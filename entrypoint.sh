@@ -36,13 +36,13 @@ php artisan cache:clear || true
 # fi
 
 echo " Running migrations..."
-php artisan migrate --seed --force
+php artisan migrate --force
 
-# ── 4. Import wilayah Bali ───────────────────────────────────────────────────
-# if [ "$IMPORT_WILAYAH" = "true" ]; then
-# echo " Importing wilayah Bali..."
-# php artisan import:wilayah-bali
-# fi
+── 4. Import wilayah Bali ───────────────────────────────────────────────────
+if [ "$IMPORT_WILAYAH" = "true" ]; then
+echo " Importing wilayah Bali..."
+php artisan import:wilayah-bali
+fi
 
 # ── 5. Storage link ───────────────────────────────────────────────────
 echo " Creating storage link..."
