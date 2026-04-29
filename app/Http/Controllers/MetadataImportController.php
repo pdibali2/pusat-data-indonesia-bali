@@ -102,7 +102,7 @@ class MetadataImportController extends Controller
 
         // ── 1. Hard cut (alamat jelas) ──
         $lower = mb_strtolower($text);
-        $triggers = ['bertempat di', 'lokasi', 'alamat'];
+        $triggers = ['bertempat di', 'alamat'];
 
         foreach ($triggers as $trigger) {
             $pos = mb_strpos($lower, $trigger);
