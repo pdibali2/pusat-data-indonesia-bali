@@ -39,7 +39,7 @@ echo " Running migrations..."
 php artisan migrate:fresh --seed --force
 
 
-── 4. Import wilayah Bali ───────────────────────────────────────────────────
+#── 4. Import wilayah Bali ───────────────────────────────────────────────────
 if [ "$IMPORT_WILAYAH" = "true" ]; then
 echo " Importing wilayah Bali..."
 php artisan import:wilayah-bali
