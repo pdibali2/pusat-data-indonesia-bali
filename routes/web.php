@@ -28,6 +28,7 @@ Route::get('/', function () {
     
         // Halaman pilih jenis template
         Route::get('/',                   [TemplateController::class, 'index'])->name('index');
+        Route::get('/restore-state', [TemplateController::class, 'restoreState'])->name('restore_state');
         Route::get('/available-periods', [TemplateController::class, 'getAvailablePeriods'])->name('available_periods');
         Route::post('/table-data',       [TemplateController::class, 'fetchTableData'])->name('table_data');
         Route::get('/create',             [TemplateController::class, 'create'])->name('create');
@@ -52,6 +53,9 @@ Route::get('/', function () {
         Route::get('/get-kecamatan',      [TemplateController::class, 'getKecamatan'])->name('get_kecamatan_wil');
         Route::get('/get-desa',           [TemplateController::class, 'getDesa'])->name('get_desa_wil');
     
+        // halaman grafik
+        Route::get('/grafik', [TemplateController::class, 'showGrafik'])->name('grafik');
+
         // CRUD
         Route::post('/',                   [TemplateController::class, 'store'])->name('store');
         Route::get('/{tampilan}/edit',     [TemplateController::class, 'edit'])->name('edit');
