@@ -286,7 +286,7 @@
                 <p class="text-sm font-semibold text-gray-700" id="tableInfoText"></p>
                 <p class="text-xs text-gray-400 mt-0.5" id="tableSubInfo"></p>
             </div>
-            <div class="flex gap-2">
+            {{-- <div class="flex gap-2">
                 <button type="button" onclick="exportCsv()"
                         class="px-3 py-1.5 border border-gray-300 hover:bg-gray-50 text-gray-600 text-xs
                                font-medium rounded-lg flex items-center gap-1.5 transition-colors">
@@ -297,7 +297,7 @@
                                font-medium rounded-lg flex items-center gap-1.5 transition-colors">
                     <i class="fas fa-times text-xs"></i> Reset
                 </button>
-            </div>
+            </div> --}}
         </div>
 
         {{-- Loading --}}
