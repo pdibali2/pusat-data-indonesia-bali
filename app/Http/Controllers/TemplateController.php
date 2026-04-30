@@ -873,9 +873,8 @@ class TemplateController extends Controller
     
         $metadataList = Metadata::whereIn('metadata_id', $metadataIds)
             ->where('status', 2)
-            ->whereRaw('LOWER(frekuensi_penerbitan) = ?', [$frekuensiDb])
             ->orderBy('nama')
-            ->get(['metadata_id', 'nama', 'klasifikasi', 'satuan_data', 'frekuensi_penerbitan']);
+            ->get(['metadata_id', 'nama', 'klasifikasi', 'satuan_data']);
     
         if ($metadataList->isEmpty()) {
             return response()->json([
@@ -941,13 +940,8 @@ class TemplateController extends Controller
     
         // ── 3. Lokasi ────────────────────────────────────────────
         $useAllLocations = empty($locationIds);
-    
-        $locations = $useAllLocations
-            ? collect()
-            : Location::whereIn('location_id', $locationIds)
-                ->select('location_id', 'nama_wilayah')
-                ->orderBy('nama_wilayah')
-                ->get();
+
+        $locationMap = Location::pluck('nama_wilayah', 'location_id');
     
         // ── 4. Satu query besar ambil semua data ─────────────────
         $dataQuery = Data::with(['rujukan:rujukan_id,nama_rujukan'])
@@ -962,27 +956,45 @@ class TemplateController extends Controller
         $allData = $dataQuery->get(['id', 'metadata_id', 'location_id', 'time_id', 'number_value', 'rujukan_id']);
     
         // Index lookup: [metadata_id][location_key][time_id] = value
-        $dataIndex   = [];
-        $rujukanIndex= [];
-    
+        $dataIndex    = [];
+        $rujukanIndex = [];
+        $metadataLocations = []; // ← penting
+
         foreach ($allData as $d) {
-            $locKey = $useAllLocations ? 0 : $d->location_id;
-            $dataIndex[$d->metadata_id][$locKey][$d->time_id] = $d->number_value;
-            if (!isset($rujukanIndex[$d->metadata_id][$locKey]) && $d->rujukan) {
-                $rujukanIndex[$d->metadata_id][$locKey] = $d->rujukan->nama_rujukan ?? '-';
+            $mId = $d->metadata_id;
+            $loc = $d->location_id;
+            $time= $d->time_id;
+
+            // Simpan value
+            $dataIndex[$mId][$loc][$time] = $d->number_value;
+
+            // Simpan rujukan PER ROW (tidak hanya 1)
+            if ($d->rujukan) {
+                $rujukanIndex[$mId][$loc][$time] = $d->rujukan->nama_rujukan;
             }
+
+            // Track lokasi yg valid per metadata
+            $metadataLocations[$mId][$loc] = true;
         }
     
         // ── 5. Build flat rows ───────────────────────────────────
         $rows = [];
-    
+
         foreach ($metadataList as $m) {
-            if ($useAllLocations) {
-                $rows[] = $this->buildPivotRow($m, null, 'Semua Wilayah', $columns, $dataIndex, $rujukanIndex);
-            } else {
-                foreach ($locations as $loc) {
-                    $rows[] = $this->buildPivotRow($m, $loc->location_id, $loc->nama_wilayah, $columns, $dataIndex, $rujukanIndex);
-                }
+            $mId = $m->metadata_id;
+
+            if (!isset($metadataLocations[$mId])) continue;
+
+            foreach (array_keys($metadataLocations[$mId]) as $locId) {
+
+                $rows[] = $this->buildPivotRow(
+                    $m,
+                    $locId,
+                    $locationMap[$locId] ?? 'Tidak diketahui',
+                    $columns,
+                    $dataIndex,
+                    $rujukanIndex
+                );
             }
         }
     
@@ -1020,6 +1032,15 @@ class TemplateController extends Controller
         foreach ($columns as $col) {
             $values[$col['label']] = $dataIndex[$m->metadata_id][$locKey][$col['time_id']] ?? null;
         }
+
+        $rujukan = '-';
+
+        if (isset($rujukanIndex[$m->metadata_id][$locKey])) {
+            // ambil salah satu rujukan dari time yang ada
+            $rujukan = collect($rujukanIndex[$m->metadata_id][$locKey])
+                ->filter()
+                ->first() ?? '-';
+        }
     
         return [
             'metadata_id' => $m->metadata_id,
@@ -1028,7 +1049,7 @@ class TemplateController extends Controller
             'satuan'      => $m->satuan_data,
             'lokasi'      => $lokasiNama,
             'location_id' => $locationId,
-            'sumber'      => $rujukanIndex[$m->metadata_id][$locKey] ?? '-',
+            'sumber'      => $rujukan,
             'values'      => $values,
         ];
     }
