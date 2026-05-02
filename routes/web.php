@@ -76,7 +76,9 @@ Route::middleware([IsLogin::class])->group(function () {
     Route::prefix('dimensi_lokasi')->name('dimensi_lokasi.')->group(function () {
         Route::get('/',       [LocationController::class, 'index'])->name('index');
         Route::get('/create', [LocationController::class, 'create'])->name('create');
-        Route::post('/',      [LocationController::class, 'store'])->name('store');
+        Route::post('/auto',   [LocationController::class, 'store'])->name('store');
+        Route::post('/manual', [LocationController::class, 'store2'])->name('store2');
+        
     });
 
     // ── Dimensi Waktu ────────────────────────────────────────
