@@ -135,6 +135,39 @@
             </div>
 
         </form>
+
+    </div>
+
+    <div class="mt-6">
+        <div class="mt-2 bg-white rounded-md shadow p-6 max-w-xl mx-auto">
+
+        <h1 class="text-xl font-bold text-gray-800 mb-6">Tambah Lokasi (Tanpa API)</h1>
+
+            <form action="{{ route('dimensi_lokasi.store2') }}" method="POST">
+                @csrf
+                    <div class="flex flex-col gap-5">
+                        <div>
+                            <label class="me-3" for="location_id">Kode Wilayah</label>
+                            <input type="text" id="location_id" name="location_id" class="border border-gray-300 rounded-md px-3 py-2.5 text-sm text-gray-800 focus:outline-none focus:ring-2 focus:ring-sky-400 focus:border-transparent">
+                            @error('location_id')
+                                <p class="text-red-500 text-sm">{{ $message }}</p>
+                            @enderror
+                        </div>
+                        <div>
+                            <label class="me-2" for="nama_wilayah">Nama Wilayah</label>
+                            <input type="text" id="nama_wilayah" name="nama_wilayah" class="border border-gray-300 rounded-md px-3 py-2.5 text-sm text-gray-800 focus:outline-none focus:ring-2 focus:ring-sky-400 focus:border-transparent">
+                        </div>
+                        {{-- SUBMIT --}}
+                        <div class="flex justify-end pt-2 border-t border-gray-100">
+                            <button type="submit"
+                                    class="bg-sky-600 hover:bg-sky-700 text-white px-6 py-2.5 rounded-md shadow
+                                        text-sm font-medium flex items-center gap-2 transition-colors">
+                                <i class="fas fa-save"></i> Simpan
+                            </button>
+                        </div>
+                    </div>
+            </form>
+        </div>
     </div>
 </div>
 

@@ -45,6 +45,11 @@
                           shadow-md shadow-sky-400/30 flex items-center gap-2 transition-colors">
                     <i class="fas fa-plus"></i> Input Data
                 </a>
+                <a href="{{ route('data.approval') }}"
+                    class="px-4 py-2 bg-emerald-500 hover:bg-emerald-600 text-white text-sm font-semibold rounded-lg
+                            flex items-center gap-2 transition-colors">
+                    <i class="fas fa-list"></i> Daftar Data
+                </a>
                 @if(isset($pendingCount) && $pendingCount > 0)
                     <a href="{{ route('data.approval') }}"
                        class="px-4 py-2 bg-amber-500 hover:bg-amber-600 text-white text-sm font-semibold rounded-lg
