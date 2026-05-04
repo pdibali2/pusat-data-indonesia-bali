@@ -57,7 +57,7 @@ class TemplateController extends Controller
 
         $allMetadata = Metadata::where('status', Metadata::STATUS_ACTIVE)
             ->orderBy('nama')
-            ->limit(100)
+            
             ->get(['metadata_id', 'nama', 'klasifikasi', 'satuan_data', 'frekuensi_penerbitan']);
 
         return view('pages.template.create-metadata', compact('provinsiList', 'allMetadata'));
@@ -847,163 +847,142 @@ class TemplateController extends Controller
             'period_to'   => 'nullable|integer',
             'page'        => 'nullable|integer|min:1',
         ]);
-    
+
         $tampilan = Tampilan::where('tampilan_id', $request->tampilan_id)
             ->where('user_id', Auth::user()->user_id)
             ->firstOrFail();
-    
+
         $tampilan->load('isiTampilan');
-    
+
         $fp          = $tampilan->filter_params ?? [];
         $locationIds = array_map('intval', $fp['location_ids'] ?? []);
-    
-        // Map frekuensi UI → DB
-        $frekuensiDbMap = [
-            '10tahunan'  => 'dekade',
-            '5tahunan'   => 'dekade',
-            'tahunan'    => 'tahunan',
-            'semesteran' => 'semester',
-            'kuartal'    => 'kuartal',
-            'bulanan'    => 'bulanan',
-        ];
-        $frekuensiDb = $frekuensiDbMap[$request->frekuensi];
-    
-        // ── 1. Metadata yang relevan ─────────────────────────────
+
+        // ── 1. Semua metadata dalam template (TANPA filter frekuensi_penerbitan) ──
         $metadataIds = $tampilan->isiTampilan->pluck('metadata_id')->toArray();
-    
+
         $metadataList = Metadata::whereIn('metadata_id', $metadataIds)
             ->where('status', 2)
             ->orderBy('nama')
             ->get(['metadata_id', 'nama', 'klasifikasi', 'satuan_data']);
-    
+
         if ($metadataList->isEmpty()) {
             return response()->json([
                 'success' => false,
-                'message' => "Tidak ada metadata dengan frekuensi {$request->frekuensi} dalam template ini.",
+                'message' => 'Tidak ada metadata dalam template ini.',
                 'rows'    => [],
                 'columns' => [],
                 'total'   => 0,
             ]);
         }
-    
-        // ── 2. Tentukan records waktu yang masuk filter ──────────
-        $timeQuery = \App\Models\Waktu::query();
-    
-        if (in_array($request->frekuensi, ['10tahunan', '5tahunan'])) {
-            if ($request->filled('period_from')) $timeQuery->where('decade', '>=', $request->period_from);
-            if ($request->filled('period_to'))   $timeQuery->where('decade', '<=', $request->period_to);
-        } elseif ($request->frekuensi === 'tahunan') {
-            if ($request->filled('period_from')) $timeQuery->where('year', '>=', $request->period_from);
-            if ($request->filled('period_to'))   $timeQuery->where('year', '<=', $request->period_to);
-        } elseif ($request->frekuensi === 'semesteran') {
-            if ($request->filled('year_from'))   $timeQuery->where('year', '>=', $request->year_from);
-            if ($request->filled('year_to'))     $timeQuery->where('year', '<=', $request->year_to);
-            if ($request->filled('period_from')) $timeQuery->where('semester', '>=', $request->period_from);
-            if ($request->filled('period_to'))   $timeQuery->where('semester', '<=', $request->period_to);
-        } elseif ($request->frekuensi === 'kuartal') {
-            if ($request->filled('year_from'))   $timeQuery->where('year', '>=', $request->year_from);
-            if ($request->filled('year_to'))     $timeQuery->where('year', '<=', $request->year_to);
-            if ($request->filled('period_from')) $timeQuery->where('quarter', '>=', $request->period_from);
-            if ($request->filled('period_to'))   $timeQuery->where('quarter', '<=', $request->period_to);
-        } elseif ($request->frekuensi === 'bulanan') {
-            if ($request->filled('year_from'))   $timeQuery->where('year', '>=', $request->year_from);
-            if ($request->filled('year_to'))     $timeQuery->where('year', '<=', $request->year_to);
-            if ($request->filled('period_from')) $timeQuery->where('month', '>=', $request->period_from);
-            if ($request->filled('period_to'))   $timeQuery->where('month', '<=', $request->period_to);
-        }
-    
-        $timeRecords = $timeQuery
-            ->orderBy('year')
-            ->orderBy('decade')
-            ->orderBy('semester')
-            ->orderBy('quarter')
-            ->orderBy('month')
-            ->get(['time_id', 'decade', 'year', 'semester', 'quarter', 'month']);
-    
-        if ($timeRecords->isEmpty()) {
+
+        // ── 2. Bangun kolom waktu berdasarkan PILIHAN USER, bukan frekuensi DB ──
+        // Kolom = semua titik waktu dalam rentang yang dipilih
+        $columns = $this->buildColumns($request->frekuensi, $request);
+
+        if (empty($columns)) {
             return response()->json([
                 'success' => false,
-                'message' => 'Tidak ada data pada rentang periode yang dipilih.',
+                'message' => 'Tidak ada kolom periode pada rentang yang dipilih.',
                 'rows'    => [],
                 'columns' => [],
                 'total'   => 0,
             ]);
         }
-    
-        $timeIds = $timeRecords->pluck('time_id')->toArray();
-    
-        // Kolom tabel (header sumbu X)
-        $columns = $timeRecords->map(fn($t) => [
-            'time_id' => $t->time_id,
-            'label'   => $this->buildTimeLabel($t, $request->frekuensi),
-        ])->unique('label')->values()->toArray();
-    
-        // ── 3. Lokasi ────────────────────────────────────────────
-        $useAllLocations = empty($locationIds);
 
+        // ── 3. Ambil time_id dari tabel `time` yang cocok dengan kolom ──
+        $timeIdMap = $this->resolveTimeIds($columns, $request->frekuensi);
+
+        // Kolom yang tidak punya time_id di DB tetap ditampilkan (nilai = null)
+        $allTimeIds = array_values(array_filter(array_column($timeIdMap, 'time_id')));
+
+        // ── 4. Lokasi ────────────────────────────────────────────────────────────
         $locationMap = Location::pluck('nama_wilayah', 'location_id');
-    
-        // ── 4. Satu query besar ambil semua data ─────────────────
+
+        // ── 5. Query data ────────────────────────────────────────────────────────
         $dataQuery = Data::with(['rujukan:rujukan_id,nama_rujukan'])
             ->whereIn('metadata_id', $metadataList->pluck('metadata_id')->toArray())
-            ->whereIn('time_id', $timeIds)
             ->where('status', Data::STATUS_AVAILABLE);
-    
-        if (!$useAllLocations) {
+
+        if (!empty($allTimeIds)) {
+            $dataQuery->whereIn('time_id', $allTimeIds);
+        }
+
+        if (!empty($locationIds)) {
             $dataQuery->whereIn('location_id', $locationIds);
         }
-    
+
         $allData = $dataQuery->get(['id', 'metadata_id', 'location_id', 'time_id', 'number_value', 'rujukan_id']);
-    
-        // Index lookup: [metadata_id][location_key][time_id] = value
+
+        // Index: [metadata_id][location_id][time_id] = value
         $dataIndex    = [];
         $rujukanIndex = [];
-        $metadataLocations = []; // ← penting
+        $metadataLocations = [];
 
         foreach ($allData as $d) {
-            $mId = $d->metadata_id;
-            $loc = $d->location_id;
-            $time= $d->time_id;
-
-            // Simpan value
-            $dataIndex[$mId][$loc][$time] = $d->number_value;
-
-            // Simpan rujukan PER ROW (tidak hanya 1)
+            $dataIndex[$d->metadata_id][$d->location_id][$d->time_id] = $d->number_value;
             if ($d->rujukan) {
-                $rujukanIndex[$mId][$loc][$time] = $d->rujukan->nama_rujukan;
+                $rujukanIndex[$d->metadata_id][$d->location_id][$d->time_id] = $d->rujukan->nama_rujukan;
             }
-
-            // Track lokasi yg valid per metadata
-            $metadataLocations[$mId][$loc] = true;
+            $metadataLocations[$d->metadata_id][$d->location_id] = true;
         }
-    
-        // ── 5. Build flat rows ───────────────────────────────────
+
+        // ── 6. Build flat rows ───────────────────────────────────────────────────
         $rows = [];
 
         foreach ($metadataList as $m) {
             $mId = $m->metadata_id;
 
-            if (!isset($metadataLocations[$mId])) continue;
+            // Tentukan lokasi yang akan ditampilkan
+            if (!empty($locationIds)) {
+                // Hanya lokasi yang dipilih di template
+                $locsToShow = $locationIds;
+            } else {
+                // Tidak ada filter wilayah → tampilkan 1 baris "Semua Wilayah"
+                $locsToShow = [null];
+            }
 
-            foreach (array_keys($metadataLocations[$mId]) as $locId) {
+            foreach ($locsToShow as $locId) {
+                $locNama = $locId ? ($locationMap[$locId] ?? 'Tidak diketahui') : 'Semua Wilayah';
 
-                $rows[] = $this->buildPivotRow(
-                    $m,
-                    $locId,
-                    $locationMap[$locId] ?? 'Tidak diketahui',
-                    $columns,
-                    $dataIndex,
-                    $rujukanIndex
-                );
+                // Bangun values per kolom
+                $values = [];
+                foreach ($columns as $col) {
+                    $timeId        = $timeIdMap[$col['label']]['time_id'] ?? null;
+                    $val           = ($timeId && $locId)
+                        ? ($dataIndex[$mId][$locId][$timeId] ?? null)
+                        : null;
+                    $values[$col['label']] = $val;
+                }
+
+                // Rujukan
+                $rujukan = '-';
+                if ($locId && isset($rujukanIndex[$mId][$locId])) {
+                    $rujukan = collect($rujukanIndex[$mId][$locId])->filter()->first() ?? '-';
+                }
+
+                // Level wilayah untuk indentasi
+                $lokasiLevel = $locId ? $this->detectLokasiLevel((string) $locId) : 0;
+
+                $rows[] = [
+                    'metadata_id'  => $mId,
+                    'nama'         => $m->nama,          // nama metadata saja
+                    'lokasi'       => $locNama,           // nama wilayah saja
+                    'klasifikasi'  => $m->klasifikasi,
+                    'satuan'       => $m->satuan_data,
+                    'location_id'  => $locId,
+                    'lokasi_level' => $lokasiLevel,
+                    'sumber'       => $rujukan,
+                    'values'       => $values,
+                ];
             }
         }
-    
-        // ── 6. Paginate ──────────────────────────────────────────
-        $perPage     = 20;
-        $page        = max(1, (int) ($request->page ?? 1));
-        $total       = count($rows);
-        $paged       = array_slice($rows, ($page - 1) * $perPage, $perPage);
-    
+
+        // ── 7. Paginate ──────────────────────────────────────────────────────────
+        $perPage = 20;
+        $page    = max(1, (int) ($request->page ?? 1));
+        $total   = count($rows);
+        $paged   = array_slice($rows, ($page - 1) * $perPage, $perPage);
+
         return response()->json([
             'success'      => true,
             'columns'      => $columns,
@@ -1014,6 +993,157 @@ class TemplateController extends Controller
             'last_page'    => (int) ceil($total / max($perPage, 1)),
             'frekuensi'    => $request->frekuensi,
         ]);
+    }
+
+    private function buildColumns(string $frekuensi, Request $request): array
+    {
+        $columns = [];
+
+        switch ($frekuensi) {
+
+            // ── 10 Tahunan: 1 kolom per dekade ──────────────────────
+            case '10tahunan':
+                $from = (int) ($request->period_from ?? $request->year_from ?? 2010);
+                $to   = (int) ($request->period_to   ?? $request->year_to   ?? 2020);
+                // Bulatkan ke kelipatan 10
+                $from = (int) floor($from / 10) * 10;
+                $to   = (int) floor($to   / 10) * 10;
+                for ($d = $from; $d <= $to; $d += 10) {
+                    $columns[] = ['label' => (string) $d, 'meta' => ['decade' => $d]];
+                }
+                break;
+
+            // ── 5 Tahunan: 1 kolom per periode 5 tahun ───────────────
+            case '5tahunan':
+                $from = (int) ($request->period_from ?? $request->year_from ?? 2010);
+                $to   = (int) ($request->period_to   ?? $request->year_to   ?? 2020);
+                $from = (int) floor($from / 5) * 5;
+                $to   = (int) floor($to   / 5) * 5;
+                for ($d = $from; $d <= $to; $d += 5) {
+                    $columns[] = ['label' => (string) $d, 'meta' => ['year_5' => $d]];
+                }
+                break;
+
+            // ── Tahunan: 1 kolom per tahun ───────────────────────────
+            case 'tahunan':
+                $from = (int) ($request->period_from ?? $request->year_from ?? 2020);
+                $to   = (int) ($request->period_to   ?? $request->year_to   ?? 2021);
+                for ($y = $from; $y <= $to; $y++) {
+                    $columns[] = ['label' => (string) $y, 'meta' => ['year' => $y]];
+                }
+                break;
+
+            // ── Semesteran: S1/YYYY, S2/YYYY ─────────────────────────
+            case 'semesteran':
+                $yFrom = (int) ($request->year_from   ?? 2021);
+                $yTo   = (int) ($request->year_to     ?? 2022);
+                $pFrom = (int) ($request->period_from ?? 1);
+                $pTo   = (int) ($request->period_to   ?? 2);
+                for ($y = $yFrom; $y <= $yTo; $y++) {
+                    $sStart = ($y === $yFrom) ? $pFrom : 1;
+                    $sEnd   = ($y === $yTo)   ? $pTo   : 2;
+                    for ($s = $sStart; $s <= $sEnd; $s++) {
+                        $columns[] = [
+                            'label' => "S{$s}/{$y}",
+                            'meta'  => ['year' => $y, 'semester' => $s],
+                        ];
+                    }
+                }
+                break;
+
+            // ── Kuartal: Q1/YYYY … Q4/YYYY ───────────────────────────
+            case 'kuartal':
+                $yFrom = (int) ($request->year_from   ?? 2021);
+                $yTo   = (int) ($request->year_to     ?? 2022);
+                $pFrom = (int) ($request->period_from ?? 1);
+                $pTo   = (int) ($request->period_to   ?? 4);
+                for ($y = $yFrom; $y <= $yTo; $y++) {
+                    $qStart = ($y === $yFrom) ? $pFrom : 1;
+                    $qEnd   = ($y === $yTo)   ? $pTo   : 4;
+                    for ($q = $qStart; $q <= $qEnd; $q++) {
+                        $columns[] = [
+                            'label' => "Q{$q}/{$y}",
+                            'meta'  => ['year' => $y, 'quarter' => $q],
+                        ];
+                    }
+                }
+                break;
+
+            // ── Bulanan: Jan/YYYY … Des/YYYY ─────────────────────────
+            case 'bulanan':
+                $yFrom = (int) ($request->year_from   ?? 2021);
+                $yTo   = (int) ($request->year_to     ?? 2022);
+                $pFrom = (int) ($request->period_from ?? 1);
+                $pTo   = (int) ($request->period_to   ?? 12);
+                for ($y = $yFrom; $y <= $yTo; $y++) {
+                    $mStart = ($y === $yFrom) ? $pFrom : 1;
+                    $mEnd   = ($y === $yTo)   ? $pTo   : 12;
+                    for ($mo = $mStart; $mo <= $mEnd; $mo++) {
+                        $columns[] = [
+                            'label' => $this->namaBulan($mo) . "/{$y}",
+                            'meta'  => ['year' => $y, 'month' => $mo],
+                        ];
+                    }
+                }
+                break;
+        }
+
+        return $columns;
+    }
+
+    private function resolveTimeIds(array $columns, string $frekuensi): array
+    {
+        $result = [];
+
+        foreach ($columns as $col) {
+            $meta  = $col['meta'];
+            $query = \App\Models\Waktu::query();
+
+            switch ($frekuensi) {
+                case '10tahunan':
+                    $query->where('decade', $meta['decade']);
+                    break;
+                case '5tahunan':
+                    // Kolom 5-tahunan: ambil time_id dengan year dalam rentang [d, d+4]
+                    // atau jika ada kolom decade, gunakan itu
+                    $query->where('year', '>=', $meta['year_5'])
+                        ->where('year', '<=', $meta['year_5'] + 4);
+                    break;
+                case 'tahunan':
+                    $query->where('year', $meta['year']);
+                    break;
+                case 'semesteran':
+                    $query->where('year', $meta['year'])
+                        ->where('semester', $meta['semester']);
+                    break;
+                case 'kuartal':
+                    $query->where('year', $meta['year'])
+                        ->where('quarter', $meta['quarter']);
+                    break;
+                case 'bulanan':
+                    $query->where('year', $meta['year'])
+                        ->where('month', $meta['month']);
+                    break;
+            }
+
+            // Ambil semua time_id yang cocok (bisa >1 untuk 5tahunan)
+            $timeIds = $query->pluck('time_id')->toArray();
+
+            $result[$col['label']] = [
+                'time_id'  => $timeIds[0] ?? null,   // primary (untuk lookup)
+                'time_ids' => $timeIds,               // semua (untuk 5-tahunan aggregate jika perlu)
+            ];
+        }
+
+        return $result;
+    }
+
+    private function detectLokasiLevel(string $locationId): int
+    {
+        if (str_ends_with($locationId, '00000000')) return 0; // Provinsi
+        if (str_ends_with($locationId, '000000'))   return 1; // Kabupaten
+        if (str_ends_with($locationId, '0000'))     return 2; // Kecamatan
+        return 3;                                             // Desa
     }
     
     // ─── Private helpers (tambahkan setelah method fetchTableData) ───────────────

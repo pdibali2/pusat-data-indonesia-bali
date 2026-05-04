@@ -288,6 +288,16 @@ class MetadataImportController extends Controller
             $skipped  = 0;
             $toInsert = [];
 
+            foreach ($toInsert as $row) {
+                $exists = DB::table('produsen_data')
+                    ->where('produsen_id', $row['produsen_id'])
+                    ->exists();
+
+                if (!$exists) {
+                    dd('INVALID PRODUSEN', $row);
+                }
+            }
+
             DB::transaction(function () use (
                 $filePath, $skipExisting, $defaultProdusenId,
                 $userId, $now, $totalRows,

@@ -48,6 +48,7 @@ class ProdusenDataSeeder extends Seeder
             ['produsen_id'=>26,'nama_produsen'=>'Badan Kepegawaian dan Pengembangan SDM Kab. Gianyar','email'=>null,'nama_contact_person'=>null,'kontak'=>null,'alamat'=>null],
             ['produsen_id'=>58,'nama_produsen'=>'Polres Gianyar','email'=>null,'nama_contact_person'=>null,'kontak'=>null,'alamat'=>null],
             ['produsen_id'=>74,'nama_produsen'=>'PDAM','email'=>null,'nama_contact_person'=>null,'kontak'=>null,'alamat'=>null],
+            ['produsen_id'=>7,'nama_produsen'=>'Dinas Pendidikan Kab. Gianyar','email'=>null,'nama_contact_person'=>null,'kontak'=>null,'alamat'=>null],
             ['produsen_id'=>62,'nama_produsen'=>'Kantor Kementerian Agama','email'=>null,'nama_contact_person'=>null,'kontak'=>null,'alamat'=>null],
             ['produsen_id'=>47,'nama_produsen'=>'Sekretariat Dewan DPRD Gianyar','email'=>null,'nama_contact_person'=>null,'kontak'=>null,'alamat'=>null],
             ['produsen_id'=>57,'nama_produsen'=>'Kodim 1616 Gianyar','email'=>null,'nama_contact_person'=>null,'kontak'=>null,'alamat'=>null],
