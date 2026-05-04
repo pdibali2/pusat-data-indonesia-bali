@@ -6,7 +6,7 @@
 
 @php
     $activeTemplateId = (int) request('template_id', 0);
-    $tahunOpts        = range(2020, @date('Y'));
+    $tahunOpts        = range(2010, 2050);
     $semesterOpts     = [1 => 'Semester 1', 2 => 'Semester 2'];
     $kuartalOpts      = [1 => 'Q1', 2 => 'Q2', 3 => 'Q3', 4 => 'Q4'];
     $bulanOpts        = [
@@ -148,21 +148,28 @@
             <p class="text-sm font-semibold text-gray-700">Pilih Frekuensi Rentang Waktu</p>
         </div>
 
-        <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-2">
+        <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-7 gap-2">
             @foreach([
-                '10tahunan'  => ['label' => '10 Tahunan',  'sub' => 'Dekade'],
-                '5tahunan'   => ['label' => '5 Tahunan',   'sub' => 'Per 5 Tahun'],
-                'tahunan'    => ['label' => 'Tahunan',     'sub' => 'Per Tahun'],
+                '10tahunan'  => ['label' => '10 Tahunan',  'sub' => 'Setiap 10 tahun'],
+                '5tahunan'   => ['label' => '5 Tahunan',   'sub' => 'Setiap 5 tahun'],
+                'tahunan'    => ['label' => 'Tahunan',     'sub' => 'Per tahun'],
                 'semesteran' => ['label' => 'Semesteran',  'sub' => 'S1 / S2'],
                 'kuartal'    => ['label' => 'Kuartal',     'sub' => 'Q1 – Q4'],
                 'bulanan'    => ['label' => 'Bulanan',     'sub' => 'Jan – Des'],
+                'custom'     => ['label' => 'Custom',      'sub' => 'Rentang bebas'],
             ] as $key => $opt)
                 <button type="button"
                         id="freq-btn-{{ $key }}"
                         onclick="selectFrekuensi('{{ $key }}')"
                         class="freq-btn border-2 border-gray-200 rounded-xl p-3 text-left
-                               hover:border-violet-400 hover:bg-violet-50 transition-all duration-150">
-                    <p class="text-xs font-semibold text-gray-700">{{ $opt['label'] }}</p>
+                               hover:border-violet-400 hover:bg-violet-50 transition-all duration-150
+                               {{ $key === 'custom' ? 'border-dashed' : '' }}">
+                    <p class="text-xs font-semibold text-gray-700">
+                        {{ $opt['label'] }}
+                        @if($key === 'custom')
+                            <i class="fas fa-sliders-h text-gray-400 ml-1"></i>
+                        @endif
+                    </p>
                     <p class="text-xs text-gray-400 mt-0.5">{{ $opt['sub'] }}</p>
                 </button>
             @endforeach
@@ -170,9 +177,7 @@
     </div>
 
     {{-- ════════════════════════════════════════
-         STEP 3 — Rentang Periode (STATIS)
-         Semua opsi di-render langsung dari Blade,
-         tidak ada AJAX ke database.
+         STEP 3 — Rentang Periode
     ════════════════════════════════════════ --}}
     <div id="stepPeriode" class="hidden mb-6">
         <div class="flex items-center gap-2 mb-3">
@@ -180,36 +185,35 @@
             <p class="text-sm font-semibold text-gray-700">Tentukan Rentang Periode</p>
         </div>
 
-        {{-- ── SIMPLE: 10tahunan / 5tahunan / tahunan ──────────
-             Hanya pilih periode (tahun) Dari–Sampai.
-             Tidak perlu field tahun tambahan.
-        ──────────────────────────────────────────────────── --}}
-        <div id="periodeSimple" class="hidden">
+        {{-- Info helper --}}
+        <div id="periodeHelperText" class="mb-3 text-xs text-violet-600 bg-violet-50 border border-violet-200 rounded-lg px-3 py-2 hidden">
+            <i class="fas fa-info-circle mr-1"></i>
+            <span id="periodeHelperMsg"></span>
+        </div>
+
+        {{-- ── PRESET CEPAT: 10tahunan ─────────────────────────── --}}
+        <div id="periode10tahunan" class="hidden">
             <div class="bg-gray-50 border border-gray-200 rounded-lg p-4">
-                <p class="text-xs text-gray-500 mb-3">
-                    <i class="fas fa-info-circle mr-1 text-gray-400"></i>
-                    Pilih rentang
-                    <span id="periodeSimpleLabel" class="font-medium text-gray-700">tahun</span>
-                </p>
-                <div class="flex flex-wrap items-end gap-3">
+                <p class="text-xs text-gray-500 mb-3">Pilih rentang dekade (setiap 10 tahun)</p>
+                <div class="flex flex-wrap gap-2 mb-3" id="preset10tahunan"></div>
+                <p class="text-xs text-gray-400 mt-2">Atau pilih manual:</p>
+                <div class="flex flex-wrap items-end gap-3 mt-2">
                     <div>
-                        <label class="block text-xs text-gray-500 mb-1">Dari</label>
-                        <select id="periodFromSimple" onchange="checkPeriodeSimple()"
-                                class="tp-select min-w-32">
+                        <label class="block text-xs text-gray-500 mb-1">Dari Dekade</label>
+                        <select id="from10" onchange="checkPeriode10()" class="tp-select min-w-32">
                             <option value="">Pilih...</option>
-                            @foreach($tahunOpts as $y)
-                                <option value="{{ $y }}">{{ $y }}</option>
+                            @foreach([1950,1960,1970,1980,1990,2000,2010,2020,2030,2040] as $d)
+                                <option value="{{ $d }}">{{ $d }}</option>
                             @endforeach
                         </select>
                     </div>
-                    <span class="text-gray-400 mb-2 text-base font-medium">—</span>
+                    <span class="text-gray-400 mb-2">—</span>
                     <div>
-                        <label class="block text-xs text-gray-500 mb-1">Sampai</label>
-                        <select id="periodToSimple" onchange="checkPeriodeSimple()"
-                                class="tp-select min-w-32">
+                        <label class="block text-xs text-gray-500 mb-1">Sampai Dekade</label>
+                        <select id="to10" onchange="checkPeriode10()" class="tp-select min-w-32">
                             <option value="">Pilih...</option>
-                            @foreach($tahunOpts as $y)
-                                <option value="{{ $y }}">{{ $y }}</option>
+                            @foreach([1950,1960,1970,1980,1990,2000,2010,2020,2030,2040] as $d)
+                                <option value="{{ $d }}">{{ $d }}</option>
                             @endforeach
                         </select>
                     </div>
@@ -217,34 +221,108 @@
             </div>
         </div>
 
-        {{-- ── COMPLEX: semesteran / kuartal / bulanan ─────────
-             Tahun Dari–Sampai (wajib) + Periode Dari–Sampai (opsional).
-        ──────────────────────────────────────────────────── --}}
-        <div id="periodeComplex" class="hidden">
-            <div class="bg-gray-50 border border-gray-200 rounded-lg p-4 space-y-5">
+        {{-- ── PRESET CEPAT: 5tahunan ──────────────────────────── --}}
+        <div id="periode5tahunan" class="hidden">
+            <div class="bg-gray-50 border border-gray-200 rounded-lg p-4">
+                <p class="text-xs text-gray-500 mb-3">Pilih rentang 5 tahunan</p>
+                <div class="flex flex-wrap gap-2 mb-3" id="preset5tahunan"></div>
+                <p class="text-xs text-gray-400 mt-2">Atau pilih manual:</p>
+                <div class="flex flex-wrap items-end gap-3 mt-2">
+                    <div>
+                        <label class="block text-xs text-gray-500 mb-1">Dari Tahun</label>
+                        <select id="from5" onchange="checkPeriode5()" class="tp-select min-w-32">
+                            <option value="">Pilih...</option>
+                            @foreach($tahunOpts as $y)
+                                @if($y % 5 === 0)
+                                    <option value="{{ $y }}">{{ $y }}</option>
+                                @endif
+                            @endforeach
+                        </select>
+                    </div>
+                    <span class="text-gray-400 mb-2">—</span>
+                    <div>
+                        <label class="block text-xs text-gray-500 mb-1">Sampai Tahun</label>
+                        <select id="to5" onchange="checkPeriode5()" class="tp-select min-w-32">
+                            <option value="">Pilih...</option>
+                            @foreach($tahunOpts as $y)
+                                @if($y % 5 === 0)
+                                    <option value="{{ $y }}">{{ $y }}</option>
+                                @endif
+                            @endforeach
+                        </select>
+                    </div>
+                </div>
+            </div>
+        </div>
 
-                {{-- Tahun --}}
+        {{-- ── TAHUNAN ──────────────────────────────────────────── --}}
+        <div id="periodeTahunan" class="hidden">
+            <div class="bg-gray-50 border border-gray-200 rounded-lg p-4">
+                <p class="text-xs text-gray-500 mb-3">Pilih rentang tahun</p>
+                <div class="flex flex-wrap gap-2 mb-3">
+                    @foreach(['5'=>'5 Tahun','10'=>'10 Tahun','15'=>'15 Tahun','20'=>'20 Tahun'] as $n => $label)
+                        <button type="button" onclick="applyPresetTahunan({{ $n }})"
+                                class="px-3 py-1.5 text-xs border border-violet-200 text-violet-600
+                                       bg-violet-50 hover:bg-violet-100 rounded-lg transition-colors font-medium">
+                            {{ $label }} Terakhir
+                        </button>
+                    @endforeach
+                </div>
+                <div class="flex flex-wrap items-end gap-3">
+                    <div>
+                        <label class="block text-xs text-gray-500 mb-1">Dari Tahun</label>
+                        <select id="fromTahunan" onchange="checkPeriodeTahunan()" class="tp-select min-w-32">
+                            <option value="">Pilih...</option>
+                            @foreach($tahunOpts as $y)
+                                <option value="{{ $y }}">{{ $y }}</option>
+                            @endforeach
+                        </select>
+                    </div>
+                    <span class="text-gray-400 mb-2">—</span>
+                    <div>
+                        <label class="block text-xs text-gray-500 mb-1">Sampai Tahun</label>
+                        <select id="toTahunan" onchange="checkPeriodeTahunan()" class="tp-select min-w-32">
+                            <option value="">Pilih...</option>
+                            @foreach($tahunOpts as $y)
+                                <option value="{{ $y }}">{{ $y }}</option>
+                            @endforeach
+                        </select>
+                    </div>
+                    <div id="tahunanKolomInfo" class="hidden mb-1">
+                        <span class="text-xs text-violet-600 font-medium" id="tahunanKolom"></span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        {{-- ── COMPLEX: semesteran / kuartal / bulanan ─────────── --}}
+        <div id="periodeComplex" class="hidden">
+            <div class="bg-gray-50 border border-gray-200 rounded-lg p-4 space-y-4">
                 <div>
-                    <p class="text-xs text-gray-500 mb-2">
-                        <i class="fas fa-info-circle mr-1 text-gray-400"></i>
-                        Pilih rentang tahun, lalu tentukan periode di dalam tahun tersebut
-                    </p>
+                    <p class="text-xs text-gray-500 mb-2">Pilih rentang tahun</p>
+                    <div class="flex flex-wrap gap-2 mb-3" id="presetComplexBtns">
+                        @foreach(['3'=>'3 Tahun','5'=>'5 Tahun','10'=>'10 Tahun'] as $n => $label)
+                            <button type="button" onclick="applyPresetComplex({{ $n }})"
+                                    class="px-3 py-1.5 text-xs border border-violet-200 text-violet-600
+                                           bg-violet-50 hover:bg-violet-100 rounded-lg transition-colors font-medium">
+                                {{ $label }} Terakhir
+                            </button>
+                        @endforeach
+                    </div>
                     <div class="flex flex-wrap items-end gap-3">
                         <div>
                             <label class="block text-xs text-gray-500 mb-1">Tahun Dari</label>
-                            <select id="yearFrom" onchange="checkPeriodeComplex()"
-                                    class="tp-select min-w-32">
+                            <select id="yearFrom" onchange="checkPeriodeComplex()" class="tp-select min-w-32">
                                 <option value="">Pilih...</option>
                                 @foreach($tahunOpts as $y)
                                     <option value="{{ $y }}">{{ $y }}</option>
                                 @endforeach
                             </select>
                         </div>
-                        <span class="text-gray-400 mb-2 text-base font-medium">—</span>
+                        <span class="text-gray-400 mb-2">—</span>
                         <div>
                             <label class="block text-xs text-gray-500 mb-1">Tahun Sampai</label>
-                            <select id="yearTo" onchange="checkPeriodeComplex()"
-                                    class="tp-select min-w-32">
+                            <select id="yearTo" onchange="checkPeriodeComplex()" class="tp-select min-w-32">
                                 <option value="">Pilih...</option>
                                 @foreach($tahunOpts as $y)
                                     <option value="{{ $y }}">{{ $y }}</option>
@@ -254,31 +332,76 @@
                     </div>
                 </div>
 
-                {{-- Periode dalam tahun --}}
                 <div>
-                    <label class="block text-xs font-medium text-gray-600 mb-2"
-                           id="periodeComplexLabel">Periode</label>
+                    <label class="block text-xs font-medium text-gray-600 mb-2" id="periodeComplexLabel">Periode</label>
                     <div class="flex flex-wrap items-end gap-3">
                         <div>
                             <label class="block text-xs text-gray-500 mb-1">Dari</label>
-                            <select id="periodFromComplex" onchange="checkPeriodeComplex()"
-                                    class="tp-select min-w-36">
-                                <option value="">Pilih...</option>
-                                {{-- Diisi JS saat frekuensi dipilih --}}
+                            <select id="periodFromComplex" onchange="checkPeriodeComplex()" class="tp-select min-w-36">
+                                <option value="">Semua (opsional)</option>
                             </select>
                         </div>
-                        <span class="text-gray-400 mb-2 text-base font-medium">—</span>
+                        <span class="text-gray-400 mb-2">—</span>
                         <div>
                             <label class="block text-xs text-gray-500 mb-1">Sampai</label>
-                            <select id="periodToComplex" onchange="checkPeriodeComplex()"
-                                    class="tp-select min-w-36">
-                                <option value="">Pilih...</option>
-                                {{-- Diisi JS saat frekuensi dipilih --}}
+                            <select id="periodToComplex" onchange="checkPeriodeComplex()" class="tp-select min-w-36">
+                                <option value="">Semua (opsional)</option>
                             </select>
                         </div>
                     </div>
+                    <p class="text-xs text-gray-400 mt-2">
+                        <i class="fas fa-info-circle mr-1"></i>
+                        Kosongkan untuk mengambil semua periode dalam rentang tahun yang dipilih.
+                    </p>
                 </div>
 
+                {{-- Preview jumlah kolom --}}
+                <div id="complexKolomInfo" class="hidden">
+                    <span class="text-xs text-violet-600 font-medium" id="complexKolom"></span>
+                </div>
+            </div>
+        </div>
+
+        {{-- ── CUSTOM ───────────────────────────────────────────── --}}
+        <div id="periodeCustom" class="hidden">
+            <div class="bg-amber-50 border border-amber-200 rounded-lg p-4 space-y-4">
+                <p class="text-xs text-amber-700 font-medium">
+                    <i class="fas fa-sliders-h mr-1"></i>
+                    Rentang Custom — Pilih tahun dari–sampai secara bebas
+                </p>
+                <div class="flex flex-wrap items-end gap-3">
+                    <div>
+                        <label class="block text-xs text-gray-500 mb-1">Dari Tahun</label>
+                        <select id="customYearFrom" onchange="checkPeriodeCustom()" class="tp-select min-w-32">
+                            <option value="">Pilih...</option>
+                            @foreach($tahunOpts as $y)
+                                <option value="{{ $y }}">{{ $y }}</option>
+                            @endforeach
+                        </select>
+                    </div>
+                    <span class="text-gray-400 mb-2">—</span>
+                    <div>
+                        <label class="block text-xs text-gray-500 mb-1">Sampai Tahun</label>
+                        <select id="customYearTo" onchange="checkPeriodeCustom()" class="tp-select min-w-32">
+                            <option value="">Pilih...</option>
+                            @foreach($tahunOpts as $y)
+                                <option value="{{ $y }}">{{ $y }}</option>
+                            @endforeach
+                        </select>
+                    </div>
+                    <div class="mb-1">
+                        <label class="block text-xs text-gray-500 mb-1">Satuan</label>
+                        <select id="customUnit" onchange="checkPeriodeCustom()" class="tp-select">
+                            <option value="tahunan">Per Tahun</option>
+                            <option value="semesteran">Per Semester</option>
+                            <option value="kuartal">Per Kuartal</option>
+                            <option value="bulanan">Per Bulan</option>
+                        </select>
+                    </div>
+                </div>
+                <div id="customKolomInfo" class="hidden">
+                    <span class="text-xs text-amber-700 font-medium" id="customKolom"></span>
+                </div>
             </div>
         </div>
     </div>
@@ -308,11 +431,6 @@
                 <p class="text-xs text-gray-400 mt-0.5" id="tableSubInfo"></p>
             </div>
             <div class="flex gap-2">
-                <button type="button" onclick="exportCsv()"
-                        class="px-3 py-1.5 border border-gray-300 hover:bg-gray-50 text-gray-600
-                               text-xs font-medium rounded-lg flex items-center gap-1.5 transition-colors">
-                    <i class="fas fa-file-csv text-green-500"></i> Export CSV
-                </button>
                 <button type="button" onclick="resetFilter()"
                         class="px-3 py-1.5 border border-gray-300 hover:bg-gray-50 text-gray-500
                                text-xs font-medium rounded-lg flex items-center gap-1.5 transition-colors">
@@ -339,14 +457,21 @@
             <p class="text-xs">Coba ubah filter atau rentang periode</p>
         </div>
 
-        {{-- Tabel --}}
-        <div id="tableWrap" class="hidden overflow-x-auto rounded-xl border border-gray-200">
-            <table class="w-full text-sm text-left border-collapse" id="pivotTable">
-                <thead id="pivotHead"
-                       class="bg-gray-50 text-xs text-gray-600 uppercase tracking-wide">
-                </thead>
-                <tbody id="pivotBody" class="text-gray-700"></tbody>
-            </table>
+        {{-- Tabel — scroll horizontal + vertikal --}}
+        <div id="tableWrap" class="hidden">
+            {{-- Kontainer scroll: horizontal bebas, vertikal maks 70vh --}}
+            <div class="overflow-x-auto overflow-y-auto rounded-xl border border-gray-200"
+                 style="max-height: 70vh;">
+                <table class="border-collapse text-sm text-left" id="pivotTable"
+                       style="min-width: max-content; width: 100%;">
+                    {{-- Sticky header (froze saat scroll vertikal) --}}
+                    <thead id="pivotHead"
+                           class="bg-gray-50 text-xs text-gray-600 uppercase tracking-wide"
+                           style="position: sticky; top: 0; z-index: 30;">
+                    </thead>
+                    <tbody id="pivotBody" class="text-gray-700"></tbody>
+                </table>
+            </div>
         </div>
 
         {{-- Pagination --}}
@@ -385,13 +510,62 @@
         box-shadow: 0 0 0 2px #a78bfa;
         border-color: #8b5cf6;
     }
+
+    /* ── Sticky kolom kiri (Nama + Wilayah) ── */
+    #pivotTable th.col-sticky,
+    #pivotTable td.col-sticky {
+        position: sticky;
+        background: inherit;
+        z-index: 10;
+    }
+    #pivotTable th.col-sticky-nama,
+    #pivotTable td.col-sticky-nama {
+        left: 0;
+        min-width: 240px;
+        max-width: 280px;
+    }
+    #pivotTable th.col-sticky-wilayah,
+    #pivotTable td.col-sticky-wilayah {
+        left: 240px;
+        min-width: 160px;
+        max-width: 200px;
+        border-right: 2px solid #e5e7eb;
+    }
+    #pivotTable thead th {
+        background: #f9fafb;
+    }
+    #pivotTable tbody tr:nth-child(even) td.col-sticky {
+        background: #f9fafb80;
+    }
+
+    /* ── Indentasi wilayah ── */
+    .loc-indent-0  { padding-left: 0.5rem; }
+    .loc-indent-1  { padding-left: 1.5rem; }   /* kabupaten */
+    .loc-indent-2  { padding-left: 2.5rem; }   /* kecamatan */
+    .loc-indent-3  { padding-left: 3.5rem; }   /* desa */
+
+    .loc-indent-1::before { content: '└ '; color: #d1d5db; margin-right: 2px; }
+    .loc-indent-2::before { content: '  └ '; color: #d1d5db; margin-right: 2px; white-space: pre; }
+    .loc-indent-3::before { content: '    └ '; color: #d1d5db; margin-right: 2px; white-space: pre; }
+
+    /* ── Separator antar metadata ── */
+    tr.metadata-separator td {
+        height: 2px;
+        padding: 0;
+        background: #e5e7eb;
+    }
+
+    /* Freeze header row saat scroll */
+    #pivotTable thead {
+        box-shadow: 0 1px 3px rgba(0,0,0,0.08);
+    }
 </style>
 
 {{-- ══════════════════════════════════════════════════════════
      JAVASCRIPT
 ══════════════════════════════════════════════════════════ --}}
 <script>
-// ─── Opsi periode statis (tidak butuh AJAX) ────────────────────
+// ─── Opsi periode statis ───────────────────────────────────────
 const TP_PERIODE_OPTS = {
     semesteran : [[1,'Semester 1'],[2,'Semester 2']],
     kuartal    : [[1,'Q1'],[2,'Q2'],[3,'Q3'],[4,'Q4']],
@@ -404,7 +578,7 @@ const TP_PERIODE_OPTS = {
 
 const TP_FREK_LABEL = {
     '10tahunan':'10 Tahunan','5tahunan':'5 Tahunan','tahunan':'Tahunan',
-    'semesteran':'Semesteran','kuartal':'Kuartal','bulanan':'Bulanan',
+    'semesteran':'Semesteran','kuartal':'Kuartal','bulanan':'Bulanan','custom':'Custom',
 };
 
 const TMPL_URLS = {
@@ -415,13 +589,14 @@ const TMPL_URLS = {
 
 // State filter aktif
 const TS = {
-    tampilan_id : {{ $activeTemplateId ?: 'null' }},
-    frekuensi   : null,
-    year_from   : null,
-    year_to     : null,
-    period_from : null,
-    period_to   : null,
-    page        : 1,
+    tampilan_id  : {{ $activeTemplateId ?: 'null' }},
+    frekuensi    : null,
+    year_from    : null,
+    year_to      : null,
+    period_from  : null,
+    period_to    : null,
+    custom_unit  : null,   // untuk mode custom
+    page         : 1,
 };
 
 // ─── STEP 1 — Pilih template ──────────────────────────────────
@@ -434,100 +609,251 @@ function selectTemplate(id) {
 
 // ─── STEP 2 — Pilih frekuensi ─────────────────────────────────
 function selectFrekuensi(freq) {
-    TS.frekuensi   = freq;
-    TS.year_from   = TS.year_to = TS.period_from = TS.period_to = null;
-    TS.page        = 1;
+    TS.frekuensi = freq;
+    TS.year_from = TS.year_to = TS.period_from = TS.period_to = null;
+    TS.page      = 1;
 
     // Highlight tombol aktif
     document.querySelectorAll('.freq-btn').forEach(btn => {
-        btn.classList.remove('border-violet-500', 'bg-violet-50');
+        btn.classList.remove('border-violet-500','bg-violet-50','border-amber-400','bg-amber-50');
         btn.classList.add('border-gray-200');
     });
     const ab = document.getElementById('freq-btn-' + freq);
-    if (ab) { ab.classList.add('border-violet-500', 'bg-violet-50'); ab.classList.remove('border-gray-200'); }
+    if (ab) {
+        ab.classList.remove('border-gray-200');
+        if (freq === 'custom') {
+            ab.classList.add('border-amber-400','bg-amber-50');
+        } else {
+            ab.classList.add('border-violet-500','bg-violet-50');
+        }
+    }
 
-    // Reset tabel & tombol tampilkan
     _resetDataTable();
     document.getElementById('stepTampilkan').classList.add('hidden');
     document.getElementById('stepPeriode').classList.remove('hidden');
 
-    const isSimple = ['10tahunan', '5tahunan', 'tahunan'].includes(freq);
-
-    // Tampilkan panel yang sesuai
-    document.getElementById('periodeSimple').classList.toggle('hidden', !isSimple);
-    document.getElementById('periodeComplex').classList.toggle('hidden', isSimple);
-
-    if (isSimple) {
-        // Update label deskripsi
-        const descMap = {
-            '10tahunan' : 'dekade',
-            '5tahunan'  : 'periode (5 tahunan)',
-            'tahunan'   : 'tahun',
-        };
-        document.getElementById('periodeSimpleLabel').textContent = descMap[freq] ?? 'periode';
-        // Reset nilai
-        document.getElementById('periodFromSimple').value = '';
-        document.getElementById('periodToSimple').value   = '';
-
+    // Helper text
+    const helperMap = {
+        '10tahunan'  : '10 Tahunan: setiap titik = 1 dekade (10 tahun). Jumlah kolom = jumlah dekade dalam rentang.',
+        '5tahunan'   : '5 Tahunan: setiap titik = 5 tahun. Jumlah kolom = jumlah interval 5 tahun.',
+        'tahunan'    : 'Tahunan: 1 kolom per tahun. Misal 2020–2025 = 6 kolom.',
+        'semesteran' : 'Semesteran: 1 kolom per semester (S1/S2). Misal 2021–2022 = 4 kolom.',
+        'kuartal'    : 'Kuartal: 1 kolom per kuartal (Q1–Q4). Misal 2021–2022 = 8 kolom.',
+        'bulanan'    : 'Bulanan: 1 kolom per bulan. Misal 2021–2022 = 24 kolom.',
+        'custom'     : 'Custom: pilih tahun bebas dan satuan tampilan kolom.',
+    };
+    const helperEl  = document.getElementById('periodeHelperText');
+    const helperMsg = document.getElementById('periodeHelperMsg');
+    if (helperMap[freq]) {
+        helperEl.classList.remove('hidden');
+        helperMsg.textContent = helperMap[freq];
     } else {
-        // Label periode
+        helperEl.classList.add('hidden');
+    }
+
+    // Sembunyikan semua panel periode
+    ['periode10tahunan','periode5tahunan','periodeTahunan','periodeComplex','periodeCustom']
+        .forEach(id => document.getElementById(id).classList.add('hidden'));
+
+    if (freq === '10tahunan') {
+        document.getElementById('periode10tahunan').classList.remove('hidden');
+        _buildPreset10();
+    } else if (freq === '5tahunan') {
+        document.getElementById('periode5tahunan').classList.remove('hidden');
+        _buildPreset5();
+    } else if (freq === 'tahunan') {
+        document.getElementById('periodeTahunan').classList.remove('hidden');
+    } else if (freq === 'custom') {
+        document.getElementById('periodeCustom').classList.remove('hidden');
+    } else {
+        // semesteran, kuartal, bulanan
+        document.getElementById('periodeComplex').classList.remove('hidden');
         const labelMap = { 'semesteran':'Semester', 'kuartal':'Kuartal', 'bulanan':'Bulan' };
         document.getElementById('periodeComplexLabel').textContent = labelMap[freq] ?? 'Periode';
 
-        // Isi opsi dropdown periode dari konstanta statis
         const opts = TP_PERIODE_OPTS[freq] ?? [];
         ['periodFromComplex','periodToComplex'].forEach(selId => {
             const el = document.getElementById(selId);
             if (!el) return;
-            el.innerHTML = '<option value="">Pilih...</option>';
+            el.innerHTML = '<option value="">Semua (opsional)</option>';
             opts.forEach(([v, label]) => {
                 const o = document.createElement('option');
                 o.value = v; o.textContent = label;
                 el.appendChild(o);
             });
         });
-
-        // Reset nilai
         ['yearFrom','yearTo','periodFromComplex','periodToComplex']
             .forEach(id => { const el = document.getElementById(id); if (el) el.value = ''; });
     }
 }
 
-// ─── STEP 3 — Cek validitas periode, munculkan tombol ─────────
+// ─── Preset tombol cepat 10tahunan ────────────────────────────
+function _buildPreset10() {
+    const container = document.getElementById('preset10tahunan');
+    container.innerHTML = '';
+    const curYear = new Date().getFullYear();
+    const curDecade = Math.floor(curYear / 10) * 10;
+    const presets = [
+        { from: curDecade, to: curDecade, label: 'Dekade Ini' },
+        { from: curDecade - 10, to: curDecade, label: '2 Dekade Terakhir' },
+        { from: curDecade - 20, to: curDecade, label: '3 Dekade Terakhir' },
+        { from: 1990, to: curDecade, label: 'Sejak 1990' },
+    ];
+    presets.forEach(p => {
+        const btn = document.createElement('button');
+        btn.type = 'button';
+        btn.textContent = p.label;
+        btn.className = 'px-3 py-1.5 text-xs border border-violet-200 text-violet-600 bg-violet-50 hover:bg-violet-100 rounded-lg transition-colors font-medium';
+        btn.onclick = () => {
+            document.getElementById('from10').value = p.from;
+            document.getElementById('to10').value   = p.to;
+            checkPeriode10();
+        };
+        container.appendChild(btn);
+    });
+}
 
-// Untuk 10tahunan / 5tahunan / tahunan
-function checkPeriodeSimple() {
-    const dari   = document.getElementById('periodFromSimple').value;
-    const sampai = document.getElementById('periodToSimple').value;
+function _buildPreset5() {
+    const container = document.getElementById('preset5tahunan');
+    container.innerHTML = '';
+    const curYear = new Date().getFullYear();
+    const curBase = Math.floor(curYear / 5) * 5;
+    const presets = [
+        { from: curBase, to: curBase, label: 'Periode Ini' },
+        { from: curBase - 10, to: curBase, label: '3 Periode (15 Tahun)' },
+        { from: curBase - 20, to: curBase, label: '5 Periode (25 Tahun)' },
+    ];
+    presets.forEach(p => {
+        const btn = document.createElement('button');
+        btn.type = 'button';
+        btn.textContent = p.label;
+        btn.className = 'px-3 py-1.5 text-xs border border-violet-200 text-violet-600 bg-violet-50 hover:bg-violet-100 rounded-lg transition-colors font-medium';
+        btn.onclick = () => {
+            document.getElementById('from5').value = p.from;
+            document.getElementById('to5').value   = p.to;
+            checkPeriode5();
+        };
+        container.appendChild(btn);
+    });
+}
 
-    if (dari && sampai) {
-        TS.period_from = parseInt(dari,   10);
-        TS.period_to   = parseInt(sampai, 10);
+// ─── Preset "N tahun terakhir" ────────────────────────────────
+function applyPresetTahunan(n) {
+    const curYear = new Date().getFullYear();
+    document.getElementById('fromTahunan').value = curYear - n + 1;
+    document.getElementById('toTahunan').value   = curYear;
+    checkPeriodeTahunan();
+}
+
+function applyPresetComplex(n) {
+    const curYear = new Date().getFullYear();
+    document.getElementById('yearFrom').value = curYear - n + 1;
+    document.getElementById('yearTo').value   = curYear;
+    checkPeriodeComplex();
+}
+
+// ─── STEP 3 — Cek validitas ───────────────────────────────────
+
+function checkPeriode10() {
+    const f = +document.getElementById('from10').value;
+    const t = +document.getElementById('to10').value;
+    if (f && t) {
+        TS.period_from = f; TS.period_to = t;
+        const count = Math.floor((t - f) / 10) + 1;
+        showKolomPreview('tahunanKolom','tahunanKolomInfo', `→ ${count} kolom dekade`);
         document.getElementById('stepTampilkan').classList.remove('hidden');
     } else {
         document.getElementById('stepTampilkan').classList.add('hidden');
     }
 }
 
-// Untuk semesteran / kuartal / bulanan
+function checkPeriode5() {
+    const f = +document.getElementById('from5').value;
+    const t = +document.getElementById('to5').value;
+    if (f && t) {
+        TS.period_from = f; TS.period_to = t;
+        const count = Math.floor((t - f) / 5) + 1;
+        showKolomPreview('tahunanKolom','tahunanKolomInfo', `→ ${count} kolom periode 5-tahunan`);
+        document.getElementById('stepTampilkan').classList.remove('hidden');
+    } else {
+        document.getElementById('stepTampilkan').classList.add('hidden');
+    }
+}
+
+function checkPeriodeTahunan() {
+    const f = +document.getElementById('fromTahunan').value;
+    const t = +document.getElementById('toTahunan').value;
+    if (f && t) {
+        TS.year_from = f; TS.year_to = t;
+        TS.period_from = f; TS.period_to = t;
+        const count = t - f + 1;
+        showKolomPreview('tahunanKolom','tahunanKolomInfo', `→ ${count} kolom tahun`);
+        document.getElementById('stepTampilkan').classList.remove('hidden');
+    } else {
+        document.getElementById('stepTampilkan').classList.add('hidden');
+    }
+}
+
 function checkPeriodeComplex() {
-    const yFrom  = document.getElementById('yearFrom').value;
-    const yTo    = document.getElementById('yearTo').value;
-    const pFrom  = document.getElementById('periodFromComplex').value;
-    const pTo    = document.getElementById('periodToComplex').value;
+    const yFrom = +document.getElementById('yearFrom').value;
+    const yTo   = +document.getElementById('yearTo').value;
+    const pFrom = document.getElementById('periodFromComplex').value;
+    const pTo   = document.getElementById('periodToComplex').value;
 
     if (yFrom && yTo) {
-        TS.year_from   = parseInt(yFrom, 10);
-        TS.year_to     = parseInt(yTo,   10);
-        TS.period_from = pFrom ? parseInt(pFrom, 10) : null;
-        TS.period_to   = pTo   ? parseInt(pTo,   10) : null;
+        TS.year_from   = yFrom;
+        TS.year_to     = yTo;
+        TS.period_from = pFrom ? +pFrom : null;
+        TS.period_to   = pTo   ? +pTo   : null;
+
+        // Hitung estimasi kolom
+        const years = yTo - yFrom + 1;
+        const perYear = { semesteran: 2, kuartal: 4, bulanan: 12 }[TS.frekuensi] ?? 1;
+        let count = years * perYear;
+        if (pFrom && pTo) count = years * (pTo - pFrom + 1);
+        const unit = { semesteran:'semester', kuartal:'kuartal', bulanan:'bulan' }[TS.frekuensi] ?? 'periode';
+        showKolomPreview('complexKolom','complexKolomInfo', `→ estimasi ${count} kolom ${unit}`);
+
         document.getElementById('stepTampilkan').classList.remove('hidden');
     } else {
         document.getElementById('stepTampilkan').classList.add('hidden');
     }
 }
 
-// ─── STEP 4 — Fetch & render tabel pivot ──────────────────────
+function checkPeriodeCustom() {
+    const f    = +document.getElementById('customYearFrom').value;
+    const t    = +document.getElementById('customYearTo').value;
+    const unit = document.getElementById('customUnit').value;
+
+    if (f && t) {
+        TS.year_from   = f;
+        TS.year_to     = t;
+        TS.period_from = null;
+        TS.period_to   = null;
+        TS.custom_unit = unit;
+        // Override frekuensi dgn unit custom
+        TS.frekuensi   = unit;
+
+        const years   = t - f + 1;
+        const perYear = { tahunan: 1, semesteran: 2, kuartal: 4, bulanan: 12 }[unit] ?? 1;
+        const count   = years * perYear;
+        const label   = { tahunan:'tahun', semesteran:'semester', kuartal:'kuartal', bulanan:'bulan' }[unit];
+        showKolomPreview('customKolom','customKolomInfo', `→ ${count} kolom ${label} (${f}–${t})`);
+
+        document.getElementById('stepTampilkan').classList.remove('hidden');
+    } else {
+        document.getElementById('stepTampilkan').classList.add('hidden');
+    }
+}
+
+function showKolomPreview(textId, wrapId, text) {
+    const el = document.getElementById(textId);
+    const wr = document.getElementById(wrapId);
+    if (el) el.textContent = text;
+    if (wr) wr.classList.remove('hidden');
+}
+
+// ─── STEP 4 — Fetch & render tabel ───────────────────────────
 async function tampilkanData(page = 1) {
     TS.page = page;
 
@@ -586,7 +912,22 @@ async function tampilkanData(page = 1) {
     }
 }
 
-// ─── Render tabel pivot ───────────────────────────────────────
+// ─── Deteksi level wilayah dari nama (fallback) ───────────────
+// Backend sebaiknya mengirim kolom 'lokasi_level' (0=provinsi,1=kab,2=kec,3=desa)
+// Jika tidak ada, kita tebak dari location_id suffix-nya
+function _getLokasiLevel(row) {
+    if (row.lokasi_level !== undefined && row.lokasi_level !== null) {
+        return row.lokasi_level;
+    }
+    // Tebak dari location_id (bigint string 10 digit)
+    const locId = String(row.location_id ?? '');
+    if (locId.endsWith('00000000')) return 0; // provinsi
+    if (locId.endsWith('000000'))   return 1; // kabupaten
+    if (locId.endsWith('0000'))     return 2; // kecamatan
+    return 3; // desa
+}
+
+// ─── Render tabel pivot dengan indentasi wilayah ──────────────
 function _renderTable(d) {
     const head     = document.getElementById('pivotHead');
     const body     = document.getElementById('pivotBody');
@@ -597,109 +938,136 @@ function _renderTable(d) {
     const cols     = d.columns;  // [{time_id, label}]
     const rows     = d.rows;
 
-    // ── Header 2 baris (seperti screenshot) ─────────────────
     const periodLabel = {
         '10tahunan':'Dekade','5tahunan':'Periode (5 Tahunan)','tahunan':'Tahun',
-        'semesteran':'Semester','kuartal':'Kuartal','bulanan':'Bulan',
+        'semesteran':'Semester','kuartal':'Kuartal','bulanan':'Bulan','custom':'Periode Custom',
     }[d.frekuensi] ?? 'Periode';
 
+    // ── Header ───────────────────────────────────────────────
+    // Dua baris: baris 1 = grup, baris 2 = sub-kolom waktu
     head.innerHTML = `
-        <tr class="border-b border-gray-200 bg-gray-50">
-            <th class="px-4 py-3 font-semibold text-gray-600 sticky left-0 z-20 bg-gray-50
-                        border-r border-gray-200 whitespace-nowrap min-w-52" rowspan="2">
-                Nama
+        <tr class="border-b border-gray-200">
+            <th class="px-4 py-3 font-semibold text-gray-600 col-sticky col-sticky-nama border-r border-gray-200 whitespace-nowrap"
+                rowspan="2" style="min-width:240px">
+                Nama Metadata + Wilayah
             </th>
-            <th class="px-4 py-3 font-semibold text-gray-600 border-r border-gray-200
-                        whitespace-nowrap" rowspan="2">
-                Wilayah
-            </th>
-            <th class="px-4 py-3 font-semibold text-gray-600 text-center border-r border-gray-200"
+            <th class="px-4 py-3 font-semibold text-gray-600 col-sticky col-sticky-wilayah whitespace-nowrap text-center"
                 colspan="${cols.length}">
-                ${periodLabel}
+                ${_esc(periodLabel)}
             </th>
-            <th class="px-4 py-3 font-semibold text-gray-600 border-r border-gray-200
-                        whitespace-nowrap text-center" rowspan="2">
+            <th class="px-4 py-3 font-semibold text-gray-600 whitespace-nowrap text-center border-l border-gray-200"
+                rowspan="2" style="min-width:80px">
                 Satuan
             </th>
-            <th class="px-4 py-3 font-semibold text-gray-600 whitespace-nowrap" rowspan="2">
+            <th class="px-4 py-3 font-semibold text-gray-600 whitespace-nowrap border-l border-gray-200"
+                rowspan="2" style="min-width:160px">
                 Sumber
             </th>
         </tr>
-        <tr class="border-b border-gray-200 bg-gray-50">
-            ${cols.map(c =>
-                `<th class="px-4 py-2 text-center font-semibold text-gray-600
-                             border-r border-gray-100 whitespace-nowrap">
+        <tr class="border-b border-gray-200">
+            ${cols.map((c, i) =>
+                `<th class="px-3 py-2 text-center font-semibold text-gray-600 whitespace-nowrap
+                             border-r border-gray-100 ${i === 0 ? 'border-l border-gray-200' : ''}"
+                     style="min-width:90px">
                     ${_esc(c.label)}
                 </th>`
             ).join('')}
         </tr>`;
 
-    // ── Body — grouped per metadata ──────────────────────────
+    // ── Body — dikelompokkan per metadata ────────────────────
     const grouped = {};
+    const metaOrder = [];
     rows.forEach(row => {
         const key = String(row.metadata_id);
         if (!grouped[key]) {
-            grouped[key] = {
-                nama: row.nama, klasifikasi: row.klasifikasi,
-                satuan: row.satuan, sumber: row.sumber, items: [],
-            };
+            grouped[key] = { nama: row.nama, klasifikasi: row.klasifikasi,
+                             satuan: row.satuan, rows: [] };
+            metaOrder.push(key);
         }
-        grouped[key].items.push(row);
+        grouped[key].rows.push(row);
     });
 
     let html = '';
     let rowIdx = 0;
 
-    Object.values(grouped).forEach(group => {
-        group.items.forEach((row, ri) => {
-            const isFirst = ri === 0;
-            const span    = group.items.length;
-            const bg      = rowIdx % 2 === 0 ? 'bg-white' : 'bg-gray-50/40';
+    metaOrder.forEach((key, mIdx) => {
+        const group = grouped[key];
+
+        // Urutkan baris dalam group berdasar level wilayah
+        group.rows.sort((a, b) => {
+            const la = _getLokasiLevel(a);
+            const lb = _getLokasiLevel(b);
+            if (la !== lb) return la - lb;
+            return (a.lokasi ?? '').localeCompare(b.lokasi ?? '');
+        });
+
+        group.rows.forEach((row, ri) => {
+            const level  = _getLokasiLevel(row);
+            const bg     = rowIdx % 2 === 0 ? 'bg-white' : 'bg-gray-50/60';
             rowIdx++;
 
-            const cells = cols.map(c => {
+            // Ikon level wilayah
+            const levelIcons = ['🏛️', '🏙️', '🏘️', '🏠'];
+            const levelNames = ['Provinsi', 'Kabupaten', 'Kecamatan', 'Desa'];
+            const locIcon    = levelIcons[level] ?? '';
+            const locTitle   = levelNames[level] ?? '';
+
+            // Nilai per kolom waktu
+            const cells = cols.map((c, ci) => {
                 const val = row.values?.[c.label];
                 const fmt = (val !== null && val !== undefined && val !== '')
                     ? parseFloat(val).toLocaleString('id-ID', {
                           minimumFractionDigits: 0, maximumFractionDigits: 2,
                       })
-                    : '<span class="text-gray-300 select-none">—</span>';
-                return `<td class="px-4 py-2.5 text-right font-mono text-xs
-                                    border-r border-gray-100 whitespace-nowrap">${fmt}</td>`;
+                    : '<span class="text-gray-200 select-none">—</span>';
+                return `<td class="px-3 py-2.5 text-right font-mono text-xs
+                                    border-r border-gray-100 whitespace-nowrap
+                                    ${ci === 0 ? 'border-l border-gray-200' : ''}">
+                            ${fmt}
+                        </td>`;
             }).join('');
+
+            // Nama metadata (hanya di baris pertama group, dengan rowspan)
+            const isFirstRow = ri === 0;
+            const span       = group.rows.length;
 
             html += `<tr class="${bg} hover:bg-violet-50/30 transition-colors">`;
 
-            // Nama — sticky, rowspan
-            if (isFirst) {
-                html += `
-                    <td class="px-4 py-3 sticky left-0 z-10 ${bg} border-r border-gray-100 align-top"
-                        rowspan="${span}">
-                        <p class="font-semibold text-gray-800 text-xs leading-snug">
-                            ${_esc(group.nama)}
-                        </p>
-                        ${group.klasifikasi
-                            ? `<p class="text-gray-400 text-xs mt-0.5">${_esc(group.klasifikasi)}</p>`
-                            : ''}
-                    </td>`;
-            }
-
-            // Wilayah
+            // ── Kolom 1: Sticky — Nama metadata (rowspan) + Wilayah berjenjang ──
+            // Kita gabungkan nama+wilayah dalam 1 sticky column dengan indentasi
             html += `
-                <td class="px-4 py-2.5 text-xs text-gray-600 border-r border-gray-100 whitespace-nowrap">
-                    ${_esc(row.lokasi)}
+                <td class="px-3 py-2.5 col-sticky col-sticky-nama border-r border-gray-100 ${bg} align-top">
+                    <div class="flex flex-col gap-0.5">
+                        ${isFirstRow ? `
+                            <p class="text-xs font-bold text-gray-800 leading-tight">
+                                ${_esc(group.nama)}
+                            </p>
+                            ${group.klasifikasi
+                                ? `<p class="text-gray-400 text-[10px] mb-1">${_esc(group.klasifikasi)}</p>`
+                                : ''}
+                        ` : ''}
+                        <span class="loc-indent-${level} flex items-center gap-1 text-xs
+                                    ${level === 0 ? 'font-semibold text-gray-700' : ''}
+                                    ${level === 1 ? 'text-gray-600' : ''}
+                                    ${level === 2 ? 'text-gray-500' : ''}
+                                    ${level === 3 ? 'text-gray-400 text-[10px]' : ''}"
+                            title="${locTitle}">
+                            <span class="text-gray-300">${locIcon}</span>
+                            ${_esc(row.lokasi ?? '-')}
+                        </span>
+                    </div>
                 </td>`;
 
             html += cells;
 
-            // Satuan + Sumber — rowspan
-            if (isFirst) {
+            // Satuan + Sumber (rowspan hanya di baris pertama group)
+            if (isFirstRow) {
                 html += `
-                    <td class="px-4 py-2.5 text-xs text-gray-500 border-r border-gray-100
+                    <td class="px-3 py-2.5 text-xs text-gray-500 border-l border-gray-200
                                 whitespace-nowrap text-center align-top" rowspan="${span}">
                         ${_esc(row.satuan ?? '-')}
                     </td>
-                    <td class="px-4 py-2.5 text-xs text-gray-400 max-w-48 align-top"
+                    <td class="px-3 py-2.5 text-xs text-gray-400 max-w-48 align-top border-l border-gray-200"
                         title="${_esc(row.sumber ?? '')}" rowspan="${span}">
                         <span class="line-clamp-3">${_esc(row.sumber ?? '-')}</span>
                     </td>`;
@@ -708,15 +1076,17 @@ function _renderTable(d) {
             html += '</tr>';
         });
 
-        // Garis pemisah antar indikator
-        html += `<tr><td colspan="${3 + cols.length + 2}"
-                          class="h-px bg-gray-200 p-0 m-0"></td></tr>`;
+        // Separator antar metadata
+        if (mIdx < metaOrder.length - 1) {
+            const totalCols = 1 + cols.length + 2; // sticky-nama + periode + satuan + sumber
+            html += `<tr class="metadata-separator"><td colspan="${totalCols}"></td></tr>`;
+        }
     });
 
     body.innerHTML = html;
     wrap.classList.remove('hidden');
 
-    // Info
+    // ── Info bar ────────────────────────────────────────────
     const start = (d.current_page - 1) * d.per_page + 1;
     const end   = Math.min(d.current_page * d.per_page, d.total);
     infoText.textContent = `Menampilkan ${start}–${end} dari ${d.total} baris`;
@@ -724,9 +1094,10 @@ function _renderTable(d) {
     subInfo.textContent = [
         tmplName ? `Template: ${tmplName}` : '',
         `Frekuensi: ${TP_FREK_LABEL[d.frekuensi] ?? d.frekuensi}`,
+        `${cols.length} kolom periode`,
     ].filter(Boolean).join(' · ');
 
-    // Pagination
+    // ── Pagination ──────────────────────────────────────────
     if (d.last_page > 1) {
         pag.classList.remove('hidden');
         document.getElementById('paginationInfo').textContent =
@@ -778,7 +1149,6 @@ function _resetDataTable() {
         .forEach(id => document.getElementById(id)?.classList.add('hidden'));
 }
 
-// ─── Escape HTML ──────────────────────────────────────────────
 function _esc(str) {
     const d = document.createElement('div');
     d.innerText = str ?? '';

@@ -204,57 +204,8 @@
             </div>
         </div>
 
-        {{-- FILTER PERIODE --}}
-        <div id="periodeFilter" class="hidden p-3 bg-gray-50 border-x border-b border-gray-200 rounded-b-xl mb-4">
-            <div class="flex flex-wrap items-center gap-3">
-
-                {{-- Dekade / Tahunan --}}
-                <div id="periodeSimple" class="hidden flex items-center gap-2">
-                    <label class="text-xs text-gray-500 font-medium" id="periodeSimpleLabel">Rentang Tahun:</label>
-                    <input type="number" id="periodFromSimple" placeholder="Dari tahun" min="1900" max="2100"
-                           class="border border-gray-300 rounded-lg px-2.5 py-1.5 text-xs w-28
-                                  focus:outline-none focus:ring-2 focus:ring-violet-400 bg-white">
-                    <span class="text-gray-400">—</span>
-                    <input type="number" id="periodToSimple" placeholder="Sampai tahun" min="1900" max="2100"
-                           class="border border-gray-300 rounded-lg px-2.5 py-1.5 text-xs w-28
-                                  focus:outline-none focus:ring-2 focus:ring-violet-400 bg-white">
-                </div>
-
-                {{-- Semester / Kuartal / Bulanan --}}
-                <div id="periodeComplex" class="hidden flex flex-wrap items-center gap-2">
-                    <label class="text-xs text-gray-500 font-medium">Tahun:</label>
-                    <input type="number" id="yearFrom" placeholder="Dari" min="1900" max="2100"
-                           class="border border-gray-300 rounded-lg px-2.5 py-1.5 text-xs w-20
-                                  focus:outline-none focus:ring-2 focus:ring-violet-400 bg-white">
-                    <span class="text-gray-400">—</span>
-                    <input type="number" id="yearTo" placeholder="Sampai" min="1900" max="2100"
-                           class="border border-gray-300 rounded-lg px-2.5 py-1.5 text-xs w-20
-                                  focus:outline-none focus:ring-2 focus:ring-violet-400 bg-white">
-                    <label class="text-xs text-gray-500 font-medium ml-2" id="periodeLabel">Periode:</label>
-                    <input type="number" id="periodFrom" placeholder="Dari" min="1" max="12"
-                           class="border border-gray-300 rounded-lg px-2.5 py-1.5 text-xs w-16
-                                  focus:outline-none focus:ring-2 focus:ring-violet-400 bg-white">
-                    <span class="text-gray-400">—</span>
-                    <input type="number" id="periodTo" placeholder="Sampai" min="1" max="12"
-                           class="border border-gray-300 rounded-lg px-2.5 py-1.5 text-xs w-16
-                                  focus:outline-none focus:ring-2 focus:ring-violet-400 bg-white">
-                </div>
-
-                <button type="button" onclick="applyPeriodeFilter()"
-                    class="px-4 py-1.5 bg-violet-500 hover:bg-violet-600 text-white text-xs font-semibold
-                           rounded-lg transition-colors flex items-center gap-1.5">
-                    <i class="fas fa-search text-xs"></i> Tampilkan
-                </button>
-                <button type="button" onclick="resetPeriodeFilter()"
-                    class="px-4 py-1.5 border border-gray-300 bg-white text-gray-500 hover:bg-gray-50
-                           text-xs font-semibold rounded-lg transition-colors">
-                    Reset
-                </button>
-            </div>
-        </div>
-
         {{-- INFO BAR --}}
-        <div class="flex items-center justify-between mb-3">
+        <div class="flex items-center justify-between my-3">
             <div>
                 <h3 class="font-bold text-gray-700 text-sm">Hasil Metadata</h3>
                 <p class="text-xs text-gray-400 mt-0.5" id="resultDesc">—</p>
@@ -860,31 +811,6 @@ function switchTab(freq) {
         }
     });
 
-    // Periode filter
-    const pf  = document.getElementById('periodeFilter');
-    const sd  = document.getElementById('periodeSimple');
-    const cd  = document.getElementById('periodeComplex');
-    const sl  = document.getElementById('periodeSimpleLabel');
-    const pl  = document.getElementById('periodeLabel');
-    pf.classList.remove('hidden');
-
-    if (freq === 'dekade') {
-        sd.classList.remove('hidden'); cd.classList.add('hidden');
-        if (sl) sl.textContent = 'Rentang Dekade:';
-        document.getElementById('periodFromSimple').placeholder = 'cth: 2010';
-        document.getElementById('periodToSimple').placeholder   = 'cth: 2020';
-    } else if (freq === 'tahunan') {
-        sd.classList.remove('hidden'); cd.classList.add('hidden');
-        if (sl) sl.textContent = 'Rentang Tahun:';
-        document.getElementById('periodFromSimple').placeholder = 'Dari tahun';
-        document.getElementById('periodToSimple').placeholder   = 'Sampai tahun';
-    } else {
-        sd.classList.add('hidden'); cd.classList.remove('hidden');
-        if (pl) pl.textContent = freq==='semester' ? 'Semester (1-2):' : freq==='kuartal' ? 'Kuartal (1-4):' : 'Bulan (1-12):';
-        const mx = freq==='semester'?2: freq==='kuartal'?4:12;
-        ['periodFrom','periodTo'].forEach(id => { const el = document.getElementById(id); if(el) el.max=mx; });
-    }
-
     sortedRows  = [...(allGrouped[freq] || [])];
     expandedMap = {};
     currentPage = 1;
@@ -1068,63 +994,6 @@ function findRow(key) {
         for (const child of children) { if (rowKey(child) === key) return child; }
     }
     return null;
-}
-
-// ─────────────────────────────────────────────────────────────
-// FILTER PERIODE
-// ─────────────────────────────────────────────────────────────
-async function applyPeriodeFilter() {
-    const klasifikasi = document.getElementById('valKlasifikasi').value;
-    if (!klasifikasi || !activeTab) return;
-
-    const body = new URLSearchParams();
-    body.append('_token', CSRF);
-    body.append('klasifikasi', klasifikasi);
-    body.append('frekuensi', activeTab);
-    const locId = kGetDeepestLocId();
-    if (locId) body.append('location_ids[]', locId);
-
-    if (['dekade','tahunan'].includes(activeTab)) {
-        const from = document.getElementById('periodFromSimple')?.value;
-        const to   = document.getElementById('periodToSimple')?.value;
-        if (from) body.append('period_from', from);
-        if (to)   body.append('period_to',   to);
-    } else {
-        const yf = document.getElementById('yearFrom')?.value;
-        const yt = document.getElementById('yearTo')?.value;
-        const pf = document.getElementById('periodFrom')?.value;
-        const pt = document.getElementById('periodTo')?.value;
-        if (yf) body.append('year_from', yf);
-        if (yt) body.append('year_to',   yt);
-        if (pf) body.append('period_from', pf);
-        if (pt) body.append('period_to',   pt);
-    }
-
-    try {
-        const r = await fetch(FETCH_KLASIFIKASI_URL, { method:'POST', body });
-        const d = await r.json();
-        if (!d.success) return;
-        allGrouped  = d.grouped;
-        expandedMap = {};
-        currentPage = 1;
-
-        FREQ_KEYS.forEach(freq => {
-            const count = (allGrouped[freq]||[]).length;
-            const badge = document.getElementById('tab-count-' + freq);
-            if (badge) badge.textContent = count;
-        });
-        const total = FREQ_KEYS.reduce((s,f) => s + (allGrouped[f]||[]).length, 0);
-        document.getElementById('totalFound').textContent = total + ' baris';
-
-        sortedRows = [...(allGrouped[activeTab] || [])];
-        renderTable();
-    } catch(e) { console.error(e); }
-}
-
-function resetPeriodeFilter() {
-    ['periodFromSimple','periodToSimple','yearFrom','yearTo','periodFrom','periodTo']
-        .forEach(id => { const el = document.getElementById(id); if (el) el.value = ''; });
-    loadKlasifikasiPreview();
 }
 
 // ─────────────────────────────────────────────────────────────
