@@ -9,7 +9,11 @@ class IsiTampilan extends Model
     protected $primaryKey = 'isi_tampilan_id';
     public $timestamps    = false;
 
-    protected $fillable = ['tampilan_id', 'metadata_id'];
+    protected $fillable = ['tampilan_id', 'metadata_id', 'location_ids'];
+
+    protected $casts = [
+        'location_ids' => 'array',
+    ];
 
     public function tampilan()
     {

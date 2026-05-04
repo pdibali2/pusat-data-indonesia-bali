@@ -590,63 +590,89 @@ class TemplateController extends Controller
     public function store(Request $request)
     {
         $request->validate([
-            'nama_tampilan'  => 'required|string|max:100',
-            'jenis_template' => 'required|in:metadata,klasifikasi,wilayah',
-            'metadata_ids'   => 'required|array|min:1',
-            'metadata_ids.*' => 'integer|exists:metadata,metadata_id',
-            'location_ids'   => 'nullable|array',
-            'location_ids.*' => 'integer|exists:location,location_id',
-            'urutan_by'      => 'nullable|array',
-            'urutan_by.*'    => 'in:klasifikasi,wilayah',
+            'nama_tampilan'          => 'required|string|max:100',
+            'jenis_template'         => 'required|in:metadata,klasifikasi,wilayah',
+            'metadata_ids'           => 'required|array|min:1',
+            'metadata_ids.*'         => 'integer|exists:metadata,metadata_id',
+            // location_ids lama (flat) – masih diterima untuk backward compat
+            'location_ids'           => 'nullable|array',
+            'location_ids.*'         => 'integer|exists:location,location_id',
+            // per-metadata location map (JSON string)
+            'metadata_location_ids'  => 'nullable|string',
+            'urutan_by'              => 'nullable|array',
+            'urutan_by.*'            => 'in:klasifikasi,wilayah',
         ]);
-
+    
+        // Decode peta lokasi per metadata (JSON string → array assoc)
+        $metaLocMap = [];
+        if ($request->filled('metadata_location_ids')) {
+            $decoded = json_decode($request->input('metadata_location_ids'), true);
+            if (is_array($decoded)) {
+                $metaLocMap = $decoded;
+            }
+        }
+    
+        // Fallback: kalau tidak ada metadata_location_ids tapi ada location_ids flat,
+        // terapkan lokasi yang sama ke semua metadata (backward compat).
+        $flatLocationIds = $request->input('location_ids', []);
+    
         // Jika tidak login → kembalikan data untuk disimpan di localStorage
         if (!Auth::check()) {
             $templateData = [
-                'nama_tampilan'  => $request->nama_tampilan,
-                'jenis_template' => $request->jenis_template,
-                'metadata_ids'   => $request->metadata_ids,
-                'location_ids'   => $request->input('location_ids', []),
-                'urutan_by'      => $request->input('urutan_by', []),
-                'created_at'     => now()->toIso8601String(),
+                'nama_tampilan'         => $request->nama_tampilan,
+                'jenis_template'        => $request->jenis_template,
+                'metadata_ids'          => $request->metadata_ids,
+                'metadata_location_ids' => $metaLocMap ?: null,
+                'location_ids'          => $flatLocationIds,
+                'urutan_by'             => $request->input('urutan_by', []),
+                'created_at'            => now()->toIso8601String(),
             ];
-
+    
             return response()->json([
-                'success'         => true,
-                'storage'         => 'local',
-                'message'         => "Template \"{$request->nama_tampilan}\" disimpan di browser Anda.",
-                'template_data'   => $templateData,
-                'redirect'        => route('data.index'),
+                'success'       => true,
+                'storage'       => 'local',
+                'message'       => "Template \"{$request->nama_tampilan}\" disimpan di browser Anda.",
+                'template_data' => $templateData,
+                'redirect'      => route('data.index'),
             ]);
         }
-
+    
         // User login → simpan ke DB
-        $urutanBy = $request->input('urutan_by', []);
+        $urutanBy  = $request->input('urutan_by', []);
         $urutanStr = count($urutanBy) === 2 ? 'keduanya' : ($urutanBy[0] ?? null);
-
+    
         $filterParams = array_filter([
             'jenis_template' => $request->jenis_template,
-            'location_ids'   => $request->input('location_ids', []),
             'urutan_by'      => $urutanStr,
             'klasifikasi'    => $request->input('klasifikasi', null),
         ], fn($v) => $v !== null && $v !== [] && $v !== '');
-
+    
         $tampilan = Tampilan::create([
             'nama_tampilan' => $request->nama_tampilan,
             'user_id'       => Auth::user()->user_id,
             'filter_params' => $filterParams ?: null,
         ]);
-
-        // Simpan isi template (metadata yang dipilih)
-        $order = 1;
+    
+        // Simpan isi template — satu baris per metadata, beserta location_ids-nya
         foreach ($request->metadata_ids as $metadataId) {
+            // Prioritas: per-metadata map → flat location_ids → null
+            if (!empty($metaLocMap) && array_key_exists((string) $metadataId, $metaLocMap)) {
+                $locIds = array_map('intval', (array) $metaLocMap[(string) $metadataId]);
+                $locIds = array_filter($locIds); // buang 0/null
+                $locIds = array_values($locIds);
+            } elseif (!empty($flatLocationIds)) {
+                $locIds = array_map('intval', $flatLocationIds);
+            } else {
+                $locIds = [];
+            }
+    
             IsiTampilan::create([
-                'tampilan_id' => $tampilan->tampilan_id,
-                'metadata_id' => $metadataId,
+                'tampilan_id'  => $tampilan->tampilan_id,
+                'metadata_id'  => $metadataId,
+                'location_ids' => !empty($locIds) ? $locIds : null,
             ]);
-            $order++;
         }
-
+    
         if ($request->wantsJson()) {
             return response()->json([
                 'success'     => true,
@@ -656,7 +682,7 @@ class TemplateController extends Controller
                 'redirect'    => route('data.index', ['template_id' => $tampilan->tampilan_id]),
             ]);
         }
-
+    
         return redirect()
             ->route('data.index', ['template_id' => $tampilan->tampilan_id])
             ->with('success', "Template \"{$request->nama_tampilan}\" berhasil disimpan.");
@@ -847,126 +873,128 @@ class TemplateController extends Controller
             'period_to'   => 'nullable|integer',
             'page'        => 'nullable|integer|min:1',
         ]);
-
+    
         $tampilan = Tampilan::where('tampilan_id', $request->tampilan_id)
             ->where('user_id', Auth::user()->user_id)
             ->firstOrFail();
-
-        $tampilan->load('isiTampilan');
-
-        $fp          = $tampilan->filter_params ?? [];
-        $locationIds = array_map('intval', $fp['location_ids'] ?? []);
-
-        // ── 1. Semua metadata dalam template (TANPA filter frekuensi_penerbitan) ──
-        $metadataIds = $tampilan->isiTampilan->pluck('metadata_id')->toArray();
-
+    
+        // Load isi tampilan beserta location_ids per metadata
+        $isiList = IsiTampilan::where('tampilan_id', $tampilan->tampilan_id)->get();
+    
+        if ($isiList->isEmpty()) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Tidak ada metadata dalam template ini.',
+                'rows'    => [], 'columns' => [], 'total' => 0,
+            ]);
+        }
+    
+        // Map: metadata_id → location_ids (array int | null)
+        $metaLocationMap = [];
+        foreach ($isiList as $isi) {
+            $metaLocationMap[$isi->metadata_id] = $isi->location_ids
+                ? array_map('intval', $isi->location_ids)
+                : [];
+        }
+    
+        $metadataIds = array_keys($metaLocationMap);
+    
         $metadataList = Metadata::whereIn('metadata_id', $metadataIds)
             ->where('status', 2)
             ->orderBy('nama')
             ->get(['metadata_id', 'nama', 'klasifikasi', 'satuan_data']);
-
+    
         if ($metadataList->isEmpty()) {
             return response()->json([
                 'success' => false,
-                'message' => 'Tidak ada metadata dalam template ini.',
-                'rows'    => [],
-                'columns' => [],
-                'total'   => 0,
+                'message' => 'Tidak ada metadata aktif dalam template ini.',
+                'rows'    => [], 'columns' => [], 'total' => 0,
             ]);
         }
-
-        // ── 2. Bangun kolom waktu berdasarkan PILIHAN USER, bukan frekuensi DB ──
-        // Kolom = semua titik waktu dalam rentang yang dipilih
+    
+        // ── Bangun kolom waktu ────────────────────────────────
         $columns = $this->buildColumns($request->frekuensi, $request);
-
+    
         if (empty($columns)) {
             return response()->json([
                 'success' => false,
                 'message' => 'Tidak ada kolom periode pada rentang yang dipilih.',
-                'rows'    => [],
-                'columns' => [],
-                'total'   => 0,
+                'rows'    => [], 'columns' => [], 'total' => 0,
             ]);
         }
-
-        // ── 3. Ambil time_id dari tabel `time` yang cocok dengan kolom ──
-        $timeIdMap = $this->resolveTimeIds($columns, $request->frekuensi);
-
-        // Kolom yang tidak punya time_id di DB tetap ditampilkan (nilai = null)
+    
+        $timeIdMap  = $this->resolveTimeIds($columns, $request->frekuensi);
         $allTimeIds = array_values(array_filter(array_column($timeIdMap, 'time_id')));
-
-        // ── 4. Lokasi ────────────────────────────────────────────────────────────
+    
+        // ── Semua location_id unik di seluruh template ────────
+        $allLocationIds = array_unique(array_merge(...array_values($metaLocationMap)));
+        $allLocationIds = array_values(array_filter($allLocationIds));
+    
         $locationMap = Location::pluck('nama_wilayah', 'location_id');
-
-        // ── 5. Query data ────────────────────────────────────────────────────────
+    
+        // ── Query data — ambil semua sekaligus ────────────────
         $dataQuery = Data::with(['rujukan:rujukan_id,nama_rujukan'])
-            ->whereIn('metadata_id', $metadataList->pluck('metadata_id')->toArray())
+            ->whereIn('metadata_id', $metadataIds)
             ->where('status', Data::STATUS_AVAILABLE);
-
+    
         if (!empty($allTimeIds)) {
             $dataQuery->whereIn('time_id', $allTimeIds);
         }
-
-        if (!empty($locationIds)) {
-            $dataQuery->whereIn('location_id', $locationIds);
+    
+        if (!empty($allLocationIds)) {
+            $dataQuery->whereIn('location_id', $allLocationIds);
         }
-
+    
         $allData = $dataQuery->get(['id', 'metadata_id', 'location_id', 'time_id', 'number_value', 'rujukan_id']);
-
+    
         // Index: [metadata_id][location_id][time_id] = value
         $dataIndex    = [];
         $rujukanIndex = [];
-        $metadataLocations = [];
-
+    
         foreach ($allData as $d) {
             $dataIndex[$d->metadata_id][$d->location_id][$d->time_id] = $d->number_value;
             if ($d->rujukan) {
                 $rujukanIndex[$d->metadata_id][$d->location_id][$d->time_id] = $d->rujukan->nama_rujukan;
             }
-            $metadataLocations[$d->metadata_id][$d->location_id] = true;
         }
-
-        // ── 6. Build flat rows ───────────────────────────────────────────────────
+    
+        // ── Build flat rows — per metadata × lokasi yang dipilih ──
         $rows = [];
-
+    
         foreach ($metadataList as $m) {
-            $mId = $m->metadata_id;
-
-            // Tentukan lokasi yang akan ditampilkan
-            if (!empty($locationIds)) {
-                // Hanya lokasi yang dipilih di template
-                $locsToShow = $locationIds;
-            } else {
-                // Tidak ada filter wilayah → tampilkan 1 baris "Semua Wilayah"
+            $mId    = $m->metadata_id;
+            $locIds = $metaLocationMap[$mId] ?? [];
+    
+            if (empty($locIds)) {
+                // Tidak ada filter lokasi → 1 baris "Semua Wilayah"
                 $locsToShow = [null];
+            } else {
+                $locsToShow = $locIds;
             }
-
+    
             foreach ($locsToShow as $locId) {
-                $locNama = $locId ? ($locationMap[$locId] ?? 'Tidak diketahui') : 'Semua Wilayah';
-
-                // Bangun values per kolom
+                $locNama     = $locId ? ($locationMap[$locId] ?? 'Tidak diketahui') : 'Semua Wilayah';
+                $lokasiLevel = $locId ? $this->detectLokasiLevel((string) $locId) : 0;
+    
+                // Nilai per kolom
                 $values = [];
                 foreach ($columns as $col) {
-                    $timeId        = $timeIdMap[$col['label']]['time_id'] ?? null;
-                    $val           = ($timeId && $locId)
+                    $timeId = $timeIdMap[$col['label']]['time_id'] ?? null;
+                    $values[$col['label']] = ($timeId && $locId)
                         ? ($dataIndex[$mId][$locId][$timeId] ?? null)
                         : null;
-                    $values[$col['label']] = $val;
                 }
-
-                // Rujukan
+    
+                // Sumber
                 $rujukan = '-';
                 if ($locId && isset($rujukanIndex[$mId][$locId])) {
                     $rujukan = collect($rujukanIndex[$mId][$locId])->filter()->first() ?? '-';
                 }
-
-                // Level wilayah untuk indentasi
-                $lokasiLevel = $locId ? $this->detectLokasiLevel((string) $locId) : 0;
-
+    
                 $rows[] = [
                     'metadata_id'  => $mId,
-                    'nama'         => $m->nama,          // nama metadata saja
-                    'lokasi'       => $locNama,           // nama wilayah saja
+                    'nama'         => $m->nama,
+                    'lokasi'       => $locNama,
                     'klasifikasi'  => $m->klasifikasi,
                     'satuan'       => $m->satuan_data,
                     'location_id'  => $locId,
@@ -976,13 +1004,13 @@ class TemplateController extends Controller
                 ];
             }
         }
-
-        // ── 7. Paginate ──────────────────────────────────────────────────────────
+    
+        // ── Paginate ──────────────────────────────────────────
         $perPage = 20;
         $page    = max(1, (int) ($request->page ?? 1));
         $total   = count($rows);
         $paged   = array_slice($rows, ($page - 1) * $perPage, $perPage);
-
+    
         return response()->json([
             'success'      => true,
             'columns'      => $columns,
@@ -1272,28 +1300,49 @@ class TemplateController extends Controller
         if ($tampilan->user_id !== Auth::user()->user_id) {
             abort(403);
         }
- 
+    
         $request->validate([
-            'nama_tampilan'  => 'required|string|max:100',
-            'metadata_ids'   => 'required|array|min:1',
-            'metadata_ids.*' => 'integer|exists:metadata,metadata_id',
+            'nama_tampilan'         => 'required|string|max:100',
+            'metadata_ids'          => 'required|array|min:1',
+            'metadata_ids.*'        => 'integer|exists:metadata,metadata_id',
+            'metadata_location_ids' => 'nullable|string',
+            'location_ids'          => 'nullable|array',
+            'location_ids.*'        => 'integer|exists:location,location_id',
         ]);
- 
-        // Update nama tampilan
-        $tampilan->update([
-            'nama_tampilan' => $request->nama_tampilan,
-        ]);
- 
-        // Ganti seluruh isi tampilan dengan yang baru (delete lama → insert baru)
+    
+        $metaLocMap = [];
+        if ($request->filled('metadata_location_ids')) {
+            $decoded = json_decode($request->input('metadata_location_ids'), true);
+            if (is_array($decoded)) {
+                $metaLocMap = $decoded;
+            }
+        }
+    
+        $flatLocationIds = $request->input('location_ids', []);
+    
+        $tampilan->update(['nama_tampilan' => $request->nama_tampilan]);
+    
+        // Ganti seluruh isi tampilan
         IsiTampilan::where('tampilan_id', $tampilan->tampilan_id)->delete();
- 
+    
         foreach ($request->metadata_ids as $metadataId) {
+            if (!empty($metaLocMap) && array_key_exists((string) $metadataId, $metaLocMap)) {
+                $locIds = array_map('intval', (array) $metaLocMap[(string) $metadataId]);
+                $locIds = array_filter($locIds);
+                $locIds = array_values($locIds);
+            } elseif (!empty($flatLocationIds)) {
+                $locIds = array_map('intval', $flatLocationIds);
+            } else {
+                $locIds = [];
+            }
+    
             IsiTampilan::create([
-                'tampilan_id' => $tampilan->tampilan_id,
-                'metadata_id' => $metadataId,
+                'tampilan_id'  => $tampilan->tampilan_id,
+                'metadata_id'  => $metadataId,
+                'location_ids' => !empty($locIds) ? $locIds : null,
             ]);
         }
- 
+    
         if ($request->wantsJson()) {
             return response()->json([
                 'success'     => true,
@@ -1302,7 +1351,7 @@ class TemplateController extends Controller
                 'redirect'    => route('data.index', ['template_id' => $tampilan->tampilan_id]),
             ]);
         }
- 
+    
         return redirect()
             ->route('data.index', ['template_id' => $tampilan->tampilan_id])
             ->with('success', "Template \"{$tampilan->nama_tampilan}\" berhasil diperbarui.");

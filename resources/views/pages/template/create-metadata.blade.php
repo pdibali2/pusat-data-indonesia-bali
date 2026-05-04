@@ -1001,37 +1001,81 @@ function closeModal() { document.getElementById('modalSave').style.display = 'no
 async function submitTemplate() {
     const nama = document.getElementById('inputNama').value.trim();
     if (!nama) { document.getElementById('errNama').classList.remove('hidden'); return; }
-
+ 
+    // ── Tentukan sumber data: selectedMap (dari tabel preview) atau selectedMeta (dari chips) ──
     const hasMapSelection = Object.keys(selectedMap || {}).length > 0;
-
+ 
+    // Kumpulkan metadata_id yang unik
     const metaSet = hasMapSelection
         ? new Set(Object.values(selectedMap).map(r => r.metadata_id))
         : new Set(Object.keys(selectedMeta || {}).map(x => parseInt(x, 10)).filter(n => !Number.isNaN(n)));
-
-    const locSet  = hasMapSelection
-        ? new Set(Object.values(selectedMap).map(r => r.location_id))
-        : (() => {
-            const deepest = mGetDeepestLocId();
-            return new Set(deepest ? [deepest] : []);
-        })();
-
+ 
+    if (!metaSet.size) { alert('Pilih minimal 1 metadata.'); return; }
+ 
+    // ── Bangun peta lokasi per metadata ──────────────────────────────────────
+    // Format: { "metadata_id": [location_id, ...] }
+    //
+    // Sumber data bisa dari dua tempat:
+    //   1. selectedMap  = hasil centang di tabel preview (sudah ada metadata_id & location_id per baris)
+    //   2. selectedMeta = chips metadata + deepest wilayah dari cascade (satu lokasi untuk semua meta)
+    const metaLocMap = {};
+ 
+    if (hasMapSelection) {
+        // Tiap baris di selectedMap sudah membawa metadata_id + location_id-nya sendiri
+        Object.values(selectedMap).forEach(row => {
+            const mid = String(row.metadata_id);
+            const lid = row.location_id;
+            if (!metaLocMap[mid]) metaLocMap[mid] = [];
+            if (lid && !metaLocMap[mid].includes(lid)) {
+                metaLocMap[mid].push(lid);
+            }
+        });
+        // Pastikan semua metadata terdaftar (meski tanpa lokasi)
+        metaSet.forEach(mid => {
+            if (!metaLocMap[String(mid)]) metaLocMap[String(mid)] = [];
+        });
+    } else {
+        // Mode chips: satu lokasi (deepest cascade) berlaku untuk semua metadata
+        const deepest = mGetDeepestLocId();
+        metaSet.forEach(mid => {
+            metaLocMap[String(mid)] = deepest ? [parseInt(deepest)] : [];
+        });
+    }
+ 
     if (IS_LOGGED_IN) {
+        // ── Submit via hidden form ──────────────────────────────────────
         document.getElementById('hidNama').value = nama;
+ 
         document.getElementById('hidMetadataIds').innerHTML =
             [...metaSet].map(id => `<input type="hidden" name="metadata_ids[]" value="${id}">`).join('');
-        document.getElementById('hidLocationIds').innerHTML =
-            [...locSet].map(id => `<input type="hidden" name="location_ids[]" value="${id}">`).join('');
+ 
+        // Kirim peta lokasi sebagai JSON string (1 field)
+        // Field location_ids[] lama tidak dipakai lagi
+        let mapInput = document.getElementById('hidMetaLocMap');
+        if (!mapInput) {
+            mapInput = document.createElement('input');
+            mapInput.type = 'hidden';
+            mapInput.name = 'metadata_location_ids';
+            mapInput.id   = 'hidMetaLocMap';
+            document.getElementById('formSaveTemplateHidden').appendChild(mapInput);
+        }
+        mapInput.value = JSON.stringify(metaLocMap);
+ 
+        document.getElementById('hidLocationIds').innerHTML = ''; // kosongkan field lama
         document.getElementById('hidUrutanBy').innerHTML =
             [...document.querySelectorAll('input[name="urutan_by[]"]:checked')]
                 .map(c => `<input type="hidden" name="urutan_by[]" value="${c.value}">`).join('');
+ 
         document.getElementById('formSaveTemplateHidden').submit();
     } else {
+        // ── Simpan ke localStorage (guest) ─────────────────────────────
         const body = new URLSearchParams();
         body.append('_token', CSRF);
         body.append('nama_tampilan', nama);
         body.append('jenis_template', 'metadata');
         [...metaSet].forEach(id => body.append('metadata_ids[]', id));
-        [...locSet].forEach(id  => body.append('location_ids[]', id));
+        body.append('metadata_location_ids', JSON.stringify(metaLocMap));
+ 
         try {
             const r = await fetch('{{ route("template.store") }}', { method: 'POST', body });
             const d = await r.json();

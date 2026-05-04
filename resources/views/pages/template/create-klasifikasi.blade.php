@@ -1076,46 +1076,129 @@ function closeSaveModal() { document.getElementById('modalSaveTemplate').style.d
 
 async function submitSaveTemplate() {
     const nama = document.getElementById('inputNamaTemplate').value.trim();
-    if (!nama) { document.getElementById('errorNamaTemplate').classList.remove('hidden'); return; }
+    if (!nama) {
+        document.getElementById('errorNamaTemplate').classList.remove('hidden');
+        return;
+    }
 
-    const metaSet  = new Set(Object.values(selectedPreviewItems).map(r => r.metadataId));
-    const locSet   = new Set(Object.values(selectedPreviewItems).map(r => r.locationId));
+    // ── Ambil data dari preview ───────────────────────────────
+    const hasSelection = Object.keys(selectedPreviewItems || {}).length > 0;
+
+    // Metadata unik
+    const metaSet = new Set(
+        Object.values(selectedPreviewItems).map(r => r.metadataId)
+    );
+
+    if (!metaSet.size) {
+        alert('Pilih minimal 1 metadata.');
+        return;
+    }
+
+    // ── Build mapping metadata → lokasi ───────────────────────
+    const metaLocMap = {};
+
+    if (hasSelection) {
+        Object.values(selectedPreviewItems).forEach(row => {
+            const mid = String(row.metadataId);
+            const lid = row.locationId;
+
+            if (!metaLocMap[mid]) metaLocMap[mid] = [];
+
+            if (lid && !metaLocMap[mid].includes(lid)) {
+                metaLocMap[mid].push(lid);
+            }
+        });
+
+        // Pastikan semua metadata ada key-nya
+        metaSet.forEach(mid => {
+            if (!metaLocMap[String(mid)]) {
+                metaLocMap[String(mid)] = [];
+            }
+        });
+    }
+
+    // ── Urutan by ─────────────────────────────────────────────
     const urutanBy = [];
     if (document.getElementById('chkKlasifikasi').checked) urutanBy.push('klasifikasi');
     if (document.getElementById('chkWilayah').checked)     urutanBy.push('wilayah');
 
+    // =========================================================
+    // 🚀 MODE LOGIN
+    // =========================================================
     if (IS_LOGGED_IN) {
-        document.getElementById('hidNama').value        = nama;
-        document.getElementById('hidKlasifikasi').value = document.getElementById('valKlasifikasi').value;
+
+        document.getElementById('hidNama').value = nama;
+
+        // metadata_ids[]
         document.getElementById('hidMetadataIds').innerHTML =
-            [...metaSet].map(id => `<input type="hidden" name="metadata_ids[]" value="${id}">`).join('');
-        document.getElementById('hidLocationIds').innerHTML =
-            [...locSet].map(id => `<input type="hidden" name="location_ids[]" value="${id}">`).join('');
+            [...metaSet].map(id =>
+                `<input type="hidden" name="metadata_ids[]" value="${id}">`
+            ).join('');
+
+        // metadata_location_ids (JSON)
+        let mapInput = document.getElementById('hidMetaLocMap');
+        if (!mapInput) {
+            mapInput = document.createElement('input');
+            mapInput.type = 'hidden';
+            mapInput.name = 'metadata_location_ids';
+            mapInput.id   = 'hidMetaLocMap';
+            document.getElementById('formSaveTemplateHidden').appendChild(mapInput);
+        }
+
+        mapInput.value = JSON.stringify(metaLocMap);
+
+        // Kosongkan field lama
+        document.getElementById('hidLocationIds').innerHTML = '';
+
+        // urutan_by[]
         document.getElementById('hidUrutanBy').innerHTML =
-            urutanBy.map(v => `<input type="hidden" name="urutan_by[]" value="${v}">`).join('');
+            urutanBy.map(v =>
+                `<input type="hidden" name="urutan_by[]" value="${v}">`
+            ).join('');
+
         document.getElementById('formSaveTemplateHidden').submit();
-    } else {
+    }
+
+    // =========================================================
+    // 🧠 MODE GUEST (localStorage)
+    // =========================================================
+    else {
         const body = new URLSearchParams();
         body.append('_token', CSRF);
         body.append('nama_tampilan', nama);
         body.append('jenis_template', 'klasifikasi');
-        body.append('klasifikasi', document.getElementById('valKlasifikasi').value);
+
         [...metaSet].forEach(id => body.append('metadata_ids[]', id));
-        [...locSet].forEach(id  => body.append('location_ids[]', id));
+
+        // ⬇️ ini yang baru
+        body.append('metadata_location_ids', JSON.stringify(metaLocMap));
+
         urutanBy.forEach(v => body.append('urutan_by[]', v));
+
         try {
-            const r = await fetch('{{ route("template.store") }}', { method:'POST', body });
+            const r = await fetch('{{ route("template.store") }}', {
+                method: 'POST',
+                body
+            });
+
             const d = await r.json();
+
             if (d.success && d.storage === 'local') {
                 const existing = JSON.parse(localStorage.getItem('savedTemplates') || '[]');
+
                 d.template_data.local_id = 'tmpl_' + Date.now();
                 existing.push(d.template_data);
+
                 localStorage.setItem('savedTemplates', JSON.stringify(existing));
-                alert(`Template "${nama}" disimpan di browser.\n(Login untuk menyimpan ke server)`);
+
+                alert(`Template "${nama}" disimpan di browser.\nLogin untuk menyimpan ke server`);
+
                 closeSaveModal();
                 window.location.href = d.redirect;
             }
-        } catch(e) { alert('Gagal menyimpan: ' + e.message); }
+        } catch (e) {
+            alert('Gagal menyimpan: ' + e.message);
+        }
     }
 }
 
