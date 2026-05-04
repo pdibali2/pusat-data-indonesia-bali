@@ -1021,27 +1021,56 @@ function closeModal() { document.getElementById('modalSave').style.display = 'no
 async function submitTemplate() {
     const nama = document.getElementById('inputNama').value.trim();
     if (!nama) { document.getElementById('errNama').classList.remove('hidden'); return; }
-
-    const metaSet = new Set(Object.values(selectedMap).map(r => r.metadata_id));
-    const locSet  = new Set(Object.values(selectedMap).map(r => r.location_id));
-
+ 
+    const count = Object.keys(selectedMap).length;
+    if (!count) { alert('Pilih minimal 1 metadata untuk disimpan.'); return; }
+ 
+    // ── Bangun peta lokasi per metadata dari selectedMap ─────────────────────
+    // Tiap baris selectedMap punya: { metadata_id, location_id, ... }
+    const metaSet    = new Set(Object.values(selectedMap).map(r => r.metadata_id));
+    const metaLocMap = {};
+ 
+    Object.values(selectedMap).forEach(row => {
+        const mid = String(row.metadata_id);
+        const lid = row.location_id;
+        if (!metaLocMap[mid]) metaLocMap[mid] = [];
+        if (lid && !metaLocMap[mid].includes(lid)) {
+            metaLocMap[mid].push(lid);
+        }
+    });
+    // Pastikan semua metadata terdaftar
+    metaSet.forEach(mid => {
+        if (!metaLocMap[String(mid)]) metaLocMap[String(mid)] = [];
+    });
+ 
     if (IS_LOGGED_IN) {
-        // Submit via form ke DB
         document.getElementById('fNama').value = nama;
+ 
         document.getElementById('fMetadataIds').innerHTML =
             [...metaSet].map(id => `<input type="hidden" name="metadata_ids[]" value="${id}">`).join('');
-        document.getElementById('fLocationIds').innerHTML =
-            [...locSet].map(id => `<input type="hidden" name="location_ids[]" value="${id}">`).join('');
+ 
+        // Kirim peta lokasi sebagai JSON string
+        let mapInput = document.getElementById('fMetaLocMap');
+        if (!mapInput) {
+            mapInput = document.createElement('input');
+            mapInput.type = 'hidden';
+            mapInput.name = 'metadata_location_ids';
+            mapInput.id   = 'fMetaLocMap';
+            document.getElementById('formSave').appendChild(mapInput);
+        }
+        mapInput.value = JSON.stringify(metaLocMap);
+ 
+        document.getElementById('fLocationIds').innerHTML = ''; // kosongkan field lama
+ 
         document.getElementById('formSave').submit();
     } else {
-        // Simpan ke localStorage
         const body = new URLSearchParams();
         body.append('_token', CSRF);
         body.append('nama_tampilan', nama);
         body.append('jenis_template', 'wilayah');
         [...metaSet].forEach(id => body.append('metadata_ids[]', id));
-        [...locSet].forEach(id  => body.append('location_ids[]', id));
-
+        body.append('metadata_location_ids', JSON.stringify(metaLocMap));
+ 
         try {
             const r = await fetch('{{ route("template.store") }}', { method: 'POST', body });
             const d = await r.json();
