@@ -86,4 +86,30 @@ class LocationController extends Controller
             ->route('dimensi_lokasi.index')
             ->with('success','Data lokasi berhasil ditambahkan.');
     }
+
+    public function store2(Request $request)
+    {
+        $request->validate([
+            'location_id'  => 'required|digits:10',
+            'nama_wilayah' => 'required|string|max:255',
+        ]);
+
+        $location_id  = $request->location_id;
+        $nama_wilayah = $request->nama_wilayah;
+
+        if (Location::where('location_id', $location_id)->exists()) {
+            return back()
+                ->withInput()
+                ->with('warning', 'Kode lokasi sudah terdaftar.');
+        }
+
+        Location::create([
+            'location_id'  => $location_id,
+            'nama_wilayah' => $nama_wilayah,
+        ]);
+
+        return redirect()
+            ->route('dimensi_lokasi.index')
+            ->with('success', 'Data lokasi berhasil ditambahkan.');
+    }
 }

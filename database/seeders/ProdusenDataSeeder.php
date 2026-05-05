@@ -48,6 +48,7 @@ class ProdusenDataSeeder extends Seeder
             ['produsen_id'=>26,'nama_produsen'=>'Badan Kepegawaian dan Pengembangan SDM Kab. Gianyar','email'=>null,'nama_contact_person'=>null,'kontak'=>null,'alamat'=>null],
             ['produsen_id'=>58,'nama_produsen'=>'Polres Gianyar','email'=>null,'nama_contact_person'=>null,'kontak'=>null,'alamat'=>null],
             ['produsen_id'=>74,'nama_produsen'=>'PDAM','email'=>null,'nama_contact_person'=>null,'kontak'=>null,'alamat'=>null],
+            ['produsen_id'=>7,'nama_produsen'=>'Dinas Pendidikan Kab. Gianyar','email'=>null,'nama_contact_person'=>null,'kontak'=>null,'alamat'=>null],
             ['produsen_id'=>62,'nama_produsen'=>'Kantor Kementerian Agama','email'=>null,'nama_contact_person'=>null,'kontak'=>null,'alamat'=>null],
             ['produsen_id'=>47,'nama_produsen'=>'Sekretariat Dewan DPRD Gianyar','email'=>null,'nama_contact_person'=>null,'kontak'=>null,'alamat'=>null],
             ['produsen_id'=>57,'nama_produsen'=>'Kodim 1616 Gianyar','email'=>null,'nama_contact_person'=>null,'kontak'=>null,'alamat'=>null],
@@ -83,6 +84,7 @@ class ProdusenDataSeeder extends Seeder
             ['produsen_id'=>32,'nama_produsen'=>'Bagian Kesejahtraan Rakyat Kab. Gianyar','email'=>null,'nama_contact_person'=>null,'kontak'=>null,'alamat'=>null],
             ['produsen_id'=>85,'nama_produsen'=>'Rumah Sakit Umum Payangan','email'=>null,'nama_contact_person'=>null,'kontak'=>null,'alamat'=>null],
             ['produsen_id'=>1,'nama_produsen'=>'Badan Pusat Statistik Provinsi Bali','email'=>'pst5100@bps.go.id','nama_contact_person'=>'Badan Pusat Statistik Kabupaten Gianyar','kontak'=>'081-810-5100','alamat'=>'Jl. Raya Puputan (Renon) No 1 Denpasar 80226'],
+            ['produsen_id'=>999,'nama_produsen'=>'N/A','email'=>'-','nama_contact_person'=>'-','kontak'=>'-','alamat'=>'-'],
         ];
 
         foreach ($data as $row) {

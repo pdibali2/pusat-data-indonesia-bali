@@ -102,7 +102,7 @@ class MetadataImportController extends Controller
 
         // ── 1. Hard cut (alamat jelas) ──
         $lower = mb_strtolower($text);
-        $triggers = ['bertempat di', 'lokasi', 'alamat'];
+        $triggers = ['bertempat di', 'alamat'];
 
         foreach ($triggers as $trigger) {
             $pos = mb_strpos($lower, $trigger);
@@ -280,7 +280,6 @@ class MetadataImportController extends Controller
             $existingInDb = Metadata::pluck('nama')
                 ->map(fn($n) => $this->dedupKey($n))
                 ->flip()->all();
-            $produsenCache = [];
 
             $totalRows = $this->countExcelRows($filePath);
 
@@ -289,10 +288,20 @@ class MetadataImportController extends Controller
             $skipped  = 0;
             $toInsert = [];
 
+            foreach ($toInsert as $row) {
+                $exists = DB::table('produsen_data')
+                    ->where('produsen_id', $row['produsen_id'])
+                    ->exists();
+
+                if (!$exists) {
+                    dd('INVALID PRODUSEN', $row);
+                }
+            }
+
             DB::transaction(function () use (
                 $filePath, $skipExisting, $defaultProdusenId,
                 $userId, $now, $totalRows,
-                &$existingInDb, &$produsenCache,
+                &$existingInDb,
                 &$seen, &$inserted, &$skipped, &$toInsert
             ) {
                 for ($startRow = 2; $startRow <= $totalRows; $startRow += self::READ_CHUNK) {
@@ -326,15 +335,12 @@ class MetadataImportController extends Controller
                         
                         $produsenId = is_numeric($r['produsen_id']) ? (int)$r['produsen_id'] : null;
 
-                        $produsenId = $produsenId ?? $defaultProdusenId;
+                        $produsenId = $produsenId ?? $defaultProdusenId ?? 999;
 
                         if (!$produsenId) { 
                             $skipped++; 
                             continue; 
                         }
-                        $produsenId = $produsenId ?? $defaultProdusenId;
-
-                        if (!$produsenId) { $skipped++; continue; }
 
                         $toInsert[] = $this->buildRow($r, $produsenId, $userId, $now);
 
