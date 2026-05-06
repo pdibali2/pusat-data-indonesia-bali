@@ -53,9 +53,12 @@
         <div class="flex-1 min-w-48">
             <label class="block text-xs text-gray-500 font-medium mb-1">Filter Metadata</label>
             <select name="metadata_id"
-                class="w-full border rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-sky-400 bg-white"
-                onchange="this.form.submit()">
-                <option value="">Semua Metadata</option>
+                id="metadataSelect"
+                placeholder="Cari metadata..."
+                class="tom-select w-full rounded-md text-sm bg-white">
+                
+                <option value=""></option>
+                
                 @foreach($metadataList as $meta)
                     <option value="{{ $meta->metadata_id }}"
                         {{ request('metadata_id') == $meta->metadata_id ? 'selected' : '' }}>
@@ -344,6 +347,20 @@
 </div>
 
 <script>
+    function initTomSelect(selector) {
+        document.querySelectorAll(selector).forEach(el => {
+            if (!el.tomselect) {
+                new TomSelect(el, {
+                    create: true,
+                    sortField: {
+                        field: "text",
+                        direction: "asc"
+                    }
+                });
+            }
+        });
+    }
+
     // ── Live clock ──
     function updateDateTime() {
         const now = new Date();
@@ -408,6 +425,8 @@
     document.getElementById('confirmModal').addEventListener('click', function(e) {
         if (e.target === this) closeModal();
     });
+
+    initTomSelect('.tom-select');
 </script>
 
 {{-- Bulk approve form (hidden) --}}
