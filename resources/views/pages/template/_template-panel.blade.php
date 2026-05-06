@@ -6,7 +6,7 @@
 
 @php
     $activeTemplateId = (int) request('template_id', 0);
-    $tahunOpts        = range(2010, 2050);
+    $tahunOpts        = range(2010, 2030);
     $semesterOpts     = [1 => 'Semester 1', 2 => 'Semester 2'];
     $kuartalOpts      = [1 => 'Q1', 2 => 'Q2', 3 => 'Q3', 4 => 'Q4'];
     $bulanOpts        = [
@@ -151,7 +151,6 @@
         <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-7 gap-2">
             @foreach([
                 '10tahunan'  => ['label' => '10 Tahunan',  'sub' => 'Setiap 10 tahun'],
-                '5tahunan'   => ['label' => '5 Tahunan',   'sub' => 'Setiap 5 tahun'],
                 'tahunan'    => ['label' => 'Tahunan',     'sub' => 'Per tahun'],
                 'semesteran' => ['label' => 'Semesteran',  'sub' => 'S1 / S2'],
                 'kuartal'    => ['label' => 'Kuartal',     'sub' => 'Q1 – Q4'],

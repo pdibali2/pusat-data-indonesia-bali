@@ -979,11 +979,20 @@ class TemplateController extends Controller
                 // Nilai per kolom
                 $values = [];
                 foreach ($columns as $col) {
-                    $timeId = $timeIdMap[$col['label']]['time_id'] ?? null;
-                    $values[$col['label']] = ($timeId && $locId)
-                        ? ($dataIndex[$mId][$locId][$timeId] ?? null)
+                $timeId = $timeIdMap[$col['label']]['time_id'] ?? null;
+                if ($timeId === null) {
+                    $values[$col['label']] = null;
+                } elseif ($locId !== null) {
+                    $values[$col['label']] = $dataIndex[$mId][$locId][$timeId] ?? null;
+                } else {
+                    $values[$col['label']] = isset($dataIndex[$mId])
+                        ? collect($dataIndex[$mId])
+                            ->map(fn($times) => $times[$timeId] ?? null)
+                            ->filter(fn($v) => $v !== null)
+                            ->first()
                         : null;
                 }
+            }
     
                 // Sumber
                 $rujukan = '-';
@@ -1124,18 +1133,14 @@ class TemplateController extends Controller
         $result = [];
 
         foreach ($columns as $col) {
-            $meta  = $col['meta'];
-            $query = \App\Models\Waktu::query();
+            $meta = $col['meta'];
+
+            // Gunakan DB::table dengan backtick — hindari reserved word MySQL 8
+            $query = \Illuminate\Support\Facades\DB::table('time');
 
             switch ($frekuensi) {
                 case '10tahunan':
                     $query->where('decade', $meta['decade']);
-                    break;
-                case '5tahunan':
-                    // Kolom 5-tahunan: ambil time_id dengan year dalam rentang [d, d+4]
-                    // atau jika ada kolom decade, gunakan itu
-                    $query->where('year', '>=', $meta['year_5'])
-                        ->where('year', '<=', $meta['year_5'] + 4);
                     break;
                 case 'tahunan':
                     $query->where('year', $meta['year']);
@@ -1154,12 +1159,11 @@ class TemplateController extends Controller
                     break;
             }
 
-            // Ambil semua time_id yang cocok (bisa >1 untuk 5tahunan)
             $timeIds = $query->pluck('time_id')->toArray();
 
             $result[$col['label']] = [
-                'time_id'  => $timeIds[0] ?? null,   // primary (untuk lookup)
-                'time_ids' => $timeIds,               // semua (untuk 5-tahunan aggregate jika perlu)
+                'time_id'  => $timeIds[0] ?? null,
+                'time_ids' => $timeIds,
             ];
         }
 
