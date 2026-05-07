@@ -980,11 +980,15 @@ class TemplateController extends Controller
                 $values = [];
                 foreach ($columns as $col) {
                 $timeId = $timeIdMap[$col['label']]['time_id'] ?? null;
+                
+                // SEBELUM (bug): ($timeId && $locId) → null kalau locId null
+                // SESUDAH (fix): cek timeId saja, locId null berarti "Semua Wilayah"
                 if ($timeId === null) {
                     $values[$col['label']] = null;
                 } elseif ($locId !== null) {
                     $values[$col['label']] = $dataIndex[$mId][$locId][$timeId] ?? null;
                 } else {
+                    // locId null = "Semua Wilayah", ambil nilai pertama yang ada
                     $values[$col['label']] = isset($dataIndex[$mId])
                         ? collect($dataIndex[$mId])
                             ->map(fn($times) => $times[$timeId] ?? null)

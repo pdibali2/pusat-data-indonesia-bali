@@ -23,7 +23,7 @@
                 <i class="fas fa-map-marker-alt text-emerald-500 text-lg"></i>
             </div>
             <div>
-                <h3 class="font-bold text-gray-800 text-base">Template Wilayah</h3>
+                <h3 class="font-bold text-gray-800 text-base">Template Berbasis Wilayah</h3>
             </div>
             <div class="mt-auto flex items-center gap-1.5 text-emerald-500 text-sm font-semibold group-hover:gap-2.5 transition-all">
                 Pilih Jenis Ini <i class="fas fa-arrow-right text-xs"></i>
@@ -38,7 +38,7 @@
                 <i class="fas fa-tags text-violet-500 text-lg"></i>
             </div>
             <div>
-                <h3 class="font-bold text-gray-800 text-base">Template Klasifikasi</h3>
+                <h3 class="font-bold text-gray-800 text-base">Template Berbasis Klasifikasi Data</h3>
             </div>
             <div class="mt-auto flex items-center gap-1.5 text-violet-500 text-sm font-semibold group-hover:gap-2.5 transition-all">
                 Pilih Jenis Ini <i class="fas fa-arrow-right text-xs"></i>
@@ -53,7 +53,7 @@
                 <i class="fas fa-database text-sky-500 text-lg"></i>
             </div>
             <div>
-                <h3 class="font-bold text-gray-800 text-base">Template Metadata</h3>
+                <h3 class="font-bold text-gray-800 text-base">Template Berbasis Metadata</h3>
             </div>
             <div class="mt-auto flex items-center gap-1.5 text-sky-500 text-sm font-semibold group-hover:gap-2.5 transition-all">
                 Pilih Jenis Ini <i class="fas fa-arrow-right text-xs"></i>

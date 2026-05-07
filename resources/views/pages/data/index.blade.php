@@ -22,7 +22,7 @@
     {{-- HEADER --}}
     <div class="flex justify-between items-start">
         <div>
-            <h1 class="text-xl font-bold text-gray-800">Halamana Data</h1>
+            <h1 class="text-xl font-bold text-gray-800">Halaman Data</h1>
             <p class="text-sm text-gray-400 mt-1">Menyajikan data sesuai dengan kebutuhan Anda</p>
         </div>
         <div class="text-right text-sm text-gray-500">
