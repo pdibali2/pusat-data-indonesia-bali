@@ -856,6 +856,81 @@ class TemplateController extends Controller
             'periods' => $periods->toArray(),
         ]);
     }
+
+    /**
+     * AJAX — hitung jumlah data yang tersedia per frekuensi untuk template tertentu
+     * GET /template-tampilan/freq-counts?tampilan_id=X
+     */
+    public function getFreqCounts(Request $request)
+    {
+        $request->validate([
+            'tampilan_id' => 'required|integer|exists:tampilan,tampilan_id',
+        ]);
+
+        // Boleh diakses tanpa login (template publik), tapi jika ada user_id, filter per user
+        $tampilanQuery = Tampilan::where('tampilan_id', $request->tampilan_id);
+        if (Auth::check()) {
+            $tampilanQuery->where('user_id', Auth::id());
+        }
+        $tampilan = $tampilanQuery->firstOrFail();
+
+        $metadataIds = IsiTampilan::where('tampilan_id', $tampilan->tampilan_id)
+            ->pluck('metadata_id')
+            ->toArray();
+
+        if (empty($metadataIds)) {
+            return response()->json([
+                '10tahunan'  => 0,
+                'tahunan'    => 0,
+                'semesteran' => 0,
+                'kuartal'    => 0,
+                'bulanan'    => 0,
+                'custom'     => 0,
+            ]);
+        }
+
+        // Map: frekuensi UI → nilai di kolom frekuensi_penerbitan DB
+        $frekuensiDbMap = [
+            '10tahunan'  => ['dekade'],
+            'tahunan'    => ['tahunan'],
+            'semesteran' => ['semester', 'semesteran'],
+            'kuartal'    => ['kuartal'],
+            'bulanan'    => ['bulanan'],
+        ];
+
+        $counts = [];
+
+        foreach ($frekuensiDbMap as $uiFreq => $dbValues) {
+            // Cari metadata dalam template yang cocok dengan frekuensi ini
+            $relevantIds = Metadata::whereIn('metadata_id', $metadataIds)
+                ->where('status', Metadata::STATUS_ACTIVE)
+                ->where(function ($q) use ($dbValues) {
+                    foreach ($dbValues as $i => $val) {
+                        $method = $i === 0 ? 'whereRaw' : 'orWhereRaw';
+                        $q->$method('LOWER(TRIM(frekuensi_penerbitan)) = ?', [strtolower(trim($val))]);
+                    }
+                })
+                ->pluck('metadata_id')
+                ->toArray();
+
+            if (empty($relevantIds)) {
+                $counts[$uiFreq] = 0;
+                continue;
+            }
+
+            // Cek apakah ada data aktif untuk metadata ini
+            $hasData = Data::whereIn('metadata_id', $relevantIds)
+                ->where('status', Data::STATUS_AVAILABLE)
+                ->exists();
+
+            $counts[$uiFreq] = $hasData ? count($relevantIds) : 0;
+        }
+
+        // Custom selalu tersedia jika ada data apapun
+        $counts['custom'] = array_sum($counts) > 0 ? 1 : 0;
+
+        return response()->json($counts);
+    }
     
     /**
      * AJAX — ambil data tabel pivot berdasarkan template + filter waktu

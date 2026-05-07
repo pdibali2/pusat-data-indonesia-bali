@@ -222,12 +222,11 @@
                 <thead class="bg-gray-50 text-gray-500 text-xs uppercase tracking-wider border-b border-gray-200">
                     <tr>
                         <th class="px-4 py-3 w-10">
-                            <input type="checkbox" id="checkAllPreview" onchange="toggleAllPreview(this)"
+                            <input type="checkbox" id="checkAllPreview" onchange="toggleAll(this)"
                                    class="rounded border-gray-300 cursor-pointer">
                         </th>
                         <th class="px-4 py-3 font-semibold text-gray-600">Metadata</th>
                         <th class="px-4 py-3 font-semibold text-gray-600 w-36 text-center">Detail Wilayah</th>
-                        <th class="px-4 py-3 font-semibold text-gray-600 w-28 text-center">Aksi</th>
                     </tr>
                 </thead>
                 <tbody id="previewTableBody" class="divide-y divide-gray-100 bg-white">
@@ -855,6 +854,19 @@ function renderTable() {
     const paged = flat.slice(start, end);
 
     tbody.innerHTML = paged.map(row => buildRow(row)).join('');
+    const visibleRows = flat.slice(start, end);
+
+    const allChecked =
+        visibleRows.length > 0 &&
+        visibleRows.every(row =>
+            selectedPreviewItems[rowKey(row)]
+        );
+
+    const masterCheckbox = document.getElementById('checkAllPreview');
+
+    if (masterCheckbox) {
+        masterCheckbox.checked = allChecked;
+    }
 
     // Pagination
     const totalPages = Math.ceil(total / PAGE_SIZE);
@@ -918,7 +930,7 @@ function buildRow(row) {
                 data-loc-id="${row.location_id}"
                 data-meta-nama="${escH(row.nama||'')}"
                 data-loc-nama="${escH(locLabel)}"
-                onchange="onPreviewCheck(this)"
+                onchange="onRowCheck(this)"
                 ${checked ? 'checked' : ''}>
         </td>
         <td class="px-4 py-3 text-xs" style="${depth > 0 ? 'padding-left:' + (12+indent) + 'px' : ''}">
@@ -929,15 +941,6 @@ function buildRow(row) {
             ${freqBadge}
         </td>
         <td class="px-4 py-3 text-center">${detailBtn}</td>
-        <td class="px-4 py-3 text-center">
-            <a href="/template-tampilan/grafik?metadata_id=${row.metadata_id}&location_id=${row.location_id}"
-            
-            class="inline-flex items-center gap-1.5 px-3 py-1.5 border border-gray-200
-                    hover:border-sky-300 hover:bg-sky-50 text-gray-500 hover:text-sky-600
-                    text-xs font-medium rounded-lg transition-colors">
-                <i class="fas fa-chart-bar text-xs"></i> Grafik
-            </a>
-        </td>
     </tr>`;
 }
 
@@ -1022,7 +1025,7 @@ function terapkanUrutan() {
 // ─────────────────────────────────────────────────────────────
 // SELECTION
 // ─────────────────────────────────────────────────────────────
-function onPreviewCheck(cb) {
+function onRowCheck(cb) {
     const key = cb.value;
     if (cb.checked) {
         selectedPreviewItems[key] = {
@@ -1036,11 +1039,29 @@ function onPreviewCheck(cb) {
     updateSelBar();
 }
 
-function toggleAllPreview(masterCb) {
-    document.querySelectorAll('.preview-check').forEach(cb => {
-        cb.checked = masterCb.checked;
-        onPreviewCheck(cb);
-    });
+function toggleAll(masterCb) {
+    const flat = buildFlat(sortedRows);
+
+    if (masterCb.checked) {
+
+        flat.forEach(row => {
+            const key = rowKey(row);
+
+            selectedPreviewItems[key] = {
+                key,
+                metadataId: row.metadata_id,
+                locationId: row.location_id,
+                metaNama: row.nama || '',
+                locNama: row.nama_wilayah || ''
+            };
+        });
+
+    } else {
+        selectedPreviewItems = {};
+    }
+
+    renderTable();
+    updateSelBar();
 }
 
 function clearAllPreviewSelection() {

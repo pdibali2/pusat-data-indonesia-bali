@@ -30,6 +30,7 @@ Route::get('/', function () {
         Route::get('/',                   [TemplateController::class, 'index'])->name('index');
         Route::get('/restore-state', [TemplateController::class, 'restoreState'])->name('restore_state');
         Route::get('/available-periods', [TemplateController::class, 'getAvailablePeriods'])->name('available_periods');
+        Route::get('/freq-counts', [TemplateController::class, 'getFreqCounts'])->name('freq_counts');
         Route::post('/table-data',       [TemplateController::class, 'fetchTableData'])->name('table_data');
         Route::get('/create',             [TemplateController::class, 'create'])->name('create');
 

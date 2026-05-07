@@ -223,7 +223,6 @@
                         </th>
                         <th class="px-4 py-3 font-semibold">Metadata – Wilayah</th>
                         <th class="px-4 py-3 font-semibold w-36 text-center">Detail Wilayah</th>
-                        <th class="px-4 py-3 font-semibold w-28 text-center">Aksi</th>
                     </tr>
                 </thead>
                 <tbody id="resultTbody" class="divide-y divide-gray-100"></tbody>
@@ -794,6 +793,11 @@ function renderTable() {
     const start = (currentPage - 1) * PAGE_SIZE;
     const end   = Math.min(start + PAGE_SIZE, total);
     tbody.innerHTML = flat.slice(start, end).map(row => buildRow(row)).join('');
+    const visibleRows = flat.slice(start, end);
+    const allChecked = visibleRows.length > 0 &&
+        visibleRows.every(row => selectedMap[rowKey(row)]);
+
+    document.getElementById('checkAll').checked = allChecked;
 
     const totalPages = Math.ceil(total / PAGE_SIZE);
     const pw = document.getElementById('paginWrap');
@@ -853,15 +857,6 @@ function buildRow(row) {
             ${row.frekuensi_penerbitan ? `<span class="ml-1.5 text-gray-400 font-normal">(${escH(row.frekuensi_penerbitan)})</span>` : ''}
         </td>
         <td class="px-4 py-3 text-center">${detailBtn}</td>
-        <td class="px-4 py-3 text-center">
-            <a href="/template-tampilan/grafik?metadata_id=${row.metadata_id}&location_id=${row.location_id}"
-            
-            class="inline-flex items-center gap-1.5 px-3 py-1.5 border border-gray-200
-                    hover:border-sky-300 hover:bg-sky-50 text-gray-500 hover:text-sky-600
-                    text-xs font-medium rounded-lg transition-colors">
-                <i class="fas fa-chart-bar text-xs"></i> Grafik
-            </a>
-        </td>
     </tr>`;
 }
 
@@ -928,11 +923,27 @@ function onRowCheck(cb, metadataId, locationId, depth) {
 }
 
 function toggleAll(masterCb) {
-    document.querySelectorAll('.row-chk').forEach(cb => {
-        cb.checked = masterCb.checked;
-        const parts = cb.value.split('_');
-        onRowCheck(cb, parseInt(parts[0]), parseInt(parts[1]), parseInt(parts[2] || '0'));
-    });
+    const flat = buildFlat(sortedRows);
+
+    if (masterCb.checked) {
+
+        // Checklist semua data dari seluruh halaman
+        flat.forEach(row => {
+            const key = rowKey(row);
+            selectedMap[key] = row;
+        });
+
+    } else {
+
+        // Hapus semua pilihan
+        selectedMap = {};
+    }
+
+    // Re-render supaya semua checkbox sinkron
+    renderTable();
+
+    // Update info selection bar
+    updateSelBar();
 }
 
 function clearAllSel() {

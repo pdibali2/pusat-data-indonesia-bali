@@ -391,10 +391,19 @@ class DataController extends Controller
 
     public function bulkApprove(Request $request)
     {
-        $request->validate(['ids' => 'required|array|min:1', 'ids.*' => 'integer|exists:data,id']);
-        $count = Data::whereIn('id', $request->ids)->where('status', Data::STATUS_PENDING)
-                     ->update(['status' => Data::STATUS_AVAILABLE]);
-        return redirect()->route('data.approval')->with('success', "{$count} data berhasil disetujui.");
+        $query = Data::where('status', Data::STATUS_PENDING);
+
+        if ($request->filled('metadata_id')) {
+            $query->where('metadata_id', $request->metadata_id);
+        }
+
+        $count = $query->update([
+            'status' => Data::STATUS_AVAILABLE
+        ]);
+
+        return redirect()
+            ->route('data.approval', $request->only('metadata_id'))
+            ->with('success', "{$count} data berhasil disetujui.");
     }
 
     public function approve(Data $datum)

@@ -87,13 +87,13 @@
         @endif
 
         {{-- Bulk approve button --}}
-        @if($data->count() > 0 && request('status', '0') == '0')
+        @if($pendingCount > 0 && request('status', '0') == '0')
             <div class="ml-auto self-end">
                 <button type="button" onclick="confirmBulkApprove()"
                     class="bg-green-500 hover:bg-green-600 text-white px-4 py-2 rounded-md text-sm font-semibold
-                           flex items-center gap-2 transition-colors shadow-md shadow-green-400/30">
+                        flex items-center gap-2 transition-colors shadow-md shadow-green-400/30">
                     <i class="fas fa-check-double"></i>
-                    Setujui Semua di Halaman Ini
+                    Approve Semua Data ({{ number_format($pendingCount) }})
                 </button>
             </div>
         @endif
@@ -418,7 +418,7 @@
 
     // ── Bulk approve ──
     function confirmBulkApprove() {
-        if (!confirm('Setujui semua data di halaman ini?')) return;
+        if (!confirm('Setujui semua data?')) return;
         document.getElementById('bulkApproveForm').submit();
     }
 
@@ -432,11 +432,10 @@
 {{-- Bulk approve form (hidden) --}}
 <form id="bulkApproveForm" action="{{ route('data.bulk_approve') }}" method="POST" class="hidden">
     @csrf
-    @foreach($data as $row)
-        @if($row->status == 0)
-            <input type="hidden" name="ids[]" value="{{ $row->id }}">
-        @endif
-    @endforeach
+
+    @if(request()->filled('metadata_id'))
+        <input type="hidden" name="metadata_id" value="{{ request('metadata_id') }}">
+    @endif
 </form>
 
 @endsection
