@@ -45,7 +45,7 @@
         <!-- NAVBAR (FIXED) -->
 
         <!-- CONTENT (SCROLLABLE) -->
-        <main class="overflow-y-auto h-full px-1">
+        <main class="overflow-y-auto h-full px-1" style="overflow-x: hidden; min-width: 0;">
             @yield('content')
         </main>
     </div>

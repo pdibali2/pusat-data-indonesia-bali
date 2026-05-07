@@ -22,20 +22,9 @@
     /* ── Card utama tidak boleh memotong scroll ── */
     .tp-panel-card {
         overflow: visible !important;
+        min-width: 0;           
     }
 
-    /* ── Wrapper tabel: scroll horizontal BEBAS, vertikal max 70vh ── */
-    #tableScrollOuter {
-        width: 100%;
-        overflow-x: auto;
-        overflow-y: auto;
-        max-height: 70vh;
-        border: 1px solid #e5e7eb;
-        border-radius: 0.75rem;
-        -webkit-overflow-scrolling: touch;
-        /* Pastikan tidak ada max-width yang memotong */
-        position: relative;
-    }
 
     /* ── Tabel: lebar min-content agar tidak di-squeeze ── */
     #pivotTable {
@@ -595,14 +584,17 @@
              #tableScrollOuter : overflow-x auto + overflow-y auto (max-height 70vh)
              Tabel di dalamnya : width: max-content → melebar bebas
         --}}
-        <div id="tableWrap" class="hidden">
-            <div id="tableScrollOuter">
-                <table id="pivotTable">
-                    <thead id="pivotHead"></thead>
-                    <tbody id="pivotBody"></tbody>
-                </table>
+        
+            <div id="tableWrap" class="hidden my-4 ">
+                <div class="border border-gray-300 rounded-lg w-full max-w-4xl max-h-100 overflow-scroll">
+                    <table id="pivotTable">
+                        <thead id="pivotHead"></thead>
+                        <tbody id="pivotBody"></tbody>
+                    </table>
+                </div>
             </div>
-        </div>
+        
+        
 
         {{-- Pagination --}}
         <div id="tablePagination"
@@ -611,6 +603,7 @@
             <div id="paginationBtns" class="flex gap-1 flex-wrap"></div>
         </div>
     </div>
+    
 
 </div>{{-- /tp-panel-card --}}
 
