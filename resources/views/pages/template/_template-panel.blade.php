@@ -584,9 +584,8 @@
              #tableScrollOuter : overflow-x auto + overflow-y auto (max-height 70vh)
              Tabel di dalamnya : width: max-content → melebar bebas
         --}}
-        
-            <div id="tableWrap" class="hidden my-4 ">
-                <div class="border border-gray-300 rounded-lg w-full max-w-4xl max-h-100 overflow-scroll">
+            <div id="tableWrap" class="hidden grid grid-cols-2 gap-5 my-4">
+                <div class="col-span-2 border border-gray-300 rounded-lg w-full max-h-100 overflow-scroll">
                     <table id="pivotTable">
                         <thead id="pivotHead"></thead>
                         <tbody id="pivotBody"></tbody>
