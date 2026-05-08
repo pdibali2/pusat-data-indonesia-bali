@@ -10,6 +10,7 @@ use App\Http\Controllers\DataController;
 use App\Http\Controllers\DataExportController;
 use App\Http\Controllers\TemplateController;
 use App\Http\Middleware\IsLogin;
+use App\Http\Controllers\LandingController;
 
 // ── Auth ─────────────────────────────────────────────────────
 Route::get('/login',  [AuthController::class, 'loginView'])->name('login');
@@ -18,6 +19,7 @@ Route::post('/logout',[AuthController::class, 'logout']);
 Route::get('/', function () {
     return redirect()->route('data.index');
 })->name('home');
+Route::get('/', [LandingController::class, 'index'])->name('landing');
 
 // ─────────────────────────────────────────────────────────────
 // TEMPLATE TAMPILAN — Sebagian bisa diakses tanpa login
