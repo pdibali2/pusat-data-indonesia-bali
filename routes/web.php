@@ -19,7 +19,7 @@ Route::post('/logout',[AuthController::class, 'logout']);
 Route::get('/', function () {
     return redirect()->route('data.index');
 })->name('home');
-Route::get('/', [LandingController::class, 'index'])->name('landing');
+Route::get('/landing', [LandingController::class, 'index'])->name('landing');
 
 // ─────────────────────────────────────────────────────────────
 // TEMPLATE TAMPILAN — Sebagian bisa diakses tanpa login
