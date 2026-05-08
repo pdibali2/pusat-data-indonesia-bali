@@ -585,7 +585,7 @@
              Tabel di dalamnya : width: max-content → melebar bebas
         --}}
             <div id="tableWrap" class="hidden grid grid-cols-2 gap-5 my-4">
-                <div class="col-span-2 border border-gray-300 rounded-lg w-full max-h-100 overflow-scroll">
+                <div class="col-span-2 border border-gray-300 rounded-lg w-full max-h-100 overflow-auto">
                     <table id="pivotTable">
                         <thead id="pivotHead"></thead>
                         <tbody id="pivotBody"></tbody>

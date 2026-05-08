@@ -1214,26 +1214,44 @@ class TemplateController extends Controller
         foreach ($columns as $col) {
             $meta = $col['meta'];
 
-            // Gunakan DB::table dengan backtick — hindari reserved word MySQL 8
             $query = \Illuminate\Support\Facades\DB::table('time');
 
             switch ($frekuensi) {
                 case '10tahunan':
-                    $query->where('decade', $meta['decade']);
+                    // Hanya row dekade murni: year=0, semester=0, quarter=0, month=0
+                    $query->where('decade', $meta['decade'])
+                        ->where('year',     0)
+                        ->where('semester', 0)
+                        ->where('quarter',  0)
+                        ->where('month',    0);
                     break;
+
                 case 'tahunan':
-                    $query->where('year', $meta['year']);
+                    // Hanya row tahunan murni: semester=0, quarter=0, month=0
+                    $query->where('year',     $meta['year'])
+                        ->where('semester', 0)
+                        ->where('quarter',  0)
+                        ->where('month',    0);
                     break;
+
                 case 'semesteran':
-                    $query->where('year', $meta['year'])
-                        ->where('semester', $meta['semester']);
+                    // Hanya row semester murni: quarter=0, month=0
+                    $query->where('year',     $meta['year'])
+                        ->where('semester', $meta['semester'])
+                        ->where('quarter',  0)
+                        ->where('month',    0);
                     break;
+
                 case 'kuartal':
-                    $query->where('year', $meta['year'])
-                        ->where('quarter', $meta['quarter']);
+                    // Hanya row kuartal murni: month=0
+                    $query->where('year',    $meta['year'])
+                        ->where('quarter', $meta['quarter'])
+                        ->where('month',   0);
                     break;
+
                 case 'bulanan':
-                    $query->where('year', $meta['year'])
+                    // Row bulanan: semua kolom terisi
+                    $query->where('year',  $meta['year'])
                         ->where('month', $meta['month']);
                     break;
             }
