@@ -19,8 +19,13 @@ Route::post('/logout',[AuthController::class, 'logout']);
 Route::get('/', function () {
     return redirect()->route('data.index');
 })->name('home');
-Route::get('/landing', [LandingController::class, 'index'])->name('landing');
-
+Route::get('/', [LandingController::class, 'index'])->name('landing');
+Route::get('/search-metadata', [LandingController::class, 'searchMetadata'])->name('search_metadata');
+Route::get('/langganan', [LandingController::class, 'langganan'])->name('langganan');
+Route::get('/klasifikasi', [LandingController::class, 'klasifikasiIndex'])
+    ->name('klasifikasi.index');
+Route::get('/klasifikasi/{klasifikasi}', [LandingController::class, 'klasifikasiShow'])
+    ->name('klasifikasi.show');
 // ─────────────────────────────────────────────────────────────
 // TEMPLATE TAMPILAN — Sebagian bisa diakses tanpa login
 // (user tanpa akun bisa buat template, disimpan di localStorage)

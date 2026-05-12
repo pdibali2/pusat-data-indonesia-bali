@@ -30,7 +30,7 @@ class AuthenticationTest extends TestCase
         ]);
 
         $this->assertAuthenticated();
-        $response->assertRedirect('/');
+        $response->assertRedirect('/data');
     }
 
     public function test_users_can_logout()

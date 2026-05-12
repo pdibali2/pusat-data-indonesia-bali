@@ -87,7 +87,7 @@ $menus = [
         <div>
             <!-- Logo -->
             <div class="px-6 py-3  flex items-center gap-3 border-b border-gray-600">
-                <div class="w-8 h-8 bg-stikom_accent rounded-full flex items-center justify-center text-white font-bold">
+                <div class="w-8 h-8 bg-stikom-accent rounded-full flex items-center justify-center text-white font-bold">
                     PDIB
                 </div>
                 <div>
@@ -107,7 +107,7 @@ $menus = [
                             <a href="{{ $menu->children ? '#' : url($menu->path) }}"
                             class="flex items-center justify-between text-xs font-normal py-2 rounded-sm transition
                             {{ $menu->active 
-                                    ? 'text-stikom_accent font-semibold' 
+                                    ? 'text-stikom-accent font-semibold' 
                                     : 'text-gray-400 hover:text-white'
                             }}">
 
@@ -132,7 +132,7 @@ $menus = [
                                             <a href="{{ url($child->path) }}"
                                             class="block rounded-e-lg px-3 py-1 transition text-xs font-normal
                                             {{ $child->active
-                                                    ? 'text-stikom_accent font-semibold'
+                                                    ? 'text-stikom-accent font-semibold'
                                                     : 'text-gray-400 hover:text-white'
                                             }}">
                                                 <div class="flex items-center gap-3 py-1">

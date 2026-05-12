@@ -1,54 +1,56 @@
 @import 'tailwindcss';
-
 @import 'tw-animate-css';
-@import url('https://fonts.googleapis.com/css2?family=Poppins:ital,wght@0,100;0,200;0,300;0,400;0,500;0,600;0,700;0,800;0,900;1,100;1,200;1,300;1,400;1,500;1,600;1,700;1,800;1,900&display=swap');
+
+/* ── Google Fonts ──────────────────────────────────────────────────── */
+@import url('https://fonts.googleapis.com/css2?family=Sora:wght@400;600;700;800;900&family=DM+Sans:wght@300;400;500;600&family=Poppins:ital,wght@0,100;0,200;0,300;0,400;0,500;0,600;0,700;0,800;0,900;1,100;1,200;1,300;1,400;1,500;1,600;1,700;1,800;1,900&display=swap');
 
 @source '../../vendor/laravel/framework/src/Illuminate/Pagination/resources/views/*.blade.php';
 @source '../../storage/framework/views/*.php';
 
 @custom-variant dark (&:is(.dark *));
 
+/* ── Theme tokens ──────────────────────────────────────────────────── */
 @theme inline {
-    --font-sans: 'Poppins', sans-serif;
+    /* Typography */
+    /* --font-sans: 'DM Sans', ui-sans-serif, system-ui, sans-serif; */
+    --font-sans: 'Poppins', ui-sans-serif, system-ui, sans-serif;
+    --font-display: 'Sora', ui-sans-serif, system-ui, sans-serif;
+    --font-poppins: 'Poppins', ui-sans-serif, system-ui, sans-serif;
 
+    /* Border radius scale */
     --radius-lg: var(--radius);
     --radius-md: calc(var(--radius) - 2px);
     --radius-sm: calc(var(--radius) - 4px);
 
+    /* Semantic colour aliases → resolved at :root */
     --color-background: var(--background);
     --color-foreground: var(--foreground);
-
     --color-card: var(--card);
     --color-card-foreground: var(--card-foreground);
-
     --color-popover: var(--popover);
     --color-popover-foreground: var(--popover-foreground);
-
     --color-primary: var(--primary);
     --color-primary-foreground: var(--primary-foreground);
-
     --color-secondary: var(--secondary);
     --color-secondary-foreground: var(--secondary-foreground);
-
     --color-muted: var(--muted);
     --color-muted-foreground: var(--muted-foreground);
-
     --color-accent: var(--accent);
     --color-accent-foreground: var(--accent-foreground);
-
     --color-destructive: var(--destructive);
     --color-destructive-foreground: var(--destructive-foreground);
-
     --color-border: var(--border);
     --color-input: var(--input);
     --color-ring: var(--ring);
 
+    /* Chart colours */
     --color-chart-1: var(--chart-1);
     --color-chart-2: var(--chart-2);
     --color-chart-3: var(--chart-3);
     --color-chart-4: var(--chart-4);
     --color-chart-5: var(--chart-5);
 
+    /* Sidebar */
     --color-sidebar: var(--sidebar-background);
     --color-sidebar-foreground: var(--sidebar-foreground);
     --color-sidebar-primary: var(--sidebar-primary);
@@ -57,38 +59,16 @@
     --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
     --color-sidebar-border: var(--sidebar-border);
     --color-sidebar-ring: var(--sidebar-ring);
+
+    /* Brand colours (custom) */
+    --color-stikom: #001734;
+    --color-stikom-accent: #F7C100;
+    --color-midnight: #121063;
+    --color-tahiti: #3ab7bf;
+    --color-bermuda: #78dcca;
 }
 
-/*
-  The default border color has changed to `currentColor` in Tailwind CSS v4,
-  so we've added these compatibility styles to make sure everything still
-  looks the same as it did with Tailwind CSS v3.
-
-  If we ever want to remove these styles, we need to add an explicit border
-  color utility to any element that depends on these defaults.
-*/
-@layer base {
-
-    *,
-    ::after,
-    ::before,
-    ::backdrop,
-    ::file-selector-button {
-        border-color: var(--color-gray-200, currentColor);
-    }
-}
-
-@layer utilities {
-
-    body,
-    html {
-        --font-sans:
-            'Instrument Sans', ui-sans-serif, system-ui, sans-serif,
-            'Apple Color Emoji', 'Segoe UI Emoji', 'Segoe UI Symbol',
-            'Noto Color Emoji';
-    }
-}
-
+/* ── CSS custom properties (light mode) ───────────────────────────── */
 :root {
     --background: hsl(0 0% 100%);
     --foreground: hsl(0 0% 3.9%);
@@ -126,6 +106,7 @@
     --sidebar: hsl(0 0% 98%);
 }
 
+/* ── Dark mode ─────────────────────────────────────────────────────── */
 .dark {
     --background: hsl(0 0% 3.9%);
     --foreground: hsl(0 0% 98%);
@@ -162,20 +143,116 @@
     --sidebar: hsl(240 5.9% 10%);
 }
 
+/* ── Base layer ────────────────────────────────────────────────────── */
 @layer base {
+
+    *,
+    ::after,
+    ::before,
+    ::backdrop,
+    ::file-selector-button {
+        border-color: var(--color-gray-200, currentColor);
+    }
+
     * {
         @apply border-border outline-ring/50;
     }
 
+    html {
+        scroll-behavior: smooth;
+        font-family: 'Poppins', sans-serif;
+    }
+
     body {
-        @apply bg-background text-foreground;
+        @apply bg-background text-foreground antialiased;
+        font-family: 'Poppins', sans-serif;
+    }
+
+    h1,
+    h2,
+    h3,
+    h4,
+    h5,
+    h6 {
+        font-family: 'Sora', sans-serif;
     }
 }
 
-@theme {
-    --color-midnight: #121063;
-    --color-tahiti: #3ab7bf;
-    --color-bermuda: #78dcca;
-    --color-stikom: #001734;
-    --color-stikom_accent: #F7C100;
+/* ── Animations (formerly inline <style> in Blade) ─────────────────── */
+
+/* Fade-up: used by hero and direct .fade-up elements */
+@keyframes fadeUp {
+    from {
+        opacity: 0;
+        transform: translateY(28px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.fade-up {
+    opacity: 0;
+    transform: translateY(28px);
+    animation: fadeUp 0.65s ease forwards;
+}
+
+/* Scroll-reveal (toggled by IntersectionObserver in JS) */
+.reveal {
+    opacity: 0;
+    transform: translateY(28px);
+    transition: opacity 0.6s ease, transform 0.6s ease;
+}
+
+.reveal.in-view {
+    opacity: 1;
+    transform: translateY(0);
+}
+
+/* ── Utilities layer ───────────────────────────────────────────────── */
+@layer utilities {
+
+    /* Override body font family at utility level */
+    body,
+    html {
+        --font-sans:
+            'Poppins', ui-sans-serif, system-ui, sans-serif,
+            'Apple Color Emoji', 'Segoe UI Emoji', 'Segoe UI Symbol',
+            'Noto Color Emoji';
+    }
+
+    /* Hide native search cancel button */
+    input[type="search"]::-webkit-search-cancel-button {
+        -webkit-appearance: none;
+    }
+
+    /* Font shorthand utilities */
+    .font-display {
+        font-family: 'Sora', sans-serif;
+    }
+
+    .font-body {
+        font-family: 'Poppins', sans-serif;
+    }
+
+    .font-poppins {
+        font-family: 'Poppins', sans-serif;
+    }
+
+    /* Line clamp helpers (redundant with Tailwind's built-in but explicit) */
+    .line-clamp-1 {
+        overflow: hidden;
+        display: -webkit-box;
+        -webkit-box-orient: vertical;
+        -webkit-line-clamp: 1;
+    }
+
+    .line-clamp-2 {
+        overflow: hidden;
+        display: -webkit-box;
+        -webkit-box-orient: vertical;
+        -webkit-line-clamp: 2;
+    }
 }

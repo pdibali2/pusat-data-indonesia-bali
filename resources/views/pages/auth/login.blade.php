@@ -29,7 +29,7 @@
                 <div>
                     <label for="username" class="block text-sm/6 font-medium text-gray-900">Username</label>
                     <div class="mt-2">
-                    <input id="username" type="username" name="username" required autocomplete="username" class="block w-full rounded-md bg-black/1 px-3 py-1.5 text-base text-black outline-1 -outline-offset-1 outline-black/30 placeholder:text-stikom_accent focus:outline-2 focus:-outline-offset-2 focus:outline-stikom_accent sm:text-sm/6" />
+                    <input id="username" type="username" name="username" required autocomplete="username" class="block w-full rounded-md bg-black/1 px-3 py-1.5 text-base text-black outline-1 -outline-offset-1 outline-black/30 placeholder:text-stikom-accent focus:outline-2 focus:-outline-offset-2 focus:outline-stikom-accent sm:text-sm/6" />
                     </div>
                 </div>
                 <div>
@@ -44,7 +44,7 @@
                             name="password" 
                             required 
                             autocomplete="current-password"
-                            class="block w-full rounded-sm bg-black/1 px-3 py-1.5 pr-10 text-base text-black outline-1 -outline-offset-1 outline-black/30 placeholder:text-stikom_accent focus:outline-2 focus:-outline-offset-2 focus:outline-stikom_accent sm:text-sm/6"
+                            class="block w-full rounded-sm bg-black/1 px-3 py-1.5 pr-10 text-base text-black outline-1 -outline-offset-1 outline-black/30 placeholder:text-stikom-accent focus:outline-2 focus:-outline-offset-2 focus:outline-stikom-accent sm:text-sm/6"
                         />
 
                         <!-- ICON TOGGLE -->

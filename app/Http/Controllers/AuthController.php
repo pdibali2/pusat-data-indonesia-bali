@@ -55,7 +55,7 @@ class AuthController extends Controller
         // Login berhasil
         Auth::login($user);
         $request->session()->regenerate();
-        return redirect('/')->with('success', 'Berhasil masuk.');
+        return redirect('/data')->with('success', 'Berhasil masuk.');
     }
 
     public function logout(Request $request)

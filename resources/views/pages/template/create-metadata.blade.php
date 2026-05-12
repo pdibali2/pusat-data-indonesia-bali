@@ -853,8 +853,24 @@ function buildRow(row) {
         </td>
         <td class="px-3 py-3 text-xs" style="${depth > 0 ? 'padding-left:' + (12 + indent) + 'px' : 'padding-left:16px'}">
             ${depth > 0 ? '<span class="text-gray-400 mr-1.5">↳</span>' : ''}
+
             ${displayName}
-            ${row.frekuensi_penerbitan ? `<span class="ml-1.5 text-gray-400 font-normal">(${escH(row.frekuensi_penerbitan)})</span>` : ''}
+
+            ${row.frekuensi_penerbitan ? `
+                <span class="ml-1.5 text-gray-400 font-normal">
+                    (${escH(row.frekuensi_penerbitan)})
+                </span>` : ''}
+
+            <!-- ICON INFO (CLICKABLE) -->
+            <a href="/metadata/${row.metadata_id}" 
+            class="ml-2 inline-flex items-center"
+            title="
+                Klasifikasi: ${escH(row.klasifikasi || '-')}
+                Satuan: ${escH(row.satuan_data || '-')}
+                Frekuensi: ${escH(row.frekuensi_penerbitan || '-')}
+                    ">
+                        <i class="fas fa-circle-info text-sky-500 hover:text-sky-600 transition-colors"></i>
+            </a>
         </td>
         <td class="px-4 py-3 text-center">${detailBtn}</td>
     </tr>`;

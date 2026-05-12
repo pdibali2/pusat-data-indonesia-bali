@@ -935,9 +935,22 @@ function buildRow(row) {
         </td>
         <td class="px-4 py-3 text-xs" style="${depth > 0 ? 'padding-left:' + (12+indent) + 'px' : ''}">
             ${depth > 0 ? '<span class="text-gray-400 mr-1">↳</span>' : ''}
+
             <span class="${depth===0 ? 'font-semibold' : 'font-medium'} text-gray-800">
                 ${escH(row.nama||'')} di ${escH(locLabel)}
             </span>
+
+            <!-- ICON INFO -->
+            <a href="/metadata/${row.metadata_id}">
+                <i class="fas fa-circle-info ml-1 text-blue-400 hover:text-violet-500 cursor-pointer"
+                title="
+            Klasifikasi: ${escH(row.klasifikasi || '-')}
+            Satuan: ${escH(row.satuan_data || '-')}
+            Frekuensi: ${escH(row.frekuensi_penerbitan || '-')}
+                ">
+                </i>
+            </a>
+
             ${freqBadge}
         </td>
         <td class="px-4 py-3 text-center">${detailBtn}</td>
