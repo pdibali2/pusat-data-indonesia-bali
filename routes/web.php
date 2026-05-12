@@ -16,9 +16,7 @@ use App\Http\Controllers\LandingController;
 Route::get('/login',  [AuthController::class, 'loginView'])->name('login');
 Route::post('/login', [AuthController::class, 'login']);
 Route::post('/logout',[AuthController::class, 'logout']);
-Route::get('/', function () {
-    return redirect()->route('data.index');
-})->name('home');
+
 Route::get('/', [LandingController::class, 'index'])->name('landing');
 Route::get('/search-metadata', [LandingController::class, 'searchMetadata'])->name('search_metadata');
 Route::get('/langganan', [LandingController::class, 'langganan'])->name('langganan');

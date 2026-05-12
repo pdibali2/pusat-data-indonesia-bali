@@ -35,13 +35,21 @@ class AppServiceProvider extends ServiceProvider
 
         View::composer('*', function ($view) {
             $allKlasifikasi = Metadata::query()
-                ->where('status', 2)
-                ->whereNotNull('klasifikasi')
-                ->where('klasifikasi', '!=', '')
-                ->distinct()
-                ->orderBy('klasifikasi')
-                ->pluck('klasifikasi')
-                ->values();
+            ->where('status', 2)
+            ->whereNotNull('klasifikasi')
+            ->distinct()
+            ->orderBy('klasifikasi')
+            ->pluck('klasifikasi')
+
+            ->map(fn ($k) => trim((string) $k))
+
+            ->filter(function ($k) {
+                return $k !== ''
+                    && $k !== '-'
+                    && \Illuminate\Support\Str::slug($k) !== '';
+            })
+
+            ->values();
 
             $view->with('allKlasifikasi', $allKlasifikasi);
         });

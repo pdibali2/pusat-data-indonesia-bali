@@ -17,11 +17,16 @@ class LandingController extends Controller
     {
         $this->allKlasifikasi = Metadata::query()
             ->whereNotNull('klasifikasi')
-            ->where('klasifikasi', '!=', '')
             ->distinct()
             ->orderBy('klasifikasi')
-        ->pluck('klasifikasi')
-        ->values();
+            ->pluck('klasifikasi')
+            ->map(fn ($k) => trim((string) $k))
+            ->filter(function ($k) {
+                return $k !== ''
+                    && $k !== '-'
+                    && Str::slug($k) !== '';
+            })
+            ->values();
     }
 
     // ─────────────────────────────────────────────────────────────────────────
@@ -34,8 +39,15 @@ class LandingController extends Controller
         $klasifikasiAktif = Metadata::where('status', 2)
             ->select('klasifikasi')
             ->distinct()
-            ->limit(10)
-            ->pluck('klasifikasi');
+            ->pluck('klasifikasi')
+            ->map(fn ($k) => trim((string) $k))
+            ->filter(function ($k) {
+                return $k !== ''
+                    && $k !== '-'
+                    && Str::slug($k) !== '';
+            })
+            ->take(10)
+            ->values();
 
         // Statistik
         $jumlahData     = Data::where('status', 1)->count();
@@ -78,11 +90,23 @@ class LandingController extends Controller
             ->groupBy('klasifikasi')
             ->pluck('total', 'klasifikasi');
 
-        $klasifikasiList = collect($this->allKlasifikasi)->map(fn($k) => [
-            'nama'  => $k,
-            'slug'  => Str::slug($k),
-            'total' => $counts->get($k, 0),
-        ]);
+        $klasifikasiList = collect($this->allKlasifikasi)
+            ->map(function ($k) use ($counts) {
+
+                $slug = Str::slug($k);
+
+                if (!$slug) {
+                    return null;
+                }
+
+                return [
+                    'nama'  => $k,
+                    'slug'  => $slug,
+                    'total' => $counts->get($k, 0),
+                ];
+            })
+            ->filter()
+            ->values();
 
         return view('pages.landing.klasifikasi.index', compact('klasifikasiList'));
     }

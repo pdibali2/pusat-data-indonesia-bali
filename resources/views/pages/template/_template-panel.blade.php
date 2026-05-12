@@ -177,15 +177,6 @@
         </a>
     </div>
 
-    {{-- ════ ALERT ════ --}}
-    @if(session('success'))
-        <div class="mb-5 flex items-center gap-3 bg-green-50 border border-green-200
-                    text-green-700 px-4 py-3 rounded-lg text-sm">
-            <i class="fas fa-check-circle text-green-500 shrink-0"></i>
-            <span>{{ session('success') }}</span>
-        </div>
-    @endif
-
     {{-- ════════════════════════════════════════
          STEP 1 — Pilih Template
     ════════════════════════════════════════ --}}
