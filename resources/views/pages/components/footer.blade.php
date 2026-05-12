@@ -123,13 +123,6 @@ $footerKlasifikasi = [
             <p class="text-white/30 text-sm">
                 Copyright &copy; {{ date('Y') }} Pusat Data Indonesia Bali. Hak cipta dilindungi.
             </p>
-            <div class="flex items-center gap-4">
-                <a href="{{ route('login') }}" class="text-white/30 hover:text-stikom-accent text-sm transition-colors">Login</a>
-                <span class="text-white/20">·</span>
-                <a href="{{ route('langganan') }}" class="text-white/30 hover:text-stikom-accent text-sm transition-colors">Langganan</a>
-                <span class="text-white/20">·</span>
-                <a href="{{ route('klasifikasi.index') }}" class="text-white/30 hover:text-stikom-accent text-sm transition-colors">Klasifikasi</a>
-            </div>
         </div>
     </div>
 </footer>
