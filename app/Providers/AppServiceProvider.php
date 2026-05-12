@@ -9,6 +9,8 @@ use Illuminate\Support\Facades\URL;
 use Illuminate\Support\ServiceProvider;
 use Illuminate\Validation\Rules\Password;
 use Carbon\Carbon;
+use App\Models\Metadata;
+use Illuminate\Support\Facades\View;
 
 class AppServiceProvider extends ServiceProvider
 {
@@ -30,6 +32,19 @@ class AppServiceProvider extends ServiceProvider
         if (app()->isProduction()) {
             URL::forceScheme('https');
         }
+
+        View::composer('*', function ($view) {
+            $allKlasifikasi = Metadata::query()
+                ->where('status', 2)
+                ->whereNotNull('klasifikasi')
+                ->where('klasifikasi', '!=', '')
+                ->distinct()
+                ->orderBy('klasifikasi')
+                ->pluck('klasifikasi')
+                ->values();
+
+            $view->with('allKlasifikasi', $allKlasifikasi);
+        });
 
         $this->configureDefaults();
     }

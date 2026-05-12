@@ -632,6 +632,7 @@ const TMPL_URLS = {
     freqCounts : '{{ route("template.freq_counts") }}',
     grafik     : '{{ route("template.grafik") }}',
     csrf       : document.querySelector('meta[name="csrf-token"]')?.content ?? '',
+    metadataDetail : '{{ url("metadata") }}',
 };
 
 // State filter aktif
@@ -1125,8 +1126,15 @@ function _renderTable(d) {
                 <td class="px-3 py-2.5 col-sticky col-sticky-nama align-top">
                     <div class="flex flex-col gap-0.5">
                         ${isFirstRow ? `
-                            <p class="text-xs font-bold text-gray-800 leading-tight">
+                            <p class="text-xs font-bold text-gray-800 leading-tight flex items-center gap-1">
                                 ${_esc(group.nama)}
+
+                                <a href="${TMPL_URLS.metadataDetail}/${row.metadata_id}"
+                                class="text-blue-400 hover:text-violet-600 transition-colors"
+                                title="Lihat detail metadata"
+                                onclick="event.stopPropagation()">
+                                    <i class="fas fa-info-circle text-[11px]"></i>
+                                </a>
                             </p>
                             ${group.klasifikasi
                                 ? `<p class="text-gray-400 text-[10px] mb-1">${_esc(group.klasifikasi)}</p>`
