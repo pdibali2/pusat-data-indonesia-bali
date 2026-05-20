@@ -16,8 +16,6 @@ use App\Http\Controllers\DataController;
 use App\Http\Controllers\DataExportController;
 use App\Http\Controllers\TemplateController;
 use App\Http\Controllers\LayananController;
-use App\Http\Middleware\IsLogin;
-use App\Http\Middleware\IsCustomer;
 use App\Http\Controllers\LandingController;
 use App\Http\Controllers\TransaksiController;
 use App\Http\Controllers\AdminTransaksiController;

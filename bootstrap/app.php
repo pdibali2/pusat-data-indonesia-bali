@@ -35,6 +35,10 @@ return Application::configure(basePath: dirname(__DIR__))
             'is.login'    => IsLogin::class,
             'is.customer' => IsCustomer::class,
         ]);
+
+        $middleware->validateCsrfTokens(except: [
+            'transaksi/notification',
+        ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {
         //
