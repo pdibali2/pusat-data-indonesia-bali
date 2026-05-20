@@ -11,6 +11,7 @@ use PhpOffice\PhpSpreadsheet\Style\Fill;
 use PhpOffice\PhpSpreadsheet\Style\Alignment;
 use PhpOffice\PhpSpreadsheet\Style\Border;
 use PhpOffice\PhpSpreadsheet\Style\Protection;
+use App\Models\Klasifikasi;
 use App\Models\Metadata;
 use App\Models\ProdusenData;
 
@@ -23,7 +24,7 @@ class MetadataController extends Controller
 
     public function index(Request $request)
     {
-        $query = Metadata::with(['produsen'])
+        $query = Metadata::with(['produsen', 'klasifikasi'])
                           ->where('status', self::STATUS_ACTIVE);
 
         // Search global
@@ -38,7 +39,9 @@ class MetadataController extends Controller
 
         // Filter kolom header tabel
         if ($request->filled('filter_nama'))        { $query->where('nama', 'like', '%'.$request->filter_nama.'%'); }
-        if ($request->filled('filter_klasifikasi')) { $query->where('klasifikasi', $request->filter_klasifikasi); }
+        if ($request->filled('filter_klasifikasi')) {
+            $query->where('klasifikasi_id', $request->filter_klasifikasi);
+        }
         if ($request->filled('filter_tipe_data'))   { $query->where('tipe_data', $request->filter_tipe_data); }
         if ($request->filled('filter_satuan'))      { $query->where('satuan_data', 'like', '%'.$request->filter_satuan.'%'); }
         if ($request->filled('filter_frekuensi'))   { $query->where('frekuensi_penerbitan', $request->filter_frekuensi); }
@@ -47,8 +50,8 @@ class MetadataController extends Controller
         $data = $query->orderBy('metadata_id', 'desc')->paginate(15)->withQueryString();
 
         // Data dropdown filter
-        $klasifikasiList = Metadata::where('status', self::STATUS_ACTIVE)
-            ->distinct()->orderBy('klasifikasi')->pluck('klasifikasi')->filter()->values();
+        $klasifikasiList = Klasifikasi::orderBy('nama_klasifikasi')
+            ->get(['klasifikasi_id', 'nama_klasifikasi']);
 
         $tipeDataList = Metadata::where('status', self::STATUS_ACTIVE)
             ->distinct()->orderBy('tipe_data')->pluck('tipe_data')->filter()->values();
@@ -99,7 +102,7 @@ class MetadataController extends Controller
             $query->where('frekuensi_penerbitan', $request->frekuensi);
         }
 
-        $rows = $query->get();
+        $rows = $query->with('klasifikasi')->get();
 
         $parts = ['Metadata'];
         if ($request->filled('produsen_id')) {
@@ -188,7 +191,7 @@ class MetadataController extends Controller
             $sheet->setCellValue("C{$row}", $m->alias);
             $sheet->setCellValue("D{$row}", $m->konsep);
             $sheet->setCellValue("E{$row}", $m->definisi);
-            $sheet->setCellValue("F{$row}", $m->klasifikasi);
+            $sheet->setCellValue("F{$row}", $m->klasifikasi?->nama_klasifikasi);
             $sheet->setCellValue("G{$row}", $m->asumsi);
             $sheet->setCellValue("H{$row}", $m->metodologi);
             $sheet->setCellValue("I{$row}", $m->penjelasan_metodologi);
@@ -691,7 +694,8 @@ class MetadataController extends Controller
     {
         $metadataList = Metadata::where('status', self::STATUS_ACTIVE)->orderBy('nama')->get();
         $produsen     = ProdusenData::all();
-        return view('pages.metadata.create', compact('metadataList', 'produsen'));
+        $klasifikasiList = Klasifikasi::orderBy('nama_klasifikasi')->get();
+        return view('pages.metadata.create', compact('metadataList', 'produsen', 'klasifikasiList'  ));
     }
 
     public function store(Request $request)
@@ -702,7 +706,7 @@ class MetadataController extends Controller
             'alias'                 => 'nullable|max:100',
             'konsep'                => 'required',
             'definisi'              => 'required',
-            'klasifikasi'           => 'required|max:100',
+            'klasifikasi_id'        => 'required|exists:klasifikasi,klasifikasi_id',
             'asumsi'                => 'nullable',
             'metodologi'            => 'required|max:100',
             'penjelasan_metodologi' => 'required',
@@ -729,7 +733,7 @@ class MetadataController extends Controller
             'alias'                  => $request->alias,
             'konsep'                 => $request->konsep,
             'definisi'               => $request->definisi,
-            'klasifikasi'            => $request->klasifikasi,
+            'klasifikasi_id'         => $request->klasifikasi_id,
             'asumsi'                 => $request->filled('asumsi') ? $request->asumsi : null,
             'metodologi'             => $request->metodologi,
             'penjelasan_metodologi'  => $request->penjelasan_metodologi,
@@ -762,11 +766,13 @@ class MetadataController extends Controller
     public function approval(Request $request)
     {
         $statusFilter = (int) $request->input('status', self::STATUS_PENDING);
-        $query = Metadata::with(['user','produsen'])->where('status', $statusFilter);
+        $query = Metadata::with(['user','produsen', 'klasifikasi'])->where('status', $statusFilter);
 
         if ($request->filled('search'))             { $query->where('nama','like','%'.$request->search.'%'); }
         if ($request->filled('filter_nama'))        { $query->where('nama','like','%'.$request->filter_nama.'%'); }
-        if ($request->filled('filter_klasifikasi')) { $query->where('klasifikasi',$request->filter_klasifikasi); }
+        if ($request->filled('filter_klasifikasi')) {
+            $query->where('klasifikasi_id', $request->filter_klasifikasi);
+        }
         if ($request->filled('filter_produsen_id')) { $query->where('produsen_id',$request->filter_produsen_id); }
         if ($request->filled('filter_tipe_data'))   { $query->where('tipe_data',$request->filter_tipe_data); }
         if ($request->filled('filter_user'))        { $query->whereHas('user',fn($q)=>$q->where('name','like','%'.$request->filter_user.'%')); }
@@ -779,7 +785,8 @@ class MetadataController extends Controller
         $countActive   = Metadata::where('status', self::STATUS_ACTIVE)->count();
         $countInactive = Metadata::where('status', self::STATUS_INACTIVE)->count();
 
-        $klasifikasiList = Metadata::select('klasifikasi')->distinct()->orderBy('klasifikasi')->pluck('klasifikasi')->filter()->values();
+        $klasifikasiList = Klasifikasi::orderBy('nama_klasifikasi')
+            ->get(['klasifikasi_id', 'nama_klasifikasi']);
         $tipeDataList    = Metadata::select('tipe_data')->distinct()->orderBy('tipe_data')->pluck('tipe_data')->filter()->values();
         $produsenList    = ProdusenData::whereIn('produsen_id', Metadata::distinct()->pluck('produsen_id'))->orderBy('nama_produsen')->get(['produsen_id','nama_produsen']);
 
@@ -822,7 +829,14 @@ class MetadataController extends Controller
 
     public function detail(Metadata $metadata)
     {
-        $metadata->load(['groupParent','groupChildren','user','produsen']);
+        $metadata->load([
+            'groupParent',
+            'groupChildren',
+            'user',
+            'produsen',
+            'klasifikasi'
+        ]);
+
         return view('pages.metadata.detail', compact('metadata'));
     }
 }

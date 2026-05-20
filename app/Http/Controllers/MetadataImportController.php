@@ -29,6 +29,47 @@ class ChunkReadFilter implements IReadFilter
 
 class MetadataImportController extends Controller
 {
+    private function getValidKlasifikasi(): array
+    {
+        return \App\Models\Klasifikasi::pluck('nama_klasifikasi')
+            ->map(fn ($v) => trim($v))
+            ->filter()
+            ->values()
+            ->toArray();
+    }
+
+    private function normalizeKlasifikasi(?string $value): ?string
+    {
+        if (!$value || trim($value) === '') {
+            return null;
+        }
+
+        $value = trim($value);
+
+        foreach ($this->getValidKlasifikasi() as $item) {
+            if (mb_strtolower($item) === mb_strtolower($value)) {
+                return $item; // pakai versi database
+            }
+        }
+
+        return ucwords(mb_strtolower($value));
+    }
+
+    private array $klasifikasiCache = [];
+
+    private function resolveKlasifikasiId(?string $nama): ?int
+    {
+        if (!$nama || trim($nama) === '') return null;
+
+        $key = mb_strtolower(trim($nama));
+
+        if (!isset($this->klasifikasiCache[$key])) {
+            $found = \App\Models\Klasifikasi::whereRaw('LOWER(nama_klasifikasi) = ?', [$key])->first();
+            $this->klasifikasiCache[$key] = $found?->klasifikasi_id;
+        }
+
+        return $this->klasifikasiCache[$key];
+    }
     // ─────────────────────────────────────────────────────────────
     // TUNING
     // ─────────────────────────────────────────────────────────────
@@ -45,7 +86,7 @@ class MetadataImportController extends Controller
         2  => 'alias',
         3  => 'konsep',
         4  => 'definisi',
-        5  => 'klasifikasi',
+        5  => 'klasifikasi_id',
         6  => 'asumsi',
         7  => 'metodologi',
         8  => 'penjelasan_metodologi',
@@ -65,7 +106,7 @@ class MetadataImportController extends Controller
     ];
 
     private const STRING_DASH = [
-        'konsep', 'definisi', 'klasifikasi',
+        'konsep', 'definisi',
         'metodologi', 'penjelasan_metodologi',
         'tipe_data', 'satuan_data', 'tahun_mulai_data',
         'frekuensi_penerbitan',
@@ -198,6 +239,7 @@ class MetadataImportController extends Controller
             $skipped = [];
             $seen    = [];
             $rowNum  = 2;
+            $klasifikasiMap = \App\Models\Klasifikasi::pluck('nama_klasifikasi', 'klasifikasi_id')->toArray();
 
             foreach ($rows as $raw) {
                 if (empty(array_filter($raw, fn($v) => $v !== null && $v !== ''))) {
@@ -230,7 +272,7 @@ class MetadataImportController extends Controller
                     'row'              => $rowNum,
                     'nama'             => $this->smartNormalizeWilayah($r['nama']),
                     'alias'            => $this->smartNormalizeWilayah($r['alias']),
-                    'klasifikasi'      => $r['klasifikasi'],
+                    'klasifikasi'      => $klasifikasiMap[$r['klasifikasi_id']] ?? ('ID: ' . $r['klasifikasi_id']),
                     'tipe_data'        => $r['tipe_data'],
                     'satuan_data'      => $r['satuan_data'],
                     'tahun_mulai_data' => $r['tahun_mulai_data'],
@@ -414,7 +456,7 @@ class MetadataImportController extends Controller
         if (!empty($r['tipe_data'])) {
             $r['tipe_data'] = str_ireplace('Angka Numerik', 'Numerik', $r['tipe_data']);
         }
-
+        $r['klasifikasi_id'] = is_numeric($r['klasifikasi_id']) ? (int)$r['klasifikasi_id'] : null;
         return $r;
     }
 
@@ -425,9 +467,6 @@ class MetadataImportController extends Controller
     }
 
 
-    // ─────────────────────────────────────────────────────────────
-    // HELPER: buildRow
-    // ─────────────────────────────────────────────────────────────
     private function buildRow(array $r, int $produsenId, int $userId, string $now): array
     {
         $groupBy = null;
@@ -448,10 +487,10 @@ class MetadataImportController extends Controller
 
             'konsep'                 => $this->smartNormalizeWilayah($r['konsep']),
             'definisi'               => $this->smartNormalizeWilayah($r['definisi']),  
-            'klasifikasi'            => $r['klasifikasi'],
+            'klasifikasi_id'         => $r['klasifikasi_id'] ?? null,
             'asumsi'                 => (!empty($r['asumsi']) && $r['asumsi'] !== '-') ? $r['asumsi'] : null,
 
-            'metodologi' => $this->smartNormalizeWilayah($r['metodologi']),
+            'metodologi'            => $this->smartNormalizeWilayah($r['metodologi']),
             'penjelasan_metodologi' => $this->smartNormalizeWilayah($r['penjelasan_metodologi']),
 
             'tipe_data'              => $r['tipe_data'],

@@ -2,6 +2,8 @@
 
 use App\Http\Middleware\HandleAppearance;
 use App\Http\Middleware\HandleInertiaRequests;
+use App\Http\Middleware\IsLogin;
+use App\Http\Middleware\IsCustomer;
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
 use Illuminate\Foundation\Configuration\Middleware;
@@ -27,6 +29,11 @@ return Application::configure(basePath: dirname(__DIR__))
 
         $middleware->api(prepend: [
             EnsureFrontendRequestsAreStateful::class,
+        ]);
+
+        $middleware->alias([
+            'is.login'    => IsLogin::class,
+            'is.customer' => IsCustomer::class,
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {

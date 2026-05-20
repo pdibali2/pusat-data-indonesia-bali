@@ -160,9 +160,9 @@
                                 onchange="applyFilters()">
                             <option value="">Semua</option>
                             @foreach($klasifikasiList as $k)
-                                <option value="{{ $k }}"
-                                    {{ request('filter_klasifikasi') === $k ? 'selected' : '' }}>
-                                    {{ $k }}
+                                <option value="{{ $k->klasifikasi_id }}"
+                                    {{ (string)request('filter_klasifikasi') === (string)$k->klasifikasi_id ? 'selected' : '' }}>
+                                    {{ $k->nama_klasifikasi }}
                                 </option>
                             @endforeach
                         </select>
@@ -267,7 +267,7 @@
 
                         <td class="px-4 py-3">
                             <span class="px-2 py-1 bg-sky-50 text-sky-700 text-xs rounded-full font-medium">
-                                {{ $item->klasifikasi }}
+                                {{ $item->klasifikasi?->nama_klasifikasi ?? '-' }}
                             </span>
                         </td>
 
@@ -383,7 +383,7 @@
                 {{-- Dropdown Frekuensi / Rentang Waktu --}}
                 <div class="mb-5">
                     <label class="block text-sm font-semibold text-gray-700 mb-1.5">
-                        <i class="fas fa-calendar-alt text-amber-400 mr-1"></i>
+                        <i class="fas fa-calendar-alt text-green-400 mr-1"></i>
                         Frekuensi Waktu Penerbitan Metadata
                     </label>
                     <select name="frekuensi" id="exportFrekuensi"
@@ -477,7 +477,7 @@
                 {{-- Dropdown Rentang Waktu (wajib, tanpa Tahunan) --}}
                 <div class="mb-4">
                     <label class="block text-sm font-semibold text-gray-700 mb-1.5">
-                        <i class="fas fa-calendar text-amber-400 mr-1"></i>
+                        <i class="fas fa-calendar text-green-400 mr-1"></i>
                         Rentang Waktu <span class="text-red-500">*</span>
                     </label>
                     <select name="rentang" id="tplRentang" required

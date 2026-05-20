@@ -244,12 +244,12 @@ let selectedMeta = {};
 
 // Pre-populate dari data PHP (metadata yang sudah ada)
 @foreach($existingMetadata as $m)
-selectedMeta[{{ $m->metadata_id }}] = {
-    metadata_id:          {{ $m->metadata_id }},
-    nama:                 @json($m->nama),
-    klasifikasi:          @json($m->klasifikasi ?? ''),
-    satuan_data:          @json($m->satuan_data ?? ''),
-    frekuensi_penerbitan: @json($m->frekuensi_penerbitan ?? ''),
+selectedMeta[{{ $m['metadata_id'] }}] = {
+    metadata_id:          {{ $m['metadata_id'] }},
+    nama:                 @json($m['nama']),
+    klasifikasi:          @json($m['klasifikasi'] ?? ''),
+    satuan_data:          @json($m['satuan_data'] ?? ''),
+    frekuensi_penerbitan: @json($m['frekuensi_penerbitan'] ?? ''),
 };
 @endforeach
 

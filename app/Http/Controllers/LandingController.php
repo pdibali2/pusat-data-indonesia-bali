@@ -3,6 +3,8 @@
 namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
+use App\Models\Layanan;
+use App\Models\Klasifikasi;
 use App\Models\Metadata;
 use App\Models\Data;
 use App\Models\ProdusenData;
@@ -15,11 +17,9 @@ class LandingController extends Controller
 
     public function __construct()
     {
-        $this->allKlasifikasi = Metadata::query()
-            ->whereNotNull('klasifikasi')
-            ->distinct()
-            ->orderBy('klasifikasi')
-            ->pluck('klasifikasi')
+        $this->allKlasifikasi = Klasifikasi::query()
+            ->orderBy('nama_klasifikasi')
+            ->pluck('nama_klasifikasi')
             ->map(fn ($k) => trim((string) $k))
             ->filter(function ($k) {
                 return $k !== ''
@@ -36,18 +36,12 @@ class LandingController extends Controller
     public function index()
     {
         // Klasifikasi yang benar-benar ada data-nya (maks 10 untuk badges di hero)
-        $klasifikasiAktif = Metadata::where('status', 2)
-            ->select('klasifikasi')
-            ->distinct()
-            ->pluck('klasifikasi')
-            ->map(fn ($k) => trim((string) $k))
-            ->filter(function ($k) {
-                return $k !== ''
-                    && $k !== '-'
-                    && Str::slug($k) !== '';
-            })
-            ->take(10)
-            ->values();
+        $klasifikasiAktif = Klasifikasi::whereHas('metadata', function ($q) {
+        $q->where('status', 2);
+        })
+        ->orderBy('nama_klasifikasi')
+        ->take(10)
+        ->get();
 
         // Statistik
         $jumlahData     = Data::where('status', 1)->count();
@@ -58,7 +52,22 @@ class LandingController extends Controller
         $produkUnggulan = Metadata::where('status', 2)
             ->latest('date_inputed')
             ->limit(6)
-            ->get(['metadata_id', 'nama', 'klasifikasi', 'satuan_data', 'frekuensi_penerbitan', 'tahun_mulai_data']);
+            ->with('klasifikasi')
+            ->get([
+                'metadata_id',
+                'nama',
+                'klasifikasi_id',
+                'satuan_data',
+                'frekuensi_penerbitan',
+                'tahun_mulai_data'
+            ]);
+
+        // Paket layanan untuk section pricing di landing
+        $pricings = Layanan::with('fiturs')
+            ->where('status', 'publish')
+            ->orderBy('urutan')
+            ->orderBy('layanan_id')
+            ->get();
 
         return view('pages.landing.index', compact(
             'klasifikasiAktif',
@@ -66,6 +75,7 @@ class LandingController extends Controller
             'jumlahMetadata',
             'jumlahProdusen',
             'produkUnggulan',
+            'pricings',
         ));
     }
 
@@ -75,7 +85,13 @@ class LandingController extends Controller
 
     public function langganan()
     {
-        return view('pages.landing.langganan');
+        $layanans = Layanan::where('status', 'publish')
+            ->with(['fiturs' => fn($q) => $q->orderBy('urutan')])
+            ->orderBy('urutan')
+            ->orderBy('harga')
+            ->get();
+    
+        return view('pages.landing.langganan', compact('layanans'));
     }
 
     // ─────────────────────────────────────────────────────────────────────────
@@ -85,10 +101,11 @@ class LandingController extends Controller
     public function klasifikasiIndex()
     {
         // Hitung jumlah metadata per klasifikasi
-        $counts = Metadata::where('status', 2)
-            ->selectRaw('klasifikasi, count(*) as total')
-            ->groupBy('klasifikasi')
-            ->pluck('total', 'klasifikasi');
+        $counts = Metadata::with('klasifikasi')
+            ->where('status', 2)
+            ->get()
+            ->groupBy(fn ($m) => $m->klasifikasi?->nama_klasifikasi)
+            ->map(fn ($items) => $items->count());
 
         $klasifikasiList = collect($this->allKlasifikasi)
             ->map(function ($k) use ($counts) {
@@ -123,8 +140,11 @@ class LandingController extends Controller
 
         abort_if(is_null($nama), 404);
 
-        $metadataList = Metadata::where('status', 2)
-            ->where('klasifikasi', $nama)
+        $metadataList = Metadata::with('klasifikasi')
+            ->where('status', 2)
+            ->whereHas('klasifikasi', function ($q) use ($nama) {
+                $q->where('nama_klasifikasi', $nama);
+            })
             ->orderBy('nama')
             ->paginate(20);
 
@@ -147,10 +167,19 @@ class LandingController extends Controller
             ->where(function ($query) use ($q) {
                 $query->where('nama', 'like', "{$q}%");
             })
-            ->select('metadata_id', 'nama', 'klasifikasi')
+            ->with('klasifikasi')
+            ->select('metadata_id', 'nama', 'klasifikasi_id')
             ->limit(20)
             ->get();
 
-        return response()->json($results);
+        return response()->json(
+            $results->map(function ($item) {
+                return [
+                    'metadata_id' => $item->metadata_id,
+                    'nama'        => $item->nama,
+                    'klasifikasi' => $item->klasifikasi?->nama_klasifikasi,
+                ];
+            })
+        );
     }
 }

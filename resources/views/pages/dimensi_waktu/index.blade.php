@@ -110,7 +110,7 @@
                                 <span class="px-2 py-0.5 rounded-full text-xs font-medium
                                     {{ $row->quarter == 1 ? 'bg-sky-100 text-sky-700' : '' }}
                                     {{ $row->quarter == 2 ? 'bg-emerald-100 text-emerald-700' : '' }}
-                                    {{ $row->quarter == 3 ? 'bg-amber-100 text-amber-700' : '' }}
+                                    {{ $row->quarter == 3 ? 'bg-green-100 text-green-700' : '' }}
                                     {{ $row->quarter == 4 ? 'bg-rose-100 text-rose-700' : '' }}
                                 ">
                                     Kuartal {{ $row->quarter }}

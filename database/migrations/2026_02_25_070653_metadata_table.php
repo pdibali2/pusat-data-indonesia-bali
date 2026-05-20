@@ -21,7 +21,7 @@ return new class extends Migration
             $table->text('konsep');
             $table->text('definisi');
 
-            $table->string('klasifikasi', 100);
+            $table->integer('klasifikasi_id');
 
             $table->text('asumsi')->nullable();
 
@@ -54,6 +54,12 @@ return new class extends Migration
             $table->foreign('user_id')
                 ->references('user_id')
                 ->on('user')
+                ->onDelete('restrict')
+                ->onUpdate('restrict');
+
+            $table->foreign('klasifikasi_id')
+                ->references('klasifikasi_id')
+                ->on('klasifikasi')
                 ->onDelete('restrict')
                 ->onUpdate('restrict');
 

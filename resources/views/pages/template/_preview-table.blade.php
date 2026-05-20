@@ -1,11 +1,3 @@
-{{-- ═══════════════════════════════════════════════════════
-     SECTION 2 — PREVIEW TABLE (shared partial)
-     Digunakan oleh: create-metadata, create-klasifikasi, create-wilayah
-     Warna aksen dikontrol oleh variabel CSS --accent-* yang di-override
-     di setiap halaman induk via <style> atau class.
-═══════════════════════════════════════════════════════ --}}
-
-{{-- TAB FREKUENSI --}}
 <div id="previewSection" class="hidden mt-6">
 
     {{-- Header --}}

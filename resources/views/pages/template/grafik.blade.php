@@ -264,7 +264,7 @@
                     <div class="flex flex-row gap-2 text-xs font-medium text-gray-300 mt-2">
                         <span class="col-1">
                             <i class="fas fa-tag"></i>
-                            {{ $metadata->klasifikasi ?? '—' }}
+                            {{ $metadata->klasifikasi?->nama_klasifikasi ?? '—' }}
                         </span>
                         <span class="col-1">
                             <i class="fas fa-map-marker-alt"></i>
@@ -350,7 +350,7 @@
         {{-- ── Footer: Klasifikasi + Nama Produsen ── --}}
         <div class="chart-footer">
             <div class="font-medium text-sm text-gray-300">
-                {{ $metadata->klasifikasi ?? '—' }}
+                {{ $metadata->klasifikasi?->nama_klasifikasi ?? '—' }}
             </div>
             <div class="font-medium text-sm text-gray-500">
                 {{ $metadata->produsen->nama_produsen ?? '—' }}

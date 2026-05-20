@@ -11,25 +11,24 @@
 </head>
 <body class="bg-slate-50 text-gray-900 antialiased">
 
-    @include('pages.components.navbar')
+    @include('pages.landing.components.navbar')
 
     <main class="pb-20 min-h-screen">
 
-        {{-- Breadcrumb + Header --}}
-        <div class="bg-stikom py-24 pb-16 relative overflow-hidden">
-            <div class="absolute inset-0 opacity-10" aria-hidden="true">
-                <svg class="w-full h-full" xmlns="http://www.w3.org/2000/svg">
-                    <defs>
-                        <pattern id="hdr-grid" width="40" height="40" patternUnits="userSpaceOnUse">
-                            <path d="M 40 0 L 0 0 0 40" fill="none" stroke="white" stroke-width="0.5"/>
-                        </pattern>
-                    </defs>
-                    <rect width="100%" height="100%" fill="url(#hdr-grid)"/>
-                </svg>
+        {{-- ═══ PAGE HEADER ════════════════════════════════════════════ --}}
+        <div class="bg-stikom py-20 pb-14 relative overflow-hidden border-l-4 border-stikom-core">
+            {{-- Grid pattern --}}
+            <div class="absolute inset-0 opacity-[.06]" aria-hidden="true"
+                 style="background-image:repeating-linear-gradient(0deg,rgba(255,255,255,.4) 0,rgba(255,255,255,.4) 1px,transparent 1px,transparent 40px),repeating-linear-gradient(90deg,rgba(255,255,255,.4) 0,rgba(255,255,255,.4) 1px,transparent 1px,transparent 40px)">
             </div>
+            <div class="absolute inset-0 opacity-[.07]"
+                 style="background-image:radial-gradient(circle,#3DB166 1px,transparent 1px);background-size:24px 24px"
+                 aria-hidden="true"></div>
+
             <div class="relative z-10 max-w-5xl mx-auto px-4 sm:px-6 lg:px-8">
+
                 {{-- Breadcrumb --}}
-                <nav class="flex items-center gap-2 text-xs text-white/40 mb-6" aria-label="Breadcrumb">
+                <nav class="flex items-center gap-2 text-[11px] text-white/35 mb-8 font-body" aria-label="Breadcrumb">
                     <a href="{{ route('landing') }}" class="hover:text-white/70 transition-colors">Beranda</a>
                     <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/>
@@ -38,44 +37,64 @@
                     <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/>
                     </svg>
-                    <span class="text-white/70 truncate max-w-200">{{ $nama }}</span>
+                    <span class="text-white/60 truncate max-w-[200px]">{{ $nama }}</span>
                 </nav>
 
-                <div class="flex flex-col sm:flex-row sm:items-end justify-between gap-4">
+                <div class="flex flex-col sm:flex-row sm:items-end justify-between gap-6">
                     <div>
-                        <div class="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-stikom-accent/15 border border-stikom-accent/30 mb-4">
-                            <div class="w-1.5 h-1.5 rounded-full bg-stikom-accent"></div>
-                            <span class="text-stikom-accent text-xs font-bold uppercase tracking-wider">Klasifikasi</span>
+                        {{-- Badge --}}
+                        <div class="inline-flex items-center gap-2 px-3 py-1.5 mb-4
+                                    bg-stikom-core/15 border border-stikom-core/40">
+                            <div class="w-1.5 h-1.5 bg-stikom-core"></div>
+                            <span class="text-stikom-core text-[10px] font-bold uppercase tracking-[.12em] font-display">
+                                Klasifikasi
+                            </span>
                         </div>
-                        <h1 class="text-2xl sm:text-3xl lg:text-4xl font-black text-white font-display">{{ $nama }}</h1>
+                        <h1 class="text-2xl sm:text-3xl lg:text-4xl font-black text-white font-display leading-tight">
+                            {{ $nama }}
+                        </h1>
                     </div>
-                    <div class="shrink-0 bg-white/10 rounded-2xl px-5 py-3 text-center">
-                        <div class="text-2xl font-black text-stikom-accent font-display">{{ $metadataList->total() }}</div>
-                        <div class="text-xs text-white/50 mt-0.5">Total Metadata</div>
+
+                    {{-- Total count card --}}
+                    <div class="shrink-0 bg-white/[.08] border border-white/10 px-6 py-4 text-center">
+                        <div class="text-3xl font-black text-stikom-core font-display">
+                            {{ $metadataList->total() }}
+                        </div>
+                        <div class="text-[10px] text-white/40 uppercase tracking-widest mt-1 font-body">
+                            Total Metadata
+                        </div>
                     </div>
                 </div>
             </div>
         </div>
 
-        {{-- Konten --}}
+        {{-- ═══ CONTENT ═════════════════════════════════════════════════ --}}
         <div class="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 mt-8">
 
             @if($metadataList->isEmpty())
-                <div class="text-center py-20">
-                    <div class="w-16 h-16 rounded-2xl bg-gray-100 flex items-center justify-center mx-auto mb-4">
+                <div class="text-center py-24">
+                    <div class="w-16 h-16 bg-gray-100 flex items-center justify-center mx-auto mb-4">
                         <svg class="w-8 h-8 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5"
+                                  d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
                         </svg>
                     </div>
-                    <p class="text-gray-500 text-sm font-medium">Belum ada metadata untuk klasifikasi ini.</p>
+                    <p class="text-gray-500 text-sm font-medium font-body">Belum ada metadata untuk klasifikasi ini.</p>
                 </div>
             @else
-                <div class="space-y-3">
+                {{-- Section label --}}
+                <div class="flex items-center gap-3 mb-5">
+                    <div class="w-0.5 h-7 bg-stikom-core shrink-0"></div>
+                    <span class="text-[10px] font-bold text-stikom-core uppercase tracking-[.12em] font-display">
+                        Daftar Metadata
+                    </span>
+                </div>
+
+                <div class="space-y-2">
                     @foreach($metadataList as $meta)
-                        {{-- Setiap item bisa diklik tapi memunculkan modal subscription --}}
                         <div
-                            class="metadata-item group bg-white rounded-2xl border border-gray-100 shadow-sm
-                                   hover:border-stikom/20 hover:shadow-md
+                            class="metadata-item group bg-white border border-gray-100 border-l-4 border-l-transparent
+                                   shadow-sm hover:border-l-stikom-core hover:shadow-md
                                    transition-all duration-200 cursor-pointer overflow-hidden"
                             data-id="{{ $meta->metadata_id }}"
                             data-nama="{{ $meta->nama }}"
@@ -83,50 +102,63 @@
                         >
                             <div class="flex items-start sm:items-center gap-4 px-5 py-4">
                                 {{-- Icon --}}
-                                <div class="w-10 h-10 rounded-xl bg-stikom/5 group-hover:bg-stikom/10 flex items-center justify-center shrink-0 transition-colors mt-0.5 sm:mt-0">
-                                    <svg class="w-5 h-5 text-stikom" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/>
+                                <div class="w-10 h-10 bg-stikom/5 group-hover:bg-stikom flex items-center justify-center shrink-0 transition-colors duration-200 mt-0.5 sm:mt-0">
+                                    <svg class="w-5 h-5 text-stikom group-hover:text-stikom-core transition-colors duration-200"
+                                         fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8"
+                                              d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/>
                                     </svg>
                                 </div>
 
                                 {{-- Info --}}
                                 <div class="flex-1 min-w-0">
-                                    <div class="flex flex-wrap items-center gap-2 mb-1">
-                                        <h2 class="text-sm font-bold text-gray-800 group-hover:text-stikom transition-colors line-clamp-1">
-                                            {{ $meta->nama }}
-                                        </h2>
-                                    </div>
-                                    <div class="flex flex-wrap gap-x-4 gap-y-1 text-xs text-gray-400">
+                                    <h2 class="text-sm font-bold text-gray-800 group-hover:text-stikom transition-colors duration-200 line-clamp-1 mb-1 font-body">
+                                        {{ $meta->nama }}
+                                    </h2>
+                                    <div class="flex flex-wrap gap-x-4 gap-y-1 text-[11px] text-gray-400 font-body">
                                         @if($meta->satuan_data)
                                             <span class="flex items-center gap-1">
-                                                <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z"/></svg>
+                                                <svg class="w-3 h-3 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                                          d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z"/>
+                                                </svg>
                                                 {{ $meta->satuan_data }}
                                             </span>
                                         @endif
                                         @if($meta->frekuensi_penerbitan)
                                             <span class="flex items-center gap-1">
-                                                <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                                                <svg class="w-3 h-3 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                                          d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                                                </svg>
                                                 {{ $meta->frekuensi_penerbitan }}
                                             </span>
                                         @endif
                                         @if($meta->tahun_mulai_data)
                                             <span class="flex items-center gap-1">
-                                                <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
+                                                <svg class="w-3 h-3 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                                          d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/>
+                                                </svg>
                                                 Sejak {{ $meta->tahun_mulai_data }}
                                             </span>
                                         @endif
                                     </div>
                                 </div>
 
-                                {{-- Lock icon --}}
+                                {{-- Lock badge + arrow --}}
                                 <div class="shrink-0 flex items-center gap-2">
-                                    <div class="hidden sm:flex items-center gap-1.5 text-xs text-amber-600 bg-amber-50 border border-amber-100 px-2.5 py-1.5 rounded-lg font-semibold">
+                                    <div class="hidden sm:flex items-center gap-1.5 text-[11px] text-stikom-accent
+                                                bg-stikom-accent/10 border border-stikom-accent/25
+                                                px-2.5 py-1.5 font-bold font-body">
                                         <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
-                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/>
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                                  d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/>
                                         </svg>
                                         Berlangganan
                                     </div>
-                                    <svg class="w-4 h-4 text-gray-300 group-hover:text-stikom group-hover:translate-x-0.5 transition-all" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                                    <svg class="w-4 h-4 text-gray-300 group-hover:text-stikom-core group-hover:translate-x-0.5 transition-all duration-200"
+                                         fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/>
                                     </svg>
                                 </div>
@@ -135,38 +167,51 @@
                     @endforeach
                 </div>
 
-                {{-- Pagination --}}
+                {{-- ═══ PAGINATION ═══════════════════════════════════════ --}}
                 @if($metadataList->hasPages())
                     <div class="mt-8 flex justify-center">
                         <div class="flex items-center gap-1">
                             {{-- Previous --}}
                             @if($metadataList->onFirstPage())
-                                <span class="px-3 py-2 rounded-xl text-sm text-gray-300 cursor-not-allowed">
-                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/></svg>
+                                <span class="px-3 py-2 text-sm text-gray-300 cursor-not-allowed">
+                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/>
+                                    </svg>
                                 </span>
                             @else
-                                <a href="{{ $metadataList->previousPageUrl() }}" class="px-3 py-2 rounded-xl text-sm text-gray-600 hover:bg-white hover:shadow-sm transition-all">
-                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/></svg>
+                                <a href="{{ $metadataList->previousPageUrl() }}"
+                                   class="px-3 py-2 text-sm text-gray-600 hover:bg-white hover:shadow-sm transition-all">
+                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/>
+                                    </svg>
                                 </a>
                             @endif
 
                             {{-- Page numbers --}}
-                            @foreach($metadataList->getUrlRange(max(1, $metadataList->currentPage()-2), min($metadataList->lastPage(), $metadataList->currentPage()+2)) as $page => $url)
+                            @foreach($metadataList->getUrlRange(max(1,$metadataList->currentPage()-2), min($metadataList->lastPage(),$metadataList->currentPage()+2)) as $page => $url)
                                 @if($page == $metadataList->currentPage())
-                                    <span class="px-3.5 py-2 rounded-xl text-sm font-bold bg-stikom text-white">{{ $page }}</span>
+                                    <span class="px-3.5 py-2 text-sm font-black bg-stikom text-white font-display">{{ $page }}</span>
                                 @else
-                                    <a href="{{ $url }}" class="px-3.5 py-2 rounded-xl text-sm text-gray-600 hover:bg-white hover:shadow-sm transition-all">{{ $page }}</a>
+                                    <a href="{{ $url }}"
+                                       class="px-3.5 py-2 text-sm text-gray-600 hover:bg-white hover:shadow-sm transition-all font-body">
+                                        {{ $page }}
+                                    </a>
                                 @endif
                             @endforeach
 
                             {{-- Next --}}
                             @if($metadataList->hasMorePages())
-                                <a href="{{ $metadataList->nextPageUrl() }}" class="px-3 py-2 rounded-xl text-sm text-gray-600 hover:bg-white hover:shadow-sm transition-all">
-                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg>
+                                <a href="{{ $metadataList->nextPageUrl() }}"
+                                   class="px-3 py-2 text-sm text-gray-600 hover:bg-white hover:shadow-sm transition-all">
+                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/>
+                                    </svg>
                                 </a>
                             @else
-                                <span class="px-3 py-2 rounded-xl text-sm text-gray-300 cursor-not-allowed">
-                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg>
+                                <span class="px-3 py-2 text-sm text-gray-300 cursor-not-allowed">
+                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/>
+                                    </svg>
                                 </span>
                             @endif
                         </div>
@@ -177,61 +222,59 @@
         </div>
     </main>
 
-    @include('pages.components.footer')
+    @include('pages.landing.components.footer')
 
     {{-- ═══════════════════════════════════════════════════════════════
          MODAL: Subscription Gate
-         Muncul saat pengguna klik salah satu metadata
     ════════════════════════════════════════════════════════════════ --}}
     <div
         id="subscribe-modal"
-        class="fixed inset-0 z-200 flex items-center justify-center p-4
+        class="fixed inset-0 z-[200] flex items-center justify-center p-4
                opacity-0 pointer-events-none transition-opacity duration-200"
         role="dialog" aria-modal="true" aria-labelledby="modal-title"
     >
         {{-- Backdrop --}}
-        <div
-            id="modal-backdrop"
-            class="absolute inset-0 bg-black/50 backdrop-blur-sm"
-            onclick="hideSubscribeGate()"
-        ></div>
+        <div id="modal-backdrop"
+             class="absolute inset-0 bg-black/60 backdrop-blur-sm"
+             onclick="hideSubscribeGate()"></div>
 
         {{-- Panel --}}
-        <div class="relative z-10 w-full max-w-md bg-white rounded-3xl shadow-2xl overflow-hidden
-                    scale-95 transition-transform duration-200" id="modal-panel">
+        <div class="relative z-10 w-full max-w-md bg-white overflow-hidden shadow-2xl
+                    scale-95 transition-transform duration-200 border-l-4 border-stikom-core"
+             id="modal-panel">
 
             {{-- Top accent bar --}}
-            <div class="h-1.5 bg-linear-to-r from-stikom via-[#003a6b] to-stikom-accent"></div>
+            <div class="h-1 bg-stikom-core"></div>
 
             <div class="px-8 py-8">
-                {{-- Lock illustration --}}
-                <div class="w-16 h-16 rounded-2xl bg-amber-50 border border-amber-100 flex items-center justify-center mx-auto mb-6">
-                    <svg class="w-8 h-8 text-amber-500" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/>
+                {{-- Lock icon --}}
+                <div class="w-14 h-14 bg-stikom-accent/10 border border-stikom-accent/25
+                            flex items-center justify-center mx-auto mb-6">
+                    <svg class="w-7 h-7 text-stikom-accent" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8"
+                              d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/>
                     </svg>
                 </div>
 
                 <h2 id="modal-title" class="text-xl font-black text-stikom text-center mb-2 font-display">
                     Akses Terbatas
                 </h2>
-                <p class="text-gray-500 text-sm text-center mb-7 leading-relaxed">
+                <p class="text-gray-500 text-sm text-center mb-7 leading-relaxed font-body">
                     Untuk melihat detail data dan mengunduh dataset ini, kamu perlu memiliki paket berlangganan aktif.
                 </p>
 
-                {{-- Benefit list --}}
+                {{-- Benefits --}}
                 <ul class="space-y-2.5 mb-8">
                     @php
-                    $benefits = [
-                        'Akses semua data',
-                        'Ekspor data Excel dan PDF',
-                        'Template tampilan data',
-                    ];
+                    $benefits = ['Akses semua data', 'Template tampilan data'];
                     @endphp
                     @foreach($benefits as $b)
-                        <li class="flex items-start gap-3 text-sm text-gray-600">
-                            <svg class="w-4 h-4 text-stikom shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7"/>
-                            </svg>
+                        <li class="flex items-start gap-3 text-sm text-gray-600 font-body">
+                            <div class="w-4 h-4 bg-stikom-core flex items-center justify-center shrink-0 mt-0.5">
+                                <svg class="w-2.5 h-2.5" fill="none" stroke="white" viewBox="0 0 24 24" aria-hidden="true">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7"/>
+                                </svg>
+                            </div>
                             {{ $b }}
                         </li>
                     @endforeach
@@ -239,20 +282,16 @@
 
                 {{-- CTAs --}}
                 <div class="flex flex-col gap-3">
-                    <a
-                        href="{{ route('langganan') }}"
-                        class="w-full py-3.5 rounded-xl text-sm font-black text-center
-                               bg-stikom text-white hover:bg-[#002a52]
-                               transition-colors duration-200"
-                    >
+                    <a href="{{ route('langganan') }}"
+                       class="w-full py-3.5 text-sm font-black text-center
+                              bg-stikom text-white hover:bg-stikom-core
+                              transition-colors duration-200 font-display">
                         Lihat Paket Berlangganan
                     </a>
-                    <button
-                        onclick="hideSubscribeGate()"
-                        class="w-full py-3 rounded-xl text-sm font-semibold text-gray-500
-                               hover:text-gray-700 hover:bg-gray-50
-                               transition-colors duration-200"
-                    >
+                    <button onclick="hideSubscribeGate()"
+                            class="w-full py-3 text-sm font-semibold text-gray-400
+                                   hover:text-gray-600 hover:bg-gray-50
+                                   transition-colors duration-200 font-body">
                         Batal
                     </button>
                 </div>
@@ -263,9 +302,9 @@
     {{-- Back to Top --}}
     <button id="back-to-top"
             onclick="window.scrollTo({ top: 0, behavior: 'smooth' })"
-            class="fixed bottom-6 right-6 z-50 w-12 h-12 rounded-2xl bg-stikom text-stikom-accent shadow-xl
+            class="fixed bottom-6 right-6 z-50 w-12 h-12 bg-stikom text-stikom-core shadow-xl
                    flex items-center justify-center opacity-0 translate-y-4 pointer-events-none
-                   transition-all duration-300 hover:bg-[#002a52] hover:scale-110"
+                   transition-all duration-300 hover:bg-stikom-core hover:text-white hover:scale-110"
             aria-label="Kembali ke atas">
         <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 10l7-7m0 0l7 7m-7-7v18"/>
@@ -281,14 +320,14 @@
             btn.classList.toggle('opacity-0',           !past);
             btn.classList.toggle('translate-y-4',       !past);
             btn.classList.toggle('pointer-events-none', !past);
-            btn.classList.toggle('opacity-100',         past);
-            btn.classList.toggle('translate-y-0',       past);
+            btn.classList.toggle('opacity-100',          past);
+            btn.classList.toggle('translate-y-0',        past);
         }, { passive: true });
     })();
 
-    // ── Modal helpers ─────────────────────────────────────────────
-    const modal   = document.getElementById('subscribe-modal');
-    const panel   = document.getElementById('modal-panel');
+    // ── Modal ─────────────────────────────────────────────────────
+    const modal = document.getElementById('subscribe-modal');
+    const panel = document.getElementById('modal-panel');
 
     function showSubscribeGate() {
         modal.classList.remove('opacity-0', 'pointer-events-none');
@@ -306,10 +345,7 @@
         document.body.style.overflow = '';
     }
 
-    // Close on Escape key
-    document.addEventListener('keydown', e => {
-        if (e.key === 'Escape') hideSubscribeGate();
-    });
+    document.addEventListener('keydown', e => { if (e.key === 'Escape') hideSubscribeGate(); });
     </script>
 
 </body>

@@ -122,9 +122,14 @@
                             {{ $data->firstItem() + $index }}
                         </td>
                         <td class="px-4 py-3">
-                            <p class="font-semibold text-gray-800">{{ $row->metadata->nama ?? '-' }}</p>
-                            @if($row->metadata?->klasifikasi)
-                                <p class="text-xs text-gray-400">{{ $row->metadata->klasifikasi }}</p>
+                            <p class="font-semibold text-gray-800">
+                                {{ $row->metadata->nama ?? '-' }}
+                            </p>
+
+                            @if($row->metadata?->klasifikasi?->nama_klasifikasi)
+                                <p class="text-xs text-gray-400">
+                                    {{ $row->metadata->klasifikasi->nama_klasifikasi }}
+                                </p>
                             @endif
                         </td>
                         <td class="px-4 py-3 text-xs">

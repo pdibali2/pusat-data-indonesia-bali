@@ -40,7 +40,8 @@
         </div>
     </div>
 
-    {{-- ACTION BAR --}}
+    {{-- ACTION BAR hanya untuk Administrator dan Pengelola --}}
+    @if(Auth::check() && (int) Auth::user()->group_id !== 3)
     <div>
         <div class="flex flex-col justify-between items-start my-5 gap-3">
             <div>
@@ -50,8 +51,8 @@
             </div>
             <div class="flex gap-2">
                 <a href="{{ route('data.create') }}"
-                   class="px-4 py-2 bg-sky-500 hover:bg-sky-600 text-white text-sm font-semibold rounded-lg
-                          shadow-md shadow-sky-400/30 flex items-center gap-2 transition-colors">
+                class="px-4 py-2 bg-sky-500 hover:bg-sky-600 text-white text-sm font-semibold rounded-lg
+                        shadow-md shadow-sky-400/30 flex items-center gap-2 transition-colors">
                     <i class="fas fa-plus"></i> Input Data
                 </a>
                 <a href="{{ route('data.approval') }}"
@@ -61,8 +62,8 @@
                 </a>
                 @if(isset($pendingCount) && $pendingCount > 0)
                     <a href="{{ route('data.approval') }}"
-                       class="px-4 py-2 bg-amber-500 hover:bg-amber-600 text-white text-sm font-semibold rounded-lg
-                              flex items-center gap-2 transition-colors">
+                    class="px-4 py-2 bg-amber-500 hover:bg-amber-600 text-white text-sm font-semibold rounded-lg
+                            flex items-center gap-2 transition-colors">
                         <i class="fas fa-clock"></i> Approval
                         <span class="bg-white text-amber-600 text-xs font-bold px-1.5 py-0.5 rounded-full">
                             {{ $pendingCount }}
@@ -72,6 +73,7 @@
             </div>
         </div>
     </div>
+    @endif
 </div>
     
 @include('pages.template._template-panel')

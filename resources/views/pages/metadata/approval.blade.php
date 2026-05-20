@@ -31,11 +31,11 @@
          STATS
     ══════════════════════════════════════════════ --}}
     <div class="grid grid-cols-3 gap-4 mt-5">
-        <div class="bg-amber-50 border border-amber-100 rounded-lg p-4 cursor-pointer hover:border-amber-300 transition-colors"
+        <div class="bg-yellow-50 border border-yellow-100 rounded-lg p-4 cursor-pointer hover:border-yellow-300 transition-colors"
              onclick="switchTab(1)">
-            <p class="text-xs text-amber-500 font-semibold uppercase tracking-wide">Pending</p>
-            <p class="text-2xl font-bold text-amber-700 mt-1" id="statPending">{{ number_format($countPending, 0, ',', '.') }}</p>
-            <p class="text-xs text-amber-400 mt-1">menunggu verifikasi</p>
+            <p class="text-xs text-yellow-500 font-semibold uppercase tracking-wide">Pending</p>
+            <p class="text-2xl font-bold text-yellow-700 mt-1" id="statPending">{{ number_format($countPending, 0, ',', '.') }}</p>
+            <p class="text-xs text-yellow-400 mt-1">menunggu verifikasi</p>
         </div>
         <div class="bg-green-50 border border-green-100 rounded-lg p-4 cursor-pointer hover:border-green-300 transition-colors"
              onclick="switchTab(2)">
@@ -187,9 +187,9 @@
                                 onchange="applyFilters()">
                             <option value="">Semua</option>
                             @foreach($klasifikasiList as $k)
-                                <option value="{{ $k }}"
-                                    {{ request('filter_klasifikasi') === $k ? 'selected' : '' }}>
-                                    {{ $k }}
+                                <option value="{{ $k->klasifikasi_id }}"
+                                    {{ (string)request('filter_klasifikasi') === (string)$k->klasifikasi_id ? 'selected' : '' }}>
+                                    {{ $k->nama_klasifikasi }}
                                 </option>
                             @endforeach
                         </select>
@@ -272,7 +272,7 @@
 
                         <td class="px-4 py-3">
                             <span class="px-2 py-1 bg-sky-50 text-sky-700 text-xs rounded-full font-medium">
-                                {{ $item->klasifikasi }}
+                                {{ $item->klasifikasi?->nama_klasifikasi ?? '-' }}
                             </span>
                         </td>
 

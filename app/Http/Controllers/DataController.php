@@ -9,6 +9,7 @@ use App\Models\Location;
 use App\Models\Waktu;
 use App\Models\Tampilan;
 use App\Models\IsiTampilan;
+use App\Models\Transaksi;
 use App\Imports\DataImport;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -36,9 +37,9 @@ class DataController extends Controller
             if ($tampilan && $tampilan->filter_params) {
                 $fp = $tampilan->filter_params;
                 $request->merge(array_filter([
-                    'metadata_id'      => $fp['metadata_id']      ?? null,
-                    'filter_wilayah_id'=> $fp['filter_wilayah_id']?? null,
-                    'year'             => $fp['year']              ?? null,
+                    'metadata_id'       => $fp['metadata_id']       ?? null,
+                    'filter_wilayah_id' => $fp['filter_wilayah_id'] ?? null,
+                    'year'              => $fp['year']               ?? null,
                 ]));
             }
         }
@@ -48,34 +49,62 @@ class DataController extends Controller
             $query = Data::with(['metadata', 'location', 'time', 'user'])
                 ->where('status', Data::STATUS_AVAILABLE);
 
-            if ($request->filled('metadata_id')) $query->where('metadata_id', $request->metadata_id);
+            if ($request->filled('metadata_id')) {
+                $query->where('metadata_id', $request->metadata_id);
+            }
 
             if ($request->filled('filter_wilayah_id')) {
                 $query->where('location_id', $request->filter_wilayah_id);
             }
 
-            if ($request->filled('year')) $query->whereHas('time', fn($q) => $q->where('year', $request->year));
+            if ($request->filled('year')) {
+                $query->whereHas('time', fn($q) => $q->where('year', $request->year));
+            }
 
             if ($request->filled('search')) {
                 $s = $request->search;
                 $query->where(fn($q) =>
                     $q->whereHas('metadata', fn($m) => $m->where('nama', 'like', "%$s%"))
-                      ->orWhere('text_value', 'like', "%$s%")
+                    ->orWhere('text_value', 'like', "%$s%")
                 );
             }
 
             $data = $query->orderBy('date_inputed', 'desc')->paginate(15)->withQueryString();
         }
 
-        $activeTemplateId = (int) $request->input('template_id', 0);
+        $activeTemplateId   = (int) $request->input('template_id', 0);
         $metadataList       = Metadata::where('status', 2)->orderBy('nama')->get(['metadata_id', 'nama']);
-        $wilayahList      = Location::select('nama_wilayah')->distinct()->orderBy('nama_wilayah')->pluck('nama_wilayah');
-        $availableTemplates = Tampilan::where('user_id', Auth::user()->user_id)->withCount('isiTampilan')->orderBy('created_at', 'desc')->get();
-        $pendingCount       = Data::where('status', Data::STATUS_PENDING)->count();
+        $wilayahList        = Location::select('nama_wilayah')->distinct()->orderBy('nama_wilayah')->pluck('nama_wilayah');
+        $availableTemplates = Tampilan::where('user_id', Auth::user()->user_id)
+                                ->withCount('isiTampilan')
+                                ->orderBy('created_at', 'desc')
+                                ->get();
+
+        // ── Cek hak akses data ────────────────────────────────────
+        // Administrator (1) dan Pengelola (2) → selalu punya akses
+        // Customer (3) → harus punya langganan aktif
+        $hasAccess  = true;
+        if (Auth::check()) {
+            $user       = Auth::user();
+            $isCustomer = (int) $user->group_id === 3;
+
+            if ($isCustomer) {
+                $hasAccess = Transaksi::where('user_id', $user->user_id)
+                    ->where('status', 'success')
+                    ->where(function ($q) {
+                        $q->whereNull('aktif_sampai')
+                        ->orWhere('aktif_sampai', '>=', now());
+                    })
+                    ->exists();
+            }
+        }
+
+        $pendingCount = Data::where('status', Data::STATUS_PENDING)->count();
 
         return view('pages.data.index', compact(
             'data', 'metadataList', 'wilayahList',
-            'availableTemplates', 'pendingCount', 'hasFilter', 'activeTemplateId'
+            'availableTemplates', 'pendingCount',
+            'hasFilter', 'activeTemplateId', 'hasAccess'
         ));
     }
 
@@ -123,9 +152,33 @@ class DataController extends Controller
     {
         $q     = $request->input('q', '');
         $limit = $q === '' ? 200 : 30;
-        $query = Metadata::where('status', 2)->orderBy('nama');
-        if ($q !== '') $query->where('nama', 'like', "%{$q}%");
-        return response()->json($query->limit($limit)->get(['metadata_id', 'nama', 'klasifikasi', 'satuan_data']));
+
+        $query = Metadata::with('klasifikasi')
+            ->where('status', 2)
+            ->orderBy('nama');
+
+        if ($q !== '') {
+            $query->where('nama', 'like', "%{$q}%");
+        }
+
+        $metadata = $query->limit($limit)->get([
+            'metadata_id',
+            'nama',
+            'klasifikasi_id',
+            'satuan_data'
+        ]);
+
+        return response()->json(
+            $metadata->map(function ($item) {
+                return [
+                    'metadata_id'   => $item->metadata_id,
+                    'nama'          => $item->nama,
+                    'satuan_data'   => $item->satuan_data,
+                    'klasifikasi_id'=> $item->klasifikasi_id,
+                    'klasifikasi'   => $item->klasifikasi?->nama_klasifikasi,
+                ];
+            })
+        );
     }
 
     public function searchYear(Request $request)

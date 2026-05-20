@@ -44,30 +44,30 @@
     </a>
 
     {{-- Navbar --}}
-    @include('pages.components.navbar')
+    @include('pages.landing.components.navbar')
 
     {{-- Main content --}}
     <main id="main-content">
-        @include('pages.components.hero')
-        @include('pages.components.about')
-        @include('pages.components.dataset-preview', ['produkUnggulan' => $produkUnggulan])
-        @include('pages.components.features')
-        @include('pages.components.statistics')
-        @include('pages.components.subscription')
+        @include('pages.landing.components.hero')
+        @include('pages.landing.components.about')
+        @include('pages.landing.components.dataset-preview', ['produkUnggulan' => $produkUnggulan])
+        @include('pages.landing.components.features')
+        @include('pages.landing.components.statistics')
+        @include('pages.landing.components.subscription')
     </main>
 
     {{-- Footer --}}
-    @include('pages.components.footer')
+    @include('pages.landing.components.footer')
 
     {{-- Back to Top button --}}
     <button
         id="back-to-top"
         onclick="window.scrollTo({ top: 0, behavior: 'smooth' })"
-        class="fixed bottom-6 right-6 z-50 w-12 h-12 rounded-2xl bg-stikom-accent text-white
-               shadow-xl shadow-stikom-accent/30 flex items-center justify-center
+        class="fixed bottom-6 right-6 z-50 w-12 h-12 bg-stikom-core text-white
+               shadow-xl shadow-stikom-core/30 flex items-center justify-center
                opacity-0 translate-y-4 pointer-events-none
-               transition-all duration-300 hover:bg-stikom-accent hover:scale-110
-               focus:outline-none focus:ring-2 focus:ring-stikom-accent focus:ring-offset-2"
+               transition-all duration-300 hover:bg-stikom-core hover:scale-110
+               focus:outline-none focus:ring-2 focus:ring-stikom-core focus:ring-offset-2"
         aria-label="Kembali ke atas"
     >
         <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">

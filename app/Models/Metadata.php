@@ -18,7 +18,7 @@ class Metadata extends Model
         'alias',
         'konsep',
         'definisi',
-        'klasifikasi',
+        'klasifikasi_id',
         'asumsi',
         'metodologi',
         'penjelasan_metodologi',
@@ -47,6 +47,7 @@ class Metadata extends Model
         'tipe_group'          => 'integer',
         'flag_desimal'        => 'integer',
         'status'              => 'integer',
+        'klasifikasi_id'      => 'integer',
         'produsen_id'         => 'integer',
         'group_by'            => 'integer',
         'user_id'             => 'integer',
@@ -57,6 +58,11 @@ class Metadata extends Model
     public function user()
     {
         return $this->belongsTo(User::class, 'user_id', 'user_id');
+    }
+
+    public function klasifikasi()
+    {
+        return $this->belongsTo(Klasifikasi::class, 'klasifikasi_id', 'klasifikasi_id');
     }
 
     public function produsen()

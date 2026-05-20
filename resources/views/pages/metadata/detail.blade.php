@@ -81,7 +81,10 @@
                 <div class="flex items-center gap-1.5 bg-gray-50 border border-gray-200 rounded-lg px-3 py-1.5 text-xs">
                     <i class="fas fa-tag text-sky-400"></i>
                     <span class="text-gray-500">Klasifikasi:</span>
-                    <span class="font-semibold text-gray-700">{{ $metadata->klasifikasi }}</span>
+
+                    <span class="font-semibold text-gray-700">
+                        {{ $metadata->klasifikasi?->nama_klasifikasi ?? '-' }}
+                    </span>
                 </div>
                 <div class="flex items-center gap-1.5 bg-gray-50 border border-gray-200 rounded-lg px-3 py-1.5 text-xs">
                     <i class="fas fa-database text-indigo-400"></i>
@@ -94,7 +97,7 @@
                     <span class="font-semibold text-gray-700">{{ $metadata->satuan_data }}</span>
                 </div>
                 <div class="flex items-center gap-1.5 bg-gray-50 border border-gray-200 rounded-lg px-3 py-1.5 text-xs">
-                    <i class="fas fa-calendar-alt text-amber-400"></i>
+                    <i class="fas fa-calendar-alt text-green-400"></i>
                     <span class="text-gray-500">Frekuensi:</span>
                     <span class="font-semibold text-gray-700">{{ $metadata->frekuensi_penerbitan }}</span>
                 </div>
@@ -283,7 +286,7 @@
                     </div>
                     <div>
                         <p class="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-1">Frekuensi Penerbitan</p>
-                        <span class="bg-amber-50 text-amber-700 text-xs font-semibold px-2.5 py-1 rounded-full">
+                        <span class="bg-green-50 text-green-700 text-xs font-semibold px-2.5 py-1 rounded-full">
                             {{ $metadata->frekuensi_penerbitan ?? '-' }}
                         </span>
                     </div>

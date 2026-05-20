@@ -590,7 +590,8 @@ function renderMetaDrop(results) {
     box.innerHTML = results.map(m => {
         const sel = !!selectedMeta[m.metadata_id];
         return `<button type="button"
-            onclick="toggleMeta(${m.metadata_id},'${escH(m.nama)}','${escH(m.klasifikasi||'')}','${escH(m.satuan_data||'')}','${escH(m.frekuensi_penerbitan||'')}')"
+            data-meta-id="${m.metadata_id}"
+            onclick="toggleMetaById(this.dataset.metaId)"
             class="w-full text-left px-4 py-2.5 flex items-start gap-2.5 border-b border-gray-50 last:border-0 transition-colors
                    ${sel ? 'bg-sky-50' : 'hover:bg-gray-50'}">
             <span class="mt-0.5 shrink-0">
@@ -607,6 +608,13 @@ function renderMetaDrop(results) {
     box.classList.remove('hidden');
 }
 
+// Fungsi baru — ambil data dari metaCache berdasarkan ID
+function toggleMetaById(idStr) {
+    const id = parseInt(idStr);
+    const m  = metaCache.find(x => x.metadata_id === id);
+    if (!m) return;
+    toggleMeta(m.metadata_id, m.nama, m.klasifikasi || '', m.satuan_data || '', m.frekuensi_penerbitan || '');
+}
 function toggleMeta(id, nama, klasifikasi, satuan, frekuensi) {
     if (selectedMeta[id]) { delete selectedMeta[id]; }
     else { selectedMeta[id] = { metadata_id: id, nama, klasifikasi, satuan_data: satuan, frekuensi_penerbitan: frekuensi }; }
@@ -657,9 +665,28 @@ async function loadMetadataPreview() {
     if (btn) { btn.disabled = true; btn.innerHTML = '<i class="fas fa-circle-notch fa-spin mr-2"></i> Memuat...'; }
 
     try {
-        const r = await fetch(FETCH_PREVIEW_URL, { method: 'POST', body });
-        const d = await r.json();
-        if (!d.success) throw new Error('Gagal memuat preview.');
+        const r = await fetch(FETCH_PREVIEW_URL, {
+        method: 'POST',
+        body,
+        headers: { 'Accept': 'application/json' }
+    });
+
+    const text = await r.text(); // baca raw response dulu
+    console.log('RAW RESPONSE:', text);
+    console.log('HTTP STATUS:', r.status);
+
+    let d;
+    try {
+        d = JSON.parse(text);
+    } catch(parseErr) {
+        alert('Server tidak return JSON.\nStatus: ' + r.status + '\nResponse:\n' + text.slice(0, 500));
+        return;
+    }
+
+    if (!d.success) {
+        alert('Server error: ' + (d.message || JSON.stringify(d)));
+        return;
+    }
 
         allGrouped = flattenGrouped(d.grouped || {});
         selectedMap = {};
@@ -674,7 +701,7 @@ async function loadMetadataPreview() {
             (metaNames.length > 60 ? metaNames.slice(0, 60) + '…' : metaNames) +
             (locId ? ' · ' + (mSelLoc.desa||mSelLoc.kecamatan||mSelLoc.kabupaten||mSelLoc.provinsi)?.nama : '');
     } catch (e) {
-        alert(e.message);
+        alert('Network error: ' + e.message);
     } finally {
         if (btn) { btn.disabled = false; btn.innerHTML = '<i class="fas fa-search mr-2"></i> Pilih &amp; Tampilkan'; }
     }

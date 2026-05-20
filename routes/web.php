@@ -1,7 +1,13 @@
 <?php
 
 use Illuminate\Support\Facades\Route;
+use Illuminate\Foundation\Http\Middleware\VerifyCsrfToken;
 use App\Http\Controllers\AuthController;
+use App\Http\Controllers\UserController;
+use App\Http\Controllers\GroupController;
+use App\Http\Controllers\ProdusenController;
+use App\Http\Controllers\RujukanController;
+use App\Http\Controllers\KlasifikasiController;
 use App\Http\Controllers\MetadataController;
 use App\Http\Controllers\MetadataImportController;
 use App\Http\Controllers\LocationController;
@@ -9,26 +15,37 @@ use App\Http\Controllers\WaktuController;
 use App\Http\Controllers\DataController;
 use App\Http\Controllers\DataExportController;
 use App\Http\Controllers\TemplateController;
+use App\Http\Controllers\LayananController;
 use App\Http\Middleware\IsLogin;
+use App\Http\Middleware\IsCustomer;
 use App\Http\Controllers\LandingController;
+use App\Http\Controllers\TransaksiController;
+use App\Http\Controllers\AdminTransaksiController;
 
-// ── Auth ─────────────────────────────────────────────────────
-Route::get('/login',  [AuthController::class, 'loginView'])->name('login');
-Route::post('/login', [AuthController::class, 'login']);
-Route::post('/logout',[AuthController::class, 'logout']);
+    // ── Auth ─────────────────────────────────────────────────────
+    Route::get('/login',  [AuthController::class, 'loginView'])->name('login');
+    Route::post('/login', [AuthController::class, 'login']);
+    Route::post('/logout',[AuthController::class, 'logout']);
 
-Route::get('/', [LandingController::class, 'index'])->name('landing');
-Route::get('/search-metadata', [LandingController::class, 'searchMetadata'])->name('search_metadata');
-Route::get('/langganan', [LandingController::class, 'langganan'])->name('langganan');
-Route::get('/klasifikasi', [LandingController::class, 'klasifikasiIndex'])
-    ->name('klasifikasi.index');
-Route::get('/klasifikasi/{klasifikasi}', [LandingController::class, 'klasifikasiShow'])
-    ->name('klasifikasi.show');
-// ─────────────────────────────────────────────────────────────
-// TEMPLATE TAMPILAN — Sebagian bisa diakses tanpa login
-// (user tanpa akun bisa buat template, disimpan di localStorage)
-// ─────────────────────────────────────────────────────────────
-// ── Template Tampilan ─────────────────────────────────────────────────
+    // Transaksi notification (Midtrans callback)
+    Route::post('/transaksi/notification', [TransaksiController::class, 'notification'])
+        ->name('transaksi.notification')
+        ->withoutMiddleware([VerifyCsrfToken::class]);
+
+        
+
+    Route::get('/', [LandingController::class, 'index'])->name('landing');
+    Route::get('/search-metadata', [LandingController::class, 'searchMetadata'])->name('search_metadata');
+    Route::get('/langganan', [LandingController::class, 'langganan'])->name('langganan');
+    Route::get('/klasifikasi', [LandingController::class, 'klasifikasiIndex'])
+        ->name('klasifikasi.index');
+    Route::get('/klasifikasi/{klasifikasi}', [LandingController::class, 'klasifikasiShow'])
+        ->name('klasifikasi.show');
+        
+    // ─────────────────────────────────────────────────────────────
+    // TEMPLATE TAMPILAN — Sebagian bisa diakses tanpa login
+    // ─────────────────────────────────────────────────────────────
+    // ── Template Tampilan ─────────────────────────────────────────────────
     Route::prefix('template-tampilan')->name('template.')->group(function () {
     
         // Halaman pilih jenis template
@@ -76,8 +93,38 @@ Route::get('/klasifikasi/{klasifikasi}', [LandingController::class, 'klasifikasi
 // AUTHENTICATED ROUTES
 // ─────────────────────────────────────────────────────────────
 
-Route::middleware([IsLogin::class])->group(function () {
+Route::middleware(['is.login', 'is.customer'])->group(function () {
 
+    Route::prefix('admin')->name('admin.')->group(function () {
+        Route::resource('users',    UserController::class);
+        Route::resource('groups',   GroupController::class);
+        Route::resource('produsen', ProdusenController::class);
+        Route::resource('rujukan',  RujukanController::class);
+        Route::resource('klasifikasi', KlasifikasiController::class);
+        Route::resource('layanan', LayananController::class);
+    
+        // Status actions
+        Route::post('layanan/{layanan}/publish',       [LayananController::class, 'publish'])->name('layanan.publish');
+        Route::post('layanan/{layanan}/takedown',      [LayananController::class, 'takedown'])->name('layanan.takedown');
+        Route::post('layanan/{layanan}/draft',         [LayananController::class, 'draft'])->name('layanan.draft');
+        Route::post('layanan/{layanan}/toggle-popular',[LayananController::class, 'togglePopular'])->name('layanan.toggle_popular');
+
+        // ADMIN TRANSAKSI
+        Route::prefix('transaksi-admin')->name('transaksi.')->group(function () {
+            Route::get('/dashboard', [AdminTransaksiController::class, 'dashboard'])->name('dashboard');
+            Route::get('/',          [AdminTransaksiController::class, 'index'])->name('index');
+            Route::get('/{transaksi}', [AdminTransaksiController::class, 'show'])->name('show');
+        });
+    });
+
+    // TRANSAKSI — User (memerlukan login)
+    Route::prefix('transaksi')->name('transaksi.')->group(function () {
+        Route::post('/checkout',              [TransaksiController::class, 'checkout'])->name('checkout');
+        Route::get('/riwayat',               [TransaksiController::class, 'riwayat'])->name('riwayat');
+        Route::get('/{transaksi}/detail',    [TransaksiController::class, 'detail'])->name('detail');
+        Route::get('/{transaksi}/status',    [TransaksiController::class, 'status'])->name('status');
+    });
+    
     // ── Dimensi Lokasi ──────────────────────────────────────
     Route::prefix('dimensi_lokasi')->name('dimensi_lokasi.')->group(function () {
         Route::get('/',       [LocationController::class, 'index'])->name('index');

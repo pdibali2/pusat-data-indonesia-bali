@@ -116,38 +116,17 @@
                         <label class="block font-medium text-sm mb-1">
                             Klasifikasi <span class="text-red-500">*</span>
                         </label>
-                        <select name="klasifikasi" placeholder="Pilih klasifikasi..." autocomplete="off"
-                            class="tom-select w-full border @error('klasifikasi') border-red-400 @else border-gray-300 @enderror
+                        <select name="klasifikasi_id" placeholder="Pilih klasifikasi..." autocomplete="off"
+                            class="tom-select w-full border @error('klasifikasi_id') border-red-400 @else border-gray-300 @enderror
                                 rounded-sm focus:outline-none focus:ring-2 focus:ring-sky-400 text-xs">
 
                             <option value="">-- Pilih Klasifikasi --</option>
 
-                            @foreach([
-                                'Kependudukan','Pendidikan','Kesehatan','Ketenagakerjaan','Sosial','Ekonomi',
-                                'Pendapatan Regional','Keuangan Daerah dan Harga','Pengeluaran Penduduk dan Konsumsi',
-                                'Perdagangan','Perindustrian','Industri Mikro dan Kecil','Industri Besar dan Sedang',
-                                'Koperasi, Usaha Kecil dan Menengah','Penanaman Modal',
-                                'Pertanian','Pertanian Tanaman Pangan','Hortikultura','Perkebunan','Peternakan',
-                                'Perikanan','Kelautan dan Perikanan','Kehutanan','Pangan',
-                                'Infrastruktur','Konstruksi','Pekerjaan Umum dan Penataan Ruang','Perhubungan',
-                                'Transportasi dan Komunikasi','Lingkungan Hidup','Energi','Listrik','PDAM',
-                                'Kemiskinan dan Pembangunan Manusia','Stunting',
-                                'Pemberdayaan Perempuan dan Perlindungan Anak','Pemberdayaan Masyarakat Desa',
-                                'Pengendalian Penduduk dan Keluarga Berencana',
-                                'Pemerintahan','Administrasi Kependudukan dan Pencatatan Sipil',
-                                'Kesatuan Bangsa dan Politik','Pemilu','Perbandingan Antar Kabupaten/Kota',
-                                'Hukum','Kriminalitas','Ketentraman dan Ketertiban Umum','Kepolisian',
-                                'Kejaksaan','Pengadilan',
-                                'Pariwisata','Hotel dan Pariwisata','Kebudayaan','Agama',
-                                'Kepemudaan dan Olahraga','Komunikasi dan Informatika',
-                                'Geografi dan Iklim','Kearsipan','Perpustakaan','POS',
-                                'Kendaraan','Rumah Sakit','Lainnya'
-                            ] as $klas)
-
-                                <option value="{{ $klas }}" {{ old('klasifikasi') == $klas ? 'selected' : '' }}>
-                                    {{ $klas }}
+                            @foreach($klasifikasiList as $k)
+                                <option value="{{ $k->klasifikasi_id }}"
+                                    {{ old('klasifikasi_id') == $k->klasifikasi_id ? 'selected' : '' }}>
+                                    {{ $k->nama_klasifikasi }}
                                 </option>
-
                             @endforeach
                         </select>
                         @error('klasifikasi')
@@ -430,7 +409,7 @@
             </div>
 
             {{-- UPLOAD AREA --}}
-            <div class="space-y-4">
+            <div class="page-layout">
                 <div>
                     <label class="block font-medium text-sm mb-2">
                         Upload File Excel <span class="text-red-500">*</span>
@@ -554,14 +533,14 @@
                     </button>
                     <div id="skippedTable" class="hidden border rounded-lg overflow-hidden">
                         <table class="w-full text-xs">
-                            <thead class="bg-amber-50 border-b text-amber-700 text-left sticky top-0">
+                            <thead class="bg-green-50 border-b text-green-700 text-left sticky top-0">
                                 <tr>
                                     <th class="px-3 py-2 font-semibold w-12">Row</th>
                                     <th class="px-3 py-2 font-semibold">Nama</th>
                                     <th class="px-3 py-2 font-semibold">Alasan</th>
                                 </tr>
                             </thead>
-                            <tbody id="skippedBody" class="divide-y divide-gray-100 bg-amber-50/30"></tbody>
+                            <tbody id="skippedBody" class="divide-y divide-gray-100 bg-green-50/30"></tbody>
                         </table>
                     </div>
                 </div>

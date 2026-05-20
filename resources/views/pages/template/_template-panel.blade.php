@@ -1,8 +1,3 @@
-{{-- ═══════════════════════════════════════════════════════════════
-     _template-panel.blade.php
-     Include dari: pages/data/index.blade.php
-═══════════════════════════════════════════════════════════════ --}}
-
 @php
     $activeTemplateId = (int) request('template_id', 0);
     $tahunOpts        = range(2010, 2030);
@@ -25,6 +20,25 @@
         min-width: 0;           
     }
 
+    #tableAccessOverlay {
+        position: absolute;
+        inset: 0;
+        z-index: 40;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        gap: 1rem;
+        border-radius: 0.5rem;
+        backdrop-filter: blur(6px);
+        -webkit-backdrop-filter: blur(6px);
+        background: rgba(255, 255, 255, 0.75); /* sedikit lebih opaque agar blur lebih solid */
+        pointer-events: all;                    /* blokir semua klik di bawahnya */
+        cursor: default;
+    }
+
+    #tableAccessOverlay:not(.hidden) {
+        display: flex;
+    }
 
     /* ── Tabel: lebar min-content agar tidak di-squeeze ── */
     #pivotTable {
@@ -102,7 +116,7 @@
     .tp-step-badge {
         width: 1.25rem; height: 1.25rem;
         border-radius: 9999px;
-        background: #8b5cf6; color: #fff;
+        ; color: #fff;
         font-size: 0.65rem; font-weight: 700;
         display: flex; align-items: center; justify-content: center;
         flex-shrink: 0;
@@ -182,7 +196,7 @@
     ════════════════════════════════════════ --}}
     <div class="mb-6">
         <div class="flex items-center gap-2 mb-3">
-            <span class="tp-step-badge">1</span>
+            <span class="tp-step-badge bg-sky-500">1</span>
             <p class="text-sm font-semibold text-gray-700">Pilih Template</p>
         </div>
 
@@ -198,7 +212,7 @@
                     <p class="font-medium text-gray-500">Belum ada template</p>
                     <p class="text-xs text-gray-400">Buat template pertama Anda untuk memudahkan akses data</p>
                     <a href="{{ route('template.create') }}"
-                       class="mt-1 px-4 py-2 bg-violet-500 hover:bg-violet-600 text-white
+                       class="mt-1 px-4 py-2 bg-sky-500 hover:bg-sky-600 text-white
                               text-xs font-semibold rounded-lg transition-colors">
                         <i class="fas fa-plus mr-1"></i> Buat Template
                     </a>
@@ -226,8 +240,8 @@
                         <div class="grid grid-cols-13 gap-5 w-full border-2 rounded-lg px-4 py-3
                                     text-xs font-semibold items-center cursor-pointer transition-all duration-150
                                     {{ $isActive
-                                        ? 'border-violet-500 bg-violet-500 text-white'
-                                        : 'border-violet-300 text-violet-700 hover:bg-violet-600 hover:text-white' }}"
+                                        ? 'border-sky-500 bg-sky-500 text-white'
+                                        : 'border-sky-300 text-sky-700 hover:bg-sky-600 hover:text-white' }}"
                              onclick="selectTemplate({{ $tmpl->tampilan_id }})">
 
                             <div class="col-span-6">
@@ -252,7 +266,7 @@
                             <div class="col-span-1 flex gap-2 justify-end"
                                  onclick="event.stopPropagation()">
                                 <a href="{{ route('template.edit', $tmpl->tampilan_id) }}"
-                                   class="{{ $isActive ? 'text-white/70 hover:text-white' : 'text-violet-400 hover:text-violet-600' }} transition-colors"
+                                   class="{{ $isActive ? 'text-white/70 hover:text-white' : 'text-sky-400 hover:text-sky-600' }} transition-colors"
                                    title="Edit">
                                     <i class="fas fa-edit"></i>
                                 </a>
@@ -261,7 +275,7 @@
                                       onsubmit="return confirm('Hapus template \'{{ addslashes($tmpl->nama_tampilan) }}\'?')">
                                     @csrf @method('DELETE')
                                     <button type="submit"
-                                            class="{{ $isActive ? 'text-white/70 hover:text-white' : 'text-violet-400 hover:text-red-500' }} transition-colors"
+                                            class="{{ $isActive ? 'text-white/70 hover:text-white' : 'text-sky-400 hover:text-red-500' }} transition-colors"
                                             title="Hapus">
                                         <i class="fas fa-trash"></i>
                                     </button>
@@ -279,13 +293,13 @@
     ════════════════════════════════════════ --}}
     <div id="stepFrekuensi" class="{{ $activeTemplateId ? '' : 'hidden' }} mb-6">
         <div class="flex items-center gap-2 mb-3">
-            <span class="tp-step-badge">2</span>
+            <span class="tp-step-badge bg-sky-500">2</span>
             <p class="text-sm font-semibold text-gray-700">Pilih Frekuensi Rentang Waktu</p>
         </div>
 
         {{-- Loading indicator frekuensi --}}
         <div id="freqLoadingHint" class="mb-2 text-xs text-gray-400 hidden">
-            <i class="fas fa-circle-notch fa-spin mr-1 text-violet-400"></i>
+            <i class="fas fa-circle-notch fa-spin mr-1 text-sky-400"></i>
             Memeriksa ketersediaan data per frekuensi...
         </div>
 
@@ -302,7 +316,7 @@
                         id="freq-btn-{{ $key }}"
                         onclick="selectFrekuensi('{{ $key }}')"
                         class="freq-btn border-2 border-gray-200 rounded-xl p-3 text-left
-                               hover:border-violet-400 hover:bg-violet-50 transition-all duration-150
+                               hover:border-sky-400 hover:bg-sky-50 transition-all duration-150
                                {{ $key === 'custom' ? 'border-dashed' : '' }}"
                         disabled>
                     <p class="text-xs font-semibold text-gray-700 flex items-center gap-1 flex-wrap">
@@ -327,12 +341,12 @@
     ════════════════════════════════════════ --}}
     <div id="stepPeriode" class="hidden mb-6">
         <div class="flex items-center gap-2 mb-3">
-            <span class="tp-step-badge">3</span>
+            <span class="tp-step-badge bg-sky-500">3</span>
             <p class="text-sm font-semibold text-gray-700">Tentukan Rentang Periode</p>
         </div>
 
         {{-- Info helper --}}
-        <div id="periodeHelperText" class="mb-3 text-xs text-violet-600 bg-violet-50 border border-violet-200 rounded-lg px-3 py-2 hidden">
+        <div id="periodeHelperText" class="mb-3 text-xs text-sky-600 bg-sky-50 border border-sky-200 rounded-lg px-3 py-2 hidden">
             <i class="fas fa-info-circle mr-1"></i>
             <span id="periodeHelperMsg"></span>
         </div>
@@ -365,7 +379,7 @@
                     </div>
                 </div>
                 <div id="tahunanKolomInfo" class="hidden mt-2">
-                    <span class="text-xs text-violet-600 font-medium" id="tahunanKolom"></span>
+                    <span class="text-xs text-sky-600 font-medium" id="tahunanKolom"></span>
                 </div>
             </div>
         </div>
@@ -377,8 +391,8 @@
                 <div class="flex flex-wrap gap-2 mb-3">
                     @foreach(['5'=>'5 Tahun','10'=>'10 Tahun','15'=>'15 Tahun','20'=>'20 Tahun'] as $n => $label)
                         <button type="button" onclick="applyPresetTahunan({{ $n }})"
-                                class="px-3 py-1.5 text-xs border border-violet-200 text-violet-600
-                                       bg-violet-50 hover:bg-violet-100 rounded-lg transition-colors font-medium">
+                                class="px-3 py-1.5 text-xs border border-sky-200 text-sky-600
+                                       bg-sky-50 hover:bg-sky-100 rounded-lg transition-colors font-medium">
                             {{ $label }} Terakhir
                         </button>
                     @endforeach
@@ -405,7 +419,7 @@
                     </div>
                 </div>
                 <div id="tahunanKolomInfoTahunan" class="hidden mt-2">
-                    <span class="text-xs text-violet-600 font-medium" id="tahunanKolomTahunan"></span>
+                    <span class="text-xs text-sky-600 font-medium" id="tahunanKolomTahunan"></span>
                 </div>
             </div>
         </div>
@@ -418,8 +432,8 @@
                     <div class="flex flex-wrap gap-2 mb-3">
                         @foreach(['3'=>'3 Tahun','5'=>'5 Tahun','10'=>'10 Tahun'] as $n => $label)
                             <button type="button" onclick="applyPresetComplex({{ $n }})"
-                                    class="px-3 py-1.5 text-xs border border-violet-200 text-violet-600
-                                           bg-violet-50 hover:bg-violet-100 rounded-lg transition-colors font-medium">
+                                    class="px-3 py-1.5 text-xs border border-sky-200 text-sky-600
+                                           bg-sky-50 hover:bg-sky-100 rounded-lg transition-colors font-medium">
                                 {{ $label }} Terakhir
                             </button>
                         @endforeach
@@ -471,7 +485,7 @@
                 </div>
 
                 <div id="complexKolomInfo" class="hidden">
-                    <span class="text-xs text-violet-600 font-medium" id="complexKolom"></span>
+                    <span class="text-xs text-sky-600 font-medium" id="complexKolom"></span>
                 </div>
             </div>
         </div>
@@ -525,8 +539,8 @@
     ════════════════════════════════════════ --}}
     <div id="stepTampilkan" class="hidden mb-6">
         <button type="button" onclick="tampilkanData()"
-                class="px-6 py-2.5 bg-violet-600 hover:bg-violet-700 text-white text-sm
-                       font-semibold rounded-lg shadow-md shadow-violet-400/30
+                class="px-6 py-2.5 bg-sky-600 hover:bg-sky-700 text-white text-sm
+                       font-semibold rounded-lg shadow-md shadow-sky-400/30
                        flex items-center gap-2 transition-colors">
             <i class="fas fa-table"></i> Tampilkan Data
         </button>
@@ -556,7 +570,7 @@
         {{-- Loading --}}
         <div id="tableLoading"
              class="hidden flex flex-col items-center gap-3 py-14 text-gray-400">
-            <i class="fas fa-circle-notch fa-spin text-violet-400 text-3xl"></i>
+            <i class="fas fa-circle-notch fa-spin text-sky-400 text-3xl"></i>
             <p class="text-sm">Memuat data...</p>
         </div>
 
@@ -571,16 +585,39 @@
             <p class="text-xs">Coba ubah filter atau rentang periode</p>
         </div>
 
-        {{-- ════ TABEL — wrapper scroll ════
-             #tableScrollOuter : overflow-x auto + overflow-y auto (max-height 70vh)
-             Tabel di dalamnya : width: max-content → melebar bebas
-        --}}
             <div id="tableWrap" class="hidden grid grid-cols-2 gap-5 my-4">
-                <div class="col-span-2 border border-gray-300 rounded-lg w-full max-h-100 overflow-auto">
-                    <table id="pivotTable">
-                        <thead id="pivotHead"></thead>
-                        <tbody id="pivotBody"></tbody>
-                    </table>
+                {{-- Wrapper relative untuk overlay + scroll ──────────────── --}}
+                <div class="col-span-2 relative">
+
+                    {{-- Overlay di sini — di luar div scroll, tapi dalam wrapper relative --}}
+                    <div id="tableAccessOverlay" class="hidden">
+                        <div class="flex flex-col items-center gap-4 text-center px-6">
+                            <div class="w-16 h-16 rounded-full bg-sky-100 flex items-center justify-center shadow-inner">
+                                <i class="fas fa-lock text-sky-500 text-2xl"></i>
+                            </div>
+                            <div>
+                                <p class="text-gray-800 font-bold text-base">Data Terkunci</p>
+                                <p class="text-gray-500 text-sm mt-1">
+                                    Berlangganan untuk mengakses data lengkap dari template ini.
+                                </p>
+                            </div>
+                            <a href="{{ route('langganan') }}"
+                            class="px-5 py-2.5 bg-sky-600 hover:bg-sky-700 text-white text-sm
+                                    font-semibold rounded-lg shadow-md shadow-sky-400/30
+                                    flex items-center gap-2 transition-colors">
+                                <i class="fas fa-crown"></i> Lihat Paket Langganan
+                            </a>
+                        </div>
+                    </div>
+
+                    {{-- Div scroll tabel — terpisah dari overlay --}}
+                    <div class="border border-gray-300 rounded-lg w-full max-h-100 overflow-auto">
+                        <table id="pivotTable">
+                            <thead id="pivotHead"></thead>
+                            <tbody id="pivotBody"></tbody>
+                        </table>
+                    </div>
+
                 </div>
             </div>
         
@@ -595,11 +632,15 @@
     </div>
     
 
-</div>{{-- /tp-panel-card --}}
+</div>
 
 {{-- ══════════════════════════════════════════════════════════
      JAVASCRIPT
 ══════════════════════════════════════════════════════════ --}}
+{{-- Pass akses ke JS --}}
+<script>
+    const TP_HAS_ACCESS = @json($hasAccess ?? true);
+</script>
 <script>
 // ─── Konstanta ────────────────────────────────────────────────
 const TP_PERIODE_OPTS = {
@@ -688,7 +729,7 @@ async function loadFreqCounts(tampilanId) {
                 btn.classList.add('cursor-pointer');
 
                 if (badge) {
-                    badge.className = 'freq-count-badge text-[10px] font-bold px-1.5 py-0.5 rounded-full bg-violet-100 text-violet-700';
+                    badge.className = 'freq-count-badge text-[10px] font-bold px-1.5 py-0.5 rounded-full bg-sky-100 text-sky-700';
                     badge.textContent = count;
                     badge.title = `${count} metadata tersedia`;
                 }
@@ -697,7 +738,7 @@ async function loadFreqCounts(tampilanId) {
                 // ── Tidak ada data → disable ──
                 btn.disabled = true;
                 // Reset border/background jika sebelumnya aktif
-                btn.classList.remove('border-violet-500','bg-violet-50','border-amber-400','bg-amber-50');
+                btn.classList.remove('border-sky-500','bg-sky-50','border-amber-400','bg-amber-50');
                 btn.classList.add('border-gray-200');
 
                 if (badge) {
@@ -732,7 +773,7 @@ function selectFrekuensi(freq) {
 
     // Highlight tombol aktif
     document.querySelectorAll('.freq-btn').forEach(btn => {
-        btn.classList.remove('border-violet-500','bg-violet-50','border-amber-400','bg-amber-50');
+        btn.classList.remove('border-sky-500','bg-sky-50','border-amber-400','bg-amber-50');
         btn.classList.add('border-gray-200');
     });
     const ab = document.getElementById('freq-btn-' + freq);
@@ -741,7 +782,7 @@ function selectFrekuensi(freq) {
         if (freq === 'custom') {
             ab.classList.add('border-amber-400','bg-amber-50');
         } else {
-            ab.classList.add('border-violet-500','bg-violet-50');
+            ab.classList.add('border-sky-500','bg-sky-50');
         }
     }
 
@@ -816,7 +857,7 @@ function _buildPreset10() {
         const btn = document.createElement('button');
         btn.type  = 'button';
         btn.textContent = p.label;
-        btn.className   = 'px-3 py-1.5 text-xs border border-violet-200 text-violet-600 bg-violet-50 hover:bg-violet-100 rounded-lg transition-colors font-medium';
+        btn.className   = 'px-3 py-1.5 text-xs border border-sky-200 text-sky-600 bg-sky-50 hover:bg-sky-100 rounded-lg transition-colors font-medium';
         btn.onclick = () => {
             document.getElementById('from10').value = p.from;
             document.getElementById('to10').value   = p.to;
@@ -1121,7 +1162,7 @@ function _renderTable(d) {
                                 ${_esc(group.nama)}
 
                                 <a href="${TMPL_URLS.metadataDetail}/${row.metadata_id}"
-                                class="text-blue-400 hover:text-violet-600 transition-colors"
+                                class="text-blue-400 hover:text-sky-600 transition-colors"
                                 title="Lihat detail metadata"
                                 onclick="event.stopPropagation()">
                                     <i class="fas fa-info-circle text-[11px]"></i>
@@ -1186,11 +1227,21 @@ function _renderTable(d) {
     body.innerHTML = html;
     wrap.classList.remove('hidden');
 
+    // ── Cek akses langganan ──
+    const overlay = document.getElementById('tableAccessOverlay');
+    if (overlay) {
+        if (!TP_HAS_ACCESS) {
+            overlay.classList.remove('hidden');
+        } else {
+            overlay.classList.add('hidden');
+        }
+    }
+
     // ── Info bar ─────────────────────────────────────────────
     const start = (d.current_page - 1) * d.per_page + 1;
     const end   = Math.min(d.current_page * d.per_page, d.total);
     infoText.textContent = `Menampilkan ${start}–${end} dari ${d.total} baris`;
-    const tmplName = document.querySelector('[class*="border-violet-500"] p.font-semibold')?.textContent?.trim() ?? '';
+    const tmplName = document.querySelector('[class*="border-sky-500"] p.font-semibold')?.textContent?.trim() ?? '';
     subInfo.textContent = [
         tmplName ? `Template: ${tmplName}` : '',
         `Frekuensi: ${TP_FREK_LABEL[d.frekuensi] ?? d.frekuensi}`,
@@ -1215,7 +1266,7 @@ function _renderTable(d) {
             : `<button onclick="tampilkanData(${p})"
                        class="w-7 h-7 rounded-md text-xs font-medium transition-colors
                               ${p === d.current_page
-                                ? 'bg-violet-500 text-white'
+                                ? 'bg-sky-500 text-white'
                                 : 'border border-gray-300 text-gray-500 hover:bg-gray-50'}">
                    ${p}</button>`
         ).join('');

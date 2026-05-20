@@ -8,6 +8,7 @@ use Database\Seeders\GroupSeeder;
 use Database\Seeders\UserSeeder;
 use Database\Seeders\ProdusenDataSeeder;
 use Database\Seeders\RujukanSeeder;
+use Database\Seeders\KlasifikasiSeeder;
 
 class DatabaseSeeder extends Seeder
 {
@@ -18,10 +19,11 @@ class DatabaseSeeder extends Seeder
     public function run(): void
     {
         $this->call([
-            GroupSeeder::class,
-            UserSeeder::class,
-            ProdusenDataSeeder::class,
-            RujukanSeeder::class,
+            // GroupSeeder::class,
+            // UserSeeder::class,
+            // ProdusenDataSeeder::class,
+            // RujukanSeeder::class,
+            KlasifikasiSeeder::class,
         ]);
     }
 }

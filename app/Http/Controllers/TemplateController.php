@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\Tampilan;
 use App\Models\IsiTampilan;
+use App\Models\Klasifikasi;
 use App\Models\Metadata;
 use App\Models\Location;
 use App\Models\Data;
@@ -56,9 +57,13 @@ class TemplateController extends Controller
             ->get(['location_id', 'nama_wilayah']);
 
         $allMetadata = Metadata::where('status', Metadata::STATUS_ACTIVE)
-            ->orderBy('nama')
-            
-            ->get(['metadata_id', 'nama', 'klasifikasi', 'satuan_data', 'frekuensi_penerbitan']);
+        ->with('klasifikasi')
+        ->orderBy('nama')
+        ->get(['metadata_id', 'nama', 'klasifikasi_id', 'satuan_data', 'frekuensi_penerbitan'])
+        ->map(fn($m) => array_merge(
+            $m->toArray(),
+            ['klasifikasi' => $m->klasifikasi?->nama_klasifikasi]
+        ));
 
         return view('pages.template.create-metadata', compact('provinsiList', 'allMetadata'));
     }
@@ -69,8 +74,11 @@ class TemplateController extends Controller
 
     public function createByKlasifikasi()
     {
-        $klasifikasiList = Metadata::where('status', Metadata::STATUS_ACTIVE)
-            ->select('klasifikasi')->distinct()->orderBy('klasifikasi')->pluck('klasifikasi');
+        $klasifikasiList = Klasifikasi::whereHas('metadata', function ($q) {
+        $q->where('status', Metadata::STATUS_ACTIVE);
+            })
+            ->orderBy('nama_klasifikasi')
+            ->pluck('nama_klasifikasi');
 
         // Hanya provinsi untuk cascade awal
         $provinsiList = Location::whereRaw("RIGHT(CAST(location_id AS CHAR), 8) = '00000000'")
@@ -111,7 +119,7 @@ class TemplateController extends Controller
         }
 
         if ($klasifikasi !== '') {
-            $query->where('klasifikasi', $klasifikasi);
+            $query->whereHas('klasifikasi', fn($q) => $q->where('nama_klasifikasi', $klasifikasi));
         }
 
         if ($locationId !== '') {
@@ -124,7 +132,8 @@ class TemplateController extends Controller
         $limit = ($q === '' && $klasifikasi === '' && $locationId === '') ? 100 : 50;
 
         return response()->json(
-            $query->limit($limit)->get(['metadata_id', 'nama', 'klasifikasi', 'satuan_data', 'frekuensi_penerbitan'])
+            $query->with('klasifikasi')->limit($limit)->get(['metadata_id', 'nama', 'klasifikasi_id', 'satuan_data', 'frekuensi_penerbitan'])
+                ->map(fn($m) => array_merge($m->toArray(), ['klasifikasi' => $m->klasifikasi?->nama_klasifikasi]))
         );
     }
 
@@ -153,7 +162,13 @@ class TemplateController extends Controller
 
         $metadataList = Metadata::whereIn('metadata_id', $metadataIds)
             ->where('status', Metadata::STATUS_ACTIVE)
-            ->get(['metadata_id', 'nama', 'klasifikasi', 'satuan_data', 'frekuensi_penerbitan']);
+            ->with('klasifikasi')
+            ->get(['metadata_id', 'nama', 'klasifikasi_id', 'satuan_data', 'frekuensi_penerbitan'])
+            ->map(fn($m) => array_merge(
+                $m->toArray(),
+                ['klasifikasi' => $m->klasifikasi?->nama_klasifikasi]
+        ));
+
 
         $grouped = [
             'dekade'   => [],
@@ -163,20 +178,49 @@ class TemplateController extends Controller
             'bulanan'  => [],
         ];
 
+        // foreach ($metadataList as $m) {
+        //     $freq = strtolower($m->frekuensi_penerbitan);
+        //     if (!isset($grouped[$freq])) continue;
+
+        //     // Cek apakah ada data dengan filter waktu (jika diberikan)
+        //     $hasData = $this->checkMetadataHasDataInPeriod(
+        //         $m->metadata_id,
+        //         $locationIds,
+        //         $request
+        //     );
+
+        //     if (!$hasData) continue;
+
+        //     $item = $m->toArray();
+
+        //     if (!empty($locationIds)) {
+        //         $item['locations'] = Location::whereIn('location_id', $locationIds)
+        //             ->select('location_id', 'nama_wilayah')
+        //             ->get()
+        //             ->map(fn($l) => [
+        //                 'location_id'  => $l->location_id,
+        //                 'nama_wilayah' => $l->nama_wilayah,
+        //                 'has_children' => $this->hasChildrenWithData($l->location_id, $m->metadata_id),
+        //             ])->toArray();
+        //     } else {
+        //         $item['locations'] = [];
+        //     }
+
+        //     $grouped[$freq][] = $item;
+        // }
         foreach ($metadataList as $m) {
-            $freq = strtolower($m->frekuensi_penerbitan);
+            $freq = strtolower($m['frekuensi_penerbitan'] ?? '');
             if (!isset($grouped[$freq])) continue;
 
-            // Cek apakah ada data dengan filter waktu (jika diberikan)
             $hasData = $this->checkMetadataHasDataInPeriod(
-                $m->metadata_id,
+                $m['metadata_id'],
                 $locationIds,
                 $request
             );
 
             if (!$hasData) continue;
 
-            $item = $m->toArray();
+            $item = $m; // sudah array, tidak perlu toArray()
 
             if (!empty($locationIds)) {
                 $item['locations'] = Location::whereIn('location_id', $locationIds)
@@ -185,7 +229,7 @@ class TemplateController extends Controller
                     ->map(fn($l) => [
                         'location_id'  => $l->location_id,
                         'nama_wilayah' => $l->nama_wilayah,
-                        'has_children' => $this->hasChildrenWithData($l->location_id, $m->metadata_id),
+                        'has_children' => $this->hasChildrenWithData($l->location_id, $m['metadata_id']),
                     ])->toArray();
             } else {
                 $item['locations'] = [];
@@ -194,11 +238,11 @@ class TemplateController extends Controller
             $grouped[$freq][] = $item;
         }
 
-        return response()->json([
-            'success' => true,
-            'grouped' => $grouped,
-        ]);
-    }
+                return response()->json([
+                    'success' => true,
+                    'grouped' => $grouped,
+                ]);
+            }
 
     // ═══════════════════════════════════════════════════════════
     // AJAX — ambil metadata berdasarkan klasifikasi + location + periode
@@ -221,7 +265,7 @@ class TemplateController extends Controller
         $locationIds = array_map('intval', $request->input('location_ids', []));
 
         $query = Metadata::where('status', Metadata::STATUS_ACTIVE)
-            ->where('klasifikasi', $klasifikasi)
+            ->whereHas('klasifikasi', fn($q) => $q->where('nama_klasifikasi', $klasifikasi))
             ->orderBy('nama');
 
         if (!empty($locationIds)) {
@@ -231,12 +275,8 @@ class TemplateController extends Controller
             });
         }
 
-        $metadataList = $query->get([
-            'metadata_id',
-            'nama',
-            'klasifikasi',
-            'satuan_data',
-            'frekuensi_penerbitan'
+        $metadataList = $query->with('klasifikasi')->get([
+            'metadata_id', 'nama', 'klasifikasi_id', 'satuan_data', 'frekuensi_penerbitan'
         ]);
 
         $locationMap = !empty($locationIds)
@@ -265,7 +305,7 @@ class TemplateController extends Controller
                 $row = [
                     'metadata_id'          => $m->metadata_id,
                     'nama'                 => $m->nama,
-                    'klasifikasi'          => $m->klasifikasi,
+                    'klasifikasi'          => $m->klasifikasi?->nama_klasifikasi,
                     'satuan_data'          => $m->satuan_data,
                     'frekuensi_penerbitan' => $m->frekuensi_penerbitan,
                     'location_id'          => null,
@@ -356,7 +396,7 @@ class TemplateController extends Controller
         $metadataList = Metadata::whereIn('metadata_id', $metadataIds)
             ->where('status', Metadata::STATUS_ACTIVE)
             ->orderBy('nama')
-            ->get(['metadata_id', 'nama', 'klasifikasi', 'satuan_data', 'frekuensi_penerbitan']);
+            ->with('klasifikasi')->get(['metadata_id', 'nama', 'klasifikasi_id', 'satuan_data', 'frekuensi_penerbitan']);
 
         $locationMap = Location::whereIn('location_id', $locationIds)
             ->pluck('nama_wilayah', 'location_id');
@@ -380,7 +420,7 @@ class TemplateController extends Controller
                 $row = [
                     'metadata_id'          => $m->metadata_id,
                     'nama'                 => $m->nama,
-                    'klasifikasi'          => $m->klasifikasi,
+                    'klasifikasi'          => $m->klasifikasi?->nama_klasifikasi,
                     'satuan_data'          => $m->satuan_data,
                     'frekuensi_penerbitan' => $m->frekuensi_penerbitan,
                     'location_id'          => $locId,
@@ -977,7 +1017,7 @@ class TemplateController extends Controller
         $metadataList = Metadata::whereIn('metadata_id', $metadataIds)
             ->where('status', 2)
             ->orderBy('nama')
-            ->get(['metadata_id', 'nama', 'klasifikasi', 'satuan_data']);
+            ->with('klasifikasi')->get(['metadata_id', 'nama', 'klasifikasi_id', 'satuan_data', 'frekuensi_penerbitan']);
     
         if ($metadataList->isEmpty()) {
             return response()->json([
@@ -1083,7 +1123,7 @@ class TemplateController extends Controller
                     'metadata_id'  => $mId,
                     'nama'         => $m->nama,
                     'lokasi'       => $locNama,
-                    'klasifikasi'  => $m->klasifikasi,
+                    'klasifikasi'  => $m->klasifikasi?->nama_klasifikasi,
                     'satuan'       => $m->satuan_data,
                     'location_id'  => $locId,
                     'lokasi_level' => $lokasiLevel,
@@ -1365,8 +1405,13 @@ class TemplateController extends Controller
         // Load detail metadata yang sudah terpilih (untuk ditampilkan sebagai chips)
         $existingMetadata = Metadata::whereIn('metadata_id', $existingMetadataIds)
             ->where('status', Metadata::STATUS_ACTIVE)
+            ->with('klasifikasi')
             ->orderBy('nama')
-            ->get(['metadata_id', 'nama', 'klasifikasi', 'satuan_data', 'frekuensi_penerbitan']);
+            ->get(['metadata_id', 'nama', 'klasifikasi_id', 'satuan_data', 'frekuensi_penerbitan'])
+            ->map(fn($m) => array_merge(
+                $m->toArray(),
+                ['klasifikasi' => $m->klasifikasi?->nama_klasifikasi]
+        ));
  
         $fp          = $tampilan->filter_params ?? [];
         $locationIds = $fp['location_ids'] ?? [];
@@ -1380,9 +1425,14 @@ class TemplateController extends Controller
  
         // Load semua metadata aktif (untuk dropdown pencarian tambah metadata baru)
         $allMetadata = Metadata::where('status', Metadata::STATUS_ACTIVE)
-            ->orderBy('nama')
-            ->limit(200)
-            ->get(['metadata_id', 'nama', 'klasifikasi', 'satuan_data', 'frekuensi_penerbitan']);
+        ->with('klasifikasi')
+        ->orderBy('nama')
+        ->limit(200)
+        ->get(['metadata_id', 'nama', 'klasifikasi_id', 'satuan_data', 'frekuensi_penerbitan'])
+        ->map(fn($m) => array_merge(
+            $m->toArray(),
+            ['klasifikasi' => $m->klasifikasi?->nama_klasifikasi]
+        ));
  
         return view('pages.template.edit', compact(
             'tampilan',
@@ -1477,7 +1527,8 @@ class TemplateController extends Controller
         $metadataList = Metadata::whereIn('metadata_id', $metadataIds)
             ->where('status', Metadata::STATUS_ACTIVE)
             ->orderBy('nama')
-            ->get(['metadata_id', 'nama', 'klasifikasi', 'satuan_data', 'frekuensi_penerbitan']);
+            ->with('klasifikasi')
+            ->get(['metadata_id', 'nama', 'klasifikasi_id', 'satuan_data', 'frekuensi_penerbitan']);
 
         $grouped = [
             'dekade'   => [],

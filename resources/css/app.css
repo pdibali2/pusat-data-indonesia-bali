@@ -63,6 +63,7 @@
     /* Brand colours (custom) */
     --color-stikom: #001734;
     --color-stikom-accent: #F7C100;
+    --color-stikom-core: #3DB166;
     --color-midnight: #121063;
     --color-tahiti: #3ab7bf;
     --color-bermuda: #78dcca;
@@ -175,6 +176,123 @@
     h5,
     h6 {
         font-family: 'Sora', sans-serif;
+    }
+}
+
+@layer components {
+    :root {
+        --stikom-accent-core: rgb(61, 177, 102);
+        --stikom-accent-core-soft: rgba(61, 177, 102, 0.14);
+    }
+
+    .page-layout {
+        max-width: 1280px;
+        margin: 0 auto;
+        padding: 1.5rem;
+        display: flex;
+        flex-direction: column;
+        gap: 1.5rem;
+    }
+
+    .page-header {
+        display: flex;
+        flex-wrap: wrap;
+        justify-content: space-between;
+        align-items: center;
+        gap: 1rem;
+        padding: 1.25rem;
+        background-color: rgba(255, 255, 255, 0.92);
+        border: 1px solid rgba(148, 163, 184, 0.16);
+        border-radius: 1rem;
+        box-shadow: 0 18px 40px rgba(15, 23, 42, 0.05);
+    }
+
+    .page-header h1,
+    .page-header h2 {
+        font-size: 1.75rem;
+        font-weight: 700;
+        color: #0f172a;
+    }
+
+    .page-header p {
+        margin-top: 0.25rem;
+        color: #475569;
+        font-size: 0.95rem;
+    }
+
+    .card-panel {
+        background-color: #ffffff;
+        border: 1px solid #e5e7eb;
+        border-radius: 1rem;
+        box-shadow: 0 16px 32px rgba(15, 23, 42, 0.04);
+        overflow: hidden;
+    }
+
+    .btn-primary {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+        padding: 0.7rem 1rem;
+        border-radius: 0.75rem;
+        font-size: 0.94rem;
+        font-weight: 600;
+        color: #ffffff;
+        background-color: var(--stikom-accent-core);
+        transition: background-color 0.2s ease, transform 0.2s ease;
+        text-decoration: none;
+    }
+
+    .btn-primary:hover {
+        background-color: rgb(47, 147, 85);
+        transform: translateY(-1px);
+    }
+
+    .btn-link {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+        font-size: 0.94rem;
+        font-weight: 600;
+        color: var(--stikom-accent-core);
+        text-decoration: none;
+        transition: color 0.2s ease;
+    }
+
+    .btn-link:hover {
+        color: rgb(47, 147, 85);
+    }
+
+    .brand-icon {
+        color: var(--stikom-accent-core);
+    }
+
+    .status-chip {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.35rem;
+        font-size: 0.75rem;
+        font-weight: 600;
+        padding: 0.4rem 0.75rem;
+        border-radius: 9999px;
+        border: 1px solid transparent;
+    }
+
+    .status-chip--published {
+        background-color: rgba(61, 177, 102, 0.12);
+        color: rgb(22, 101, 52);
+        border-color: rgba(61, 177, 102, 0.2);
+    }
+
+    .status-chip--pending {
+        background-color: rgba(250, 204, 21, 0.18);
+        color: rgb(120, 53, 15);
+        border-color: rgba(250, 204, 21, 0.3);
+    }
+
+    .status-chip--takedown {
+        background-color: rgba(148, 163, 184, 0.16);
+        color: rgb(71, 85, 105);
+        border-color: rgba(148, 163, 184, 0.24);
     }
 }
 

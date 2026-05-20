@@ -9,6 +9,7 @@ use Illuminate\Support\Facades\URL;
 use Illuminate\Support\ServiceProvider;
 use Illuminate\Validation\Rules\Password;
 use Carbon\Carbon;
+use App\Models\Klasifikasi;
 use App\Models\Metadata;
 use Illuminate\Support\Facades\View;
 
@@ -34,22 +35,20 @@ class AppServiceProvider extends ServiceProvider
         }
 
         View::composer('*', function ($view) {
-            $allKlasifikasi = Metadata::query()
-            ->where('status', 2)
-            ->whereNotNull('klasifikasi')
-            ->distinct()
-            ->orderBy('klasifikasi')
-            ->pluck('klasifikasi')
 
-            ->map(fn ($k) => trim((string) $k))
+            $allKlasifikasi = Klasifikasi::query()
+                ->orderBy('nama_klasifikasi')
+                ->pluck('nama_klasifikasi')
 
-            ->filter(function ($k) {
-                return $k !== ''
-                    && $k !== '-'
-                    && \Illuminate\Support\Str::slug($k) !== '';
-            })
+                ->map(fn ($k) => trim((string) $k))
 
-            ->values();
+                ->filter(function ($k) {
+                    return $k !== ''
+                        && $k !== '-'
+                        && \Illuminate\Support\Str::slug($k) !== '';
+                })
+
+                ->values();
 
             $view->with('allKlasifikasi', $allKlasifikasi);
         });

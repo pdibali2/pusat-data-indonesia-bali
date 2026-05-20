@@ -1,0 +1,135 @@
+{{-- resources/views/pages/landing/components/subscription.blade.php --}}
+
+<section id="langganan" class="py-24 bg-slate-50 border-t border-gray-100" aria-labelledby="langganan-heading">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+
+        {{-- Section header --}}
+        <div class="grid lg:grid-cols-2 gap-12 items-end mb-16 fade-up">
+            <div>
+                <div class="flex items-center gap-3 mb-6">
+                    <div class="w-1 h-8 bg-[#3DB166]"></div>
+                    <span class="text-[#3DB166] text-xs font-bold uppercase tracking-widest">Paket Berlangganan</span>
+                </div>
+                <h2 id="langganan-heading" class="text-3xl sm:text-4xl font-black font-poppins text-[#001734] leading-tight">
+                    Pilih Paket yang <br><span class="text-[#3DB166]">Sesuai Kebutuhan</span>
+                </h2>
+            </div>
+            <p class="text-gray-500 text-lg leading-relaxed lg:text-right">
+                Akses penuh ke seluruh fitur platform dengan berlangganan. Harga terjangkau untuk semua kalangan.
+            </p>
+        </div>
+
+        {{-- Grid layout: menyesuaikan jumlah paket --}}
+        <div class="grid lg:grid-cols-5 gap-8 items-start">
+
+            {{-- Pricing cards dari database --}}
+            <div class="{{ $pricings->count() > 1 ? 'lg:col-span-5' : 'lg:col-span-2' }} fade-up">
+                <div class="{{ $pricings->count() > 1 ? 'grid sm:grid-cols-2 lg:grid-cols-' . min($pricings->count(), 3) . ' gap-6' : '' }}">
+
+                    @forelse($pricings as $plan)
+                        @php
+                            $isPopular = $loop->first;
+                        @endphp
+
+                        <div class="relative overflow-hidden shadow-2xl shadow-[#001734]/30
+                                    {{ $isPopular ? 'ring-2 ring-[#3DB166]' : '' }}"
+                             style="background: linear-gradient(160deg, #001020 0%, #001734 50%, #002a52 100%);">
+
+                            {{-- Top badge --}}
+                            @if($isPopular)
+                                <div class="bg-[#3DB166] py-2 px-6 flex items-center justify-between">
+                                    <span class="text-[#001734] text-xs font-black uppercase tracking-widest flex items-center gap-1.5">
+                                        <svg class="w-3.5 h-3.5" fill="currentColor" viewBox="0 0 20 20" aria-hidden="true">
+                                            <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"/>
+                                        </svg>
+                                        Launching Price
+                                    </span>
+                                    <span class="text-[#001734] text-[10px] font-bold uppercase tracking-wider">Terbaik</span>
+                                </div>
+                            @else
+                                <div class="bg-[#001734] border-b border-white/10 py-2 px-6">
+                                    <span class="text-white/40 text-xs font-bold uppercase tracking-widest">Paket</span>
+                                </div>
+                            @endif
+
+                            <div class="p-8">
+                                {{-- Nama paket --}}
+                                <div class="text-xs font-bold uppercase tracking-widest mb-3 text-[#3DB166]/60">
+                                    {{ $plan->nama_layanan ?? $plan->name ?? 'Paket' }}
+                                </div>
+
+                                {{-- Harga --}}
+                                <div class="flex items-end gap-2 mb-1">
+                                    <span class="text-5xl font-black text-white font-poppins">
+                                        Rp{{ number_format($plan->harga ?? 0, 0, ',', '.') }}
+                                    </span>
+                                </div>
+                                <div class="text-sm mb-8 text-white/35">
+                                    / {{ $plan->periode ?? 'bulan' }}
+                                </div>
+
+                                {{-- Deskripsi singkat (opsional) --}}
+                                @if(!empty($plan->deskripsi))
+                                    <p class="text-white/50 text-xs mb-6 leading-relaxed">{{ $plan->deskripsi }}</p>
+                                @endif
+
+                                {{-- List fitur dari relasi fiturs --}}
+                                <ul class="space-y-3 mb-8">
+                                    @forelse($plan->fiturs->sortBy('urutan') as $fitur)
+                                        <li class="flex items-center gap-3 text-sm {{ !$fitur->aktif ? 'opacity-35' : '' }}">
+                                            <div class="w-5 h-5 {{ $fitur->aktif ? 'bg-[#3DB166]' : 'bg-white/10' }} flex items-center justify-center shrink-0">
+                                                <svg class="w-3 h-3 {{ $fitur->aktif ? 'text-white' : 'text-white/50' }}"
+                                                     fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                                                    @if($fitur->aktif)
+                                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7"/>
+                                                    @else
+                                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+                                                    @endif
+                                                </svg>
+                                            </div>
+                                            <span class="text-white/75">{{ $fitur->nama_fitur }}</span>
+                                        </li>
+                                    @empty
+                                        <li class="text-white/30 text-sm italic">Tidak ada fitur terdaftar.</li>
+                                    @endforelse
+                                </ul>
+
+                                <a href="{{ route('langganan') }}"
+                                   class="block w-full py-3.5 {{ $isPopular ? 'bg-[#3DB166] hover:bg-[#2d9955]' : 'bg-white/10 hover:bg-white/20' }} text-white text-sm font-black text-center transition-all duration-200">
+                                    Berlangganan Sekarang
+                                </a>
+                            </div>
+                        </div>
+
+                    @empty
+                        <div class="text-center py-16 text-gray-400 lg:col-span-full">
+                            <p class="text-sm">Belum ada paket berlangganan tersedia.</p>
+                        </div>
+                    @endforelse
+
+                </div>
+            </div>
+
+            {{-- Benefits / Why subscribe — hanya tampil jika hanya 1 paket --}}
+            @if($pricings->count() === 1)
+                <div class="lg:col-span-3 fade-up" style="animation-delay:0.15s">
+                    <div class="mb-8">
+                        <h3 class="text-xl font-black text-[#001734] font-poppins mb-2">Kenapa berlangganan?</h3>
+                        <p class="text-gray-500 text-sm">Dapatkan akses penuh ke semua fitur premium yang dirancang untuk mempermudah pekerjaan Anda.</p>
+                    </div>
+
+                    <div class="mt-6 flex flex-col sm:flex-row gap-3">
+                        <a href="{{ route('langganan') }}"
+                           class="inline-flex items-center justify-center gap-2 px-7 py-3.5 bg-[#3DB166] text-white font-black text-sm hover:bg-[#2d9955] transition-all duration-200 shadow-lg">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z"/>
+                            </svg>
+                            Mulai Berlangganan
+                        </a>
+                    </div>
+                </div>
+            @endif
+
+        </div>
+    </div>
+</section>

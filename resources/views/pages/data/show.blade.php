@@ -157,7 +157,7 @@
                             $metaFields = [
                                 'Nama'                  => $datum->metadata->nama,
                                 'Alias'                 => $datum->metadata->alias,
-                                'Klasifikasi'           => $datum->metadata->klasifikasi,
+                                'Klasifikasi'           => $datum->metadata->klasifikasi?->nama_klasifikasi,
                                 'Tipe Data'             => $datum->metadata->tipe_data,
                                 'Satuan Data'           => $datum->metadata->satuan_data,
                                 'Ukuran Data'           => $datum->metadata->ukuran_data,
