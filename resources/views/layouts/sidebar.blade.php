@@ -158,7 +158,7 @@
             @csrf
             <button type="submit"
                     class="w-full flex items-center justify-center gap-2 text-[11px] font-semibold
-                           text-white/90 hover:text-white bg-red-500/40 hover:bg-red-600 border border-red-400/30
+                           text-white bg-red-500/50 hover:bg-red-500 border border-red-400/30
                            hover:border-red-400/55 py-2 rounded-lg transition-colors">
                 <i class="fa-solid fa-arrow-right-from-bracket rotate-180"></i>
                 Logout

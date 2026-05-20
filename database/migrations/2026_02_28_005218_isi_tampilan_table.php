@@ -26,7 +26,7 @@ return new class extends Migration
                 ->on('metadata')
                 ->onDelete('cascade')
                 ->onUpdate('cascade');
-            $table->json('location_ids')->nullable()->after('metadata_id');
+            $table->json('location_ids')->nullable();
         });
     }
 
