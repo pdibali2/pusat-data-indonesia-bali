@@ -419,7 +419,7 @@ class DataImport
         // Ambil semua metadata yang ADA di DB (apapun statusnya)
         $rows = DB::table('metadata')
             ->whereIn('metadata_id', $ids)
-            ->get(['metadata_id', 'nama', 'status', 'alias', 'klasifikasi', 'tipe_data', 'satuan_data', 'frekuensi_penerbitan']);
+            ->get(['metadata_id', 'nama', 'status', 'alias', 'tipe_data', 'satuan_data', 'frekuensi_penerbitan']);
 
         $found = [];
         foreach ($rows as $r) {
@@ -450,7 +450,6 @@ class DataImport
                     'nama'   => $found[$id]->nama,
                     'satuan_data' => $found[$id]->satuan_data,
                     'tipe_data' => $found[$id]->tipe_data,
-                    'klasifikasi' => $found[$id]->klasifikasi,
                     'alias' => $found[$id]->alias,
                     'frekuensi_penerbitan' => $found[$id]->frekuensi_penerbitan,
                 ];
