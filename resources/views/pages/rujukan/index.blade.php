@@ -8,7 +8,7 @@
 
     <div class="page-header">
         <div>
-            <h2 class="text-lg font-semibold text-gray-200">Kelola Rujukan</h2>
+            <h2 class="text-lg font-semibold text-gray-700">Kelola Rujukan</h2>
             <p class="text-xs text-gray-500 mt-0.5">Manajemen data referensi / rujukan</p>
         </div>
         <a href="{{ route('admin.rujukan.create') }}"
@@ -23,11 +23,11 @@
           class="card-panel p-3 flex flex-wrap gap-2">
         <input type="text" name="search" value="{{ request('search') }}"
                placeholder="Cari nama rujukan..."
-               class="flex-1 min-w-48 bg-white/5 border border-white/10 text-gray-300 text-xs rounded-lg px-3 py-2
+               class="flex-1 min-w-48 bg-white/5 border border-gray-700 text-gray-700 text-xs rounded-lg px-3 py-2
                       placeholder-gray-600 focus:outline-none focus:border-green-400/50">
 
         <select name="produsen_id"
-                class="bg-white/5 border border-white/10 text-gray-300 text-xs rounded-lg px-3 py-2
+                class="bg-white/5 border border-gray-700 text-gray-700 text-xs rounded-lg px-3 py-2
                        focus:outline-none focus:border-green-400/50">
             <option value="">Semua Produsen</option>
             @foreach ($produsen as $p)
@@ -59,7 +59,7 @@
         @else
             <table class="w-full text-xs">
                 <thead>
-                    <tr class="border-b border-white/10 text-gray-400 bg-white/5">
+                    <tr class="border-b border-gray-300 text-gray-400 bg-white/5">
                         <th class="text-left px-4 py-3 font-semibold">#</th>
                         <th class="text-left px-4 py-3 font-semibold">Gambar</th>
                         <th class="text-left px-4 py-3 font-semibold">Nama Rujukan</th>
@@ -70,20 +70,20 @@
                 </thead>
                 <tbody class="divide-y divide-white/5">
                     @foreach ($rujukans as $i => $rujukan)
-                        <tr class="hover:bg-white/5 transition text-gray-300">
+                        <tr class="hover:bg-white/5 transition text-gray-700">
                             <td class="px-4 py-3 text-gray-500">{{ $rujukans->firstItem() + $i }}</td>
                             <td class="px-4 py-3">
                                 @if ($rujukan->gambar_rujukan)
                                     <img src="{{ Storage::url($rujukan->gambar_rujukan) }}"
                                          alt="{{ $rujukan->nama_rujukan }}"
-                                         class="w-10 h-10 object-cover rounded-md border border-white/10">
+                                         class="w-10 h-10 object-cover rounded-md border border-gray-700">
                                 @else
-                                    <div class="w-10 h-10 rounded-md bg-white/5 border border-white/10 flex items-center justify-center text-gray-600">
+                                    <div class="w-10 h-10 rounded-md bg-white/5 border border-gray-700 flex items-center justify-center text-gray-600">
                                         <i class="fas fa-image"></i>
                                     </div>
                                 @endif
                             </td>
-                            <td class="px-4 py-3 font-medium text-gray-200">{{ $rujukan->nama_rujukan }}</td>
+                            <td class="px-4 py-3 font-medium text-gray-700">{{ $rujukan->nama_rujukan }}</td>
                             <td class="px-4 py-3 text-gray-400">{{ $rujukan->produsen->nama_produsen ?? '-' }}</td>
                             <td class="px-4 py-3">
                                 @if ($rujukan->link_rujukan)
@@ -121,7 +121,7 @@
                 </tbody>
             </table>
             @if ($rujukans->hasPages())
-                <div class="px-4 py-3 border-t border-white/10">
+                <div class="px-4 py-3 border-t border-gray-700">
                     {{ $rujukans->links() }}
                 </div>
             @endif

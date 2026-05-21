@@ -43,6 +43,7 @@ class KlasifikasiSeeder extends Seeder
             ['klasifikasi_id' => 28, 'nama_klasifikasi' => 'Harga'],
             ['klasifikasi_id' => 29, 'nama_klasifikasi' => 'Pengeluaran dan Konsumsi'],
             ['klasifikasi_id' => 30, 'nama_klasifikasi' => 'Pendapatan Regional'],
+            ['klasifikasi_id' => 99, 'nama_klasifikasi' => 'Lainnya'],
         ];
 
         foreach ($data as $item) {

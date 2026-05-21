@@ -9,11 +9,11 @@
     <div class="flex items-center gap-2 text-xs text-gray-500">
         <a href="{{ route('admin.rujukan.index') }}" class="hover:text-green-500 transition">Kelola Rujukan</a>
         <i class="fas fa-chevron-right text-[10px]"></i>
-        <span class="text-gray-300">Detail</span>
+        <span class="text-gray-700">Detail</span>
     </div>
 
     <div class="card-panel p-6">
-        <h2 class="text-sm font-semibold text-gray-200 mb-5">
+        <h2 class="text-sm font-semibold text-gray-700 mb-5">
             <i class="fas fa-file-alt text-green-400 mr-2"></i>Detail Rujukan
         </h2>
 
@@ -34,7 +34,7 @@
             ] as $item)
                 <div class="flex gap-4 py-2.5 border-b border-white/5">
                     <dt class="w-32 text-gray-500 shrink-0">{{ $item['label'] }}</dt>
-                    <dd class="text-gray-300">{{ $item['value'] ?? '-' }}</dd>
+                    <dd class="text-gray-700">{{ $item['value'] ?? '-' }}</dd>
                 </div>
             @endforeach
 

@@ -285,13 +285,24 @@ function clearThumbnail() {
 // ── Durasi Type ───────────────────────────────────────────────
 function handleDurasiType(val) {
     const inputDurasi = document.getElementById('input-durasi');
+
     if (val === 'selamanya') {
         inputDurasi.value = 1;
-        inputDurasi.disabled = true;
-        inputDurasi.classList.add('opacity-50', 'cursor-not-allowed');
+        inputDurasi.readOnly = true;
+
+        inputDurasi.classList.add(
+            'opacity-50',
+            'cursor-not-allowed',
+            'bg-gray-100'
+        );
     } else {
-        inputDurasi.disabled = false;
-        inputDurasi.classList.remove('opacity-50', 'cursor-not-allowed');
+        inputDurasi.readOnly = false;
+
+        inputDurasi.classList.remove(
+            'opacity-50',
+            'cursor-not-allowed',
+            'bg-gray-100'
+        );
     }
 }
 

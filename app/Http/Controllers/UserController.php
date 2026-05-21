@@ -57,7 +57,7 @@ class UserController extends Controller
             'block'         => 0,
             'registerdate'  => now(),
             'lastvisitdate' => now(),
-            'activation'    => '',
+            'activation'    => 'activated',
         ]);
 
         return redirect()->route('admin.users.index')

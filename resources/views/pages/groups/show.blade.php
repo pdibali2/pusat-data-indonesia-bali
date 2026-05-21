@@ -13,18 +13,18 @@
     </div>
 
     <div class="card-panel p-6">
-        <h2 class="text-sm font-semibold text-gray-200 mb-5">
+        <h2 class="text-sm font-semibold text-gray-700 mb-5">
             <i class="fas fa-users text-green-400 mr-2"></i>Detail Group
         </h2>
 
         <dl class="space-y-3 text-xs">
             <div class="flex gap-4 py-2.5 border-b border-white/5">
                 <dt class="w-32 text-gray-500 shrink-0">ID</dt>
-                <dd class="text-gray-300">{{ $group->group_id }}</dd>
+                <dd class="text-gray-700">{{ $group->group_id }}</dd>
             </div>
             <div class="flex gap-4 py-2.5 border-b border-white/5">
                 <dt class="w-32 text-gray-500 shrink-0">Nama Group</dt>
-                <dd class="text-gray-200 font-medium">{{ $group->title }}</dd>
+                <dd class="text-gray-700 font-medium">{{ $group->title }}</dd>
             </div>
             <div class="flex gap-4 py-2.5 border-b border-white/5">
                 <dt class="w-32 text-gray-500 shrink-0">Jumlah User</dt>

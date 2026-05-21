@@ -312,6 +312,13 @@ class TransaksiController extends Controller
         ]);
     }
 
+    public function sukses(Transaksi $transaksi)
+    {
+        if ($transaksi->user_id !== Auth::id()) abort(403);
+        if (! $transaksi->isSuccess()) return redirect()->route('transaksi.riwayat');
+        return view('pages.transaksi.sukses', compact('transaksi'));
+    }
+
     // ── Debug: Generate Test Signature ────────────────────────
     // URL: /transaksi/signature-test?order_id=TEST001&status_code=200&gross_amount=10000
     // Gunakan untuk generate signature untuk test

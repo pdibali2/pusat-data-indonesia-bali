@@ -8,7 +8,7 @@
 
     <div class="page-header">
         <div>
-            <h2 class="text-lg font-semibold text-gray-200">Kelola Group</h2>
+            <h2 class="text-lg font-semibold text-gray-700">Kelola Group</h2>
             <p class="text-xs text-gray-500 mt-0.5">Manajemen group / role pengguna</p>
         </div>
         <a href="{{ route('admin.groups.create') }}"
@@ -58,7 +58,7 @@
                     @foreach ($groups as $i => $group)
                         <tr class="hover:bg-white/5 transition text-gray-300">
                             <td class="px-4 py-3 text-gray-500">{{ $groups->firstItem() + $i }}</td>
-                            <td class="px-4 py-3 font-medium text-gray-200">{{ $group->title }}</td>
+                            <td class="px-4 py-3 font-medium text-gray-700">{{ $group->title }}</td>
                             <td class="px-4 py-3">
                                 <span class="px-2 py-0.5 rounded-full bg-blue-500/10 text-blue-400 border border-blue-500/20">
                                     {{ $group->user_count }} user

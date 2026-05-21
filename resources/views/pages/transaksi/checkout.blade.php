@@ -114,30 +114,116 @@
 
     @include('pages.landing.components.footer')
 
+    {{-- Midtrans Snap JS --}}
+    <script src="{{ config('midtrans.snap_url') }}"
+            data-client-key="{{ config('midtrans.client_key') }}"></script>
+
     <script>
-    const snapToken = @json($snapToken);
-    const statusUrl = @json(route('transaksi.status', $transaksi->transaksi_id));
+    const snapToken  = @json($snapToken);
+    const statusUrl  = @json(route('transaksi.status',  $transaksi->transaksi_id));
+    const suksesUrl  = @json(route('transaksi.sukses',  $transaksi->transaksi_id));
     const riwayatUrl = @json(route('transaksi.riwayat'));
 
     document.getElementById('pay-button').addEventListener('click', function () {
         snap.pay(snapToken, {
+
             onSuccess: function(result) {
-                // Midtrans sudah kirim webhook, arahkan ke riwayat
-                window.location.href = riwayatUrl + '?paid=1';
+                // Snap bilang sukses, tapi webhook mungkin belum diproses Laravel.
+                // Poll dulu sampai status di DB benar-benar 'success'.
+                showStatusCheck('Memverifikasi pembayaran...');
+                pollStatus(suksesUrl);
             },
+
             onPending: function(result) {
-                window.location.href = riwayatUrl + '?pending=1';
+                // Pembayaran pending (transfer bank, dll) — arahkan ke riwayat
+                window.location.href = riwayatUrl + '?status=pending';
             },
+
             onError: function(result) {
-                alert('Pembayaran gagal. Silakan coba lagi.');
-                console.error(result);
+                console.error('Snap onError:', result);
+                showStatusCheck('Pembayaran gagal. Silakan coba lagi.', 'error');
             },
+
             onClose: function() {
-                // User menutup popup tanpa bayar — biarkan saja di halaman ini
+                // User menutup popup — biarkan tetap di halaman checkout
+                // Jangan redirect agar user bisa mencoba lagi
             }
         });
     });
-    </script>
+
+    // ── Polling status ke database ─────────────────────────────────
+    let pollCount = 0;
+
+    function pollStatus(redirectOnSuccess) {
+        pollCount++;
+
+        // Batas maksimal 20x polling (~60 detik)
+        if (pollCount > 20) {
+            showStatusCheck(
+                'Status belum terkonfirmasi otomatis. Silakan cek riwayat transaksi.',
+                'warning'
+            );
+            setTimeout(() => window.location.href = riwayatUrl, 3000);
+            return;
+        }
+
+        fetch(statusUrl + '?t=' + Date.now()) // cache buster
+            .then(r => r.json())
+            .then(data => {
+                if (data.status === 'success') {
+                    // Webhook sudah diproses, redirect ke halaman sukses
+                    window.location.href = redirectOnSuccess;
+
+                } else if (data.status === 'failed' || data.status === 'cancelled') {
+                    showStatusCheck('Pembayaran ' + data.status_label + '.', 'error');
+
+                } else {
+                    // Masih pending, coba lagi setelah 3 detik
+                    setTimeout(() => pollStatus(redirectOnSuccess), 3000);
+                }
+            })
+            .catch(() => {
+                // Error network, coba lagi
+                setTimeout(() => pollStatus(redirectOnSuccess), 3000);
+            });
+    }
+
+    // ── UI helpers ─────────────────────────────────────────────────
+    function showStatusCheck(msg, type = 'loading') {
+        const el = document.getElementById('status-check');
+        if (!el) return;
+
+        el.classList.remove('hidden');
+
+        const icons = {
+            loading: `<div class="w-8 h-8 border-4 border-blue-200 border-t-blue-600 rounded-full animate-spin mx-auto mb-3"></div>`,
+            error:   `<i class="fas fa-times-circle text-red-500 text-3xl mb-3 block text-center"></i>`,
+            warning: `<i class="fas fa-exclamation-circle text-yellow-500 text-3xl mb-3 block text-center"></i>`,
+        };
+
+        const textColors = {
+            loading: 'text-gray-600',
+            error:   'text-red-600',
+            warning: 'text-yellow-700',
+        };
+
+        el.innerHTML = `
+            <div class="px-6 py-5 text-center">
+                ${icons[type] ?? icons.loading}
+                <p class="text-sm font-medium ${textColors[type] ?? textColors.loading}">${msg}</p>
+                ${type !== 'loading' ? `
+                <a href="${riwayatUrl}"
+                class="mt-3 inline-block text-xs text-blue-600 hover:underline">
+                    Lihat Riwayat Transaksi →
+                </a>` : `
+                <p class="text-xs text-gray-400 mt-1">Mohon tunggu, jangan tutup halaman ini.</p>
+                `}
+            </div>`;
+
+        window.scrollTo({ top: document.body.scrollHeight, behavior: 'smooth' });
+    }
+</script>
+
 
 </body>
 </html>

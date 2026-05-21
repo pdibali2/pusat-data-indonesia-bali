@@ -12,7 +12,7 @@
     </div>
 
     <div class="card-panel p-6">
-        <h2 class="text-sm font-semibold text-gray-200 mb-5">
+        <h2 class="text-sm font-semibold text-gray-700 mb-5">
             <i class="fas fa-users text-green-400 mr-2"></i>Tambah Group Baru
         </h2>
 

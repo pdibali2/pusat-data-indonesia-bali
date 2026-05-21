@@ -90,6 +90,12 @@ class LayananController extends Controller
     // ── Update ─────────────────────────────────────────────────
     public function update(Request $request, Layanan $layanan)
     {
+        if ($request->durasi_type === 'selamanya') {
+            $request->merge([
+                'durasi' => 1
+            ]);
+        }
+
         $validated = $request->validate([
             'nama_layanan' => 'required|string|max:200',
             'harga'        => 'required|numeric|min:0',

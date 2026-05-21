@@ -20,7 +20,7 @@
                     {{ strtoupper(substr($user->name, 0, 1)) }}
                 </div>
                 <div>
-                    <h2 class="text-sm font-semibold text-gray-200">{{ $user->name }}</h2>
+                    <h2 class="text-sm font-semibold text-gray-700">{{ $user->name }}</h2>
                     <p class="text-xs text-gray-500">{{ $user->email }}</p>
                 </div>
             </div>
@@ -39,8 +39,8 @@
                 ['label' => 'Login Terakhir', 'value' => $user->lastvisitdate?->format('d M Y H:i')],
             ] as $item)
                 <div class="flex gap-4 py-2.5 border-b border-white/5">
-                    <dt class="w-32 text-gray-500 shrink-0">{{ $item['label'] }}</dt>
-                    <dd class="text-gray-300">{{ $item['value'] ?? '-' }}</dd>
+                    <dt class="w-32 text-gray-700 font-semibold shrink-0">{{ $item['label'] }}</dt>
+                    <dd class="text-gray-600">{{ $item['value'] ?? '-' }}</dd>
                 </div>
             @endforeach
         </dl>

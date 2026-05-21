@@ -13,7 +13,7 @@
     </div>
 
     <div class="card-panel p-6">
-        <h2 class="text-sm font-semibold text-gray-200 mb-5">
+        <h2 class="text-sm font-semibold text-gray-600 mb-5">
             <i class="fas fa-industry text-green-400 mr-2"></i>Detail Produsen
         </h2>
 

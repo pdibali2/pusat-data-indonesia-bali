@@ -8,7 +8,7 @@
 
     <div class="page-header">
         <div>
-            <h2 class="text-lg font-semibold text-gray-200">Kelola Produsen</h2>
+            <h2 class="text-lg font-semibold text-gray-600">Kelola Produsen</h2>
             <p class="text-xs text-gray-500 mt-0.5">Manajemen data produsen / publisher data</p>
         </div>
         <a href="{{ route('admin.produsen.create') }}"
@@ -60,7 +60,7 @@
                     @foreach ($produsen as $i => $p)
                         <tr class="hover:bg-white/5 transition text-gray-300">
                             <td class="px-4 py-3 text-gray-500">{{ $produsen->firstItem() + $i }}</td>
-                            <td class="px-4 py-3 font-medium text-gray-200">{{ $p->nama_produsen }}</td>
+                            <td class="px-4 py-3 font-medium text-gray-600">{{ $p->nama_produsen }}</td>
                             <td class="px-4 py-3 text-gray-400">{{ $p->nama_contact_person ?? '-' }}</td>
                             <td class="px-4 py-3 text-gray-400">{{ $p->kontak ?? '-' }}</td>
                             <td class="px-4 py-3 text-gray-400">{{ $p->email ?? '-' }}</td>

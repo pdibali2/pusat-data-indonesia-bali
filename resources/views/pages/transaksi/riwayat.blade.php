@@ -15,14 +15,13 @@
         </a>
     </div>
 
-    {{-- Flash --}}
     @if(session('error'))
     <div class="flex items-center gap-3 bg-red-50 border border-red-200 text-red-700 text-sm px-4 py-3 rounded-lg">
         <i class="fas fa-exclamation-circle"></i> {{ session('error') }}
     </div>
     @endif
 
-    {{-- Statistik User --}}
+    {{-- Statistik --}}
     <div class="grid grid-cols-2 lg:grid-cols-4 gap-4">
         <div class="card-panel px-5 py-4">
             <p class="text-xs text-gray-500 mb-1">Total Transaksi</p>
@@ -54,13 +53,9 @@
                     <option value="failed"    {{ request('status') === 'failed'    ? 'selected' : '' }}>Gagal</option>
                     <option value="cancelled" {{ request('status') === 'cancelled' ? 'selected' : '' }}>Dibatalkan</option>
                 </select>
-                <button type="submit" class="px-4 py-2 bg-gray-100 hover:bg-gray-200 text-gray-700 text-sm rounded-lg transition">
-                    Filter
-                </button>
+                <button type="submit" class="px-4 py-2 bg-gray-100 hover:bg-gray-200 text-gray-700 text-sm rounded-lg transition">Filter</button>
                 @if(request()->filled('status'))
-                <a href="{{ route('transaksi.riwayat') }}" class="px-4 py-2 text-sm text-gray-500 hover:text-gray-700 rounded-lg transition">
-                    Reset
-                </a>
+                <a href="{{ route('transaksi.riwayat') }}" class="px-4 py-2 text-sm text-gray-500 hover:text-gray-700 rounded-lg transition">Reset</a>
                 @endif
             </form>
         </div>
@@ -94,24 +89,17 @@
                 <tbody class="divide-y divide-gray-100">
                     @foreach($transaksis as $item)
                     <tr class="hover:bg-gray-50 transition">
-                        <td class="px-5 py-3.5 font-mono text-xs text-gray-500">
-                            {{ $item->order_id }}
-                        </td>
+                        <td class="px-5 py-3.5 font-mono text-xs text-gray-500">{{ $item->order_id }}</td>
                         <td class="px-5 py-3.5">
                             <p class="font-medium text-gray-800">{{ $item->nama_layanan }}</p>
                             <p class="text-xs text-gray-400">{{ $item->durasi_label }}</p>
                         </td>
-                        <td class="px-5 py-3.5 font-medium text-gray-700">
-                            {{ $item->harga_format }}
-                        </td>
-                        <td class="px-5 py-3.5">
-                            {!! $item->status_badge !!}
-                        </td>
+                        <td class="px-5 py-3.5 font-medium text-gray-700">{{ $item->harga_format }}</td>
+                        <td class="px-5 py-3.5">{!! $item->status_badge !!}</td>
                         <td class="px-5 py-3.5 text-xs text-gray-500">
                             @if($item->isSuccess())
                                 @if($item->aktif_sampai)
-                                    {{ $item->aktif_mulai?->format('d M Y') }} –
-                                    {{ $item->aktif_sampai->format('d M Y') }}
+                                    {{ $item->aktif_mulai?->format('d M Y') }} – {{ $item->aktif_sampai->format('d M Y') }}
                                     @if($item->isAktif())
                                         <span class="ml-1 text-green-600 font-medium">Aktif</span>
                                     @else
@@ -124,12 +112,14 @@
                                 <span class="text-gray-400">—</span>
                             @endif
                         </td>
-                        <td class="px-5 py-3.5 text-xs text-gray-500">
-                            {{ $item->created_at->format('d M Y, H:i') }}
-                        </td>
+                        <td class="px-5 py-3.5 text-xs text-gray-500">{{ $item->created_at->format('d M Y, H:i') }}</td>
                         <td class="px-5 py-3.5 text-right">
-                            <a href="{{ route('transaksi.detail', $item) }}"
-                               class="text-xs text-blue-600 hover:underline">Detail</a>
+                            {{-- Tombol Detail → buka modal --}}
+                            <button type="button"
+                                    onclick="showDetail({{ $item->transaksi_id }})"
+                                    class="text-xs text-blue-600 hover:text-blue-800 hover:underline">
+                                Detail
+                            </button>
                         </td>
                     </tr>
                     @endforeach
@@ -138,7 +128,6 @@
             @endif
         </div>
 
-        {{-- Pagination --}}
         @if($transaksis->hasPages())
         <div class="px-5 py-3 border-t border-gray-100 flex items-center justify-between text-sm text-gray-500">
             <span>Menampilkan {{ $transaksis->firstItem() }}–{{ $transaksis->lastItem() }} dari {{ $transaksis->total() }} data</span>
@@ -147,4 +136,187 @@
         @endif
     </div>
 </div>
+
+{{-- ══════════════════════════════════════════════════════
+     MODAL DETAIL TRANSAKSI — Portrait style
+═══════════════════════════════════════════════════════ --}}
+<div id="modal-detail"
+     class="hidden fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm px-4"
+     onclick="closeDetail(event)">
+
+    <div class="bg-white rounded-3xl shadow-2xl w-full max-w-sm overflow-hidden"
+         id="modal-card"
+         onclick="event.stopPropagation()">
+
+        {{-- Loading state --}}
+        <div id="modal-loading" class="flex flex-col items-center justify-center py-16">
+            <div class="w-8 h-8 border-4 border-blue-200 border-t-blue-600 rounded-full animate-spin"></div>
+            <p class="text-sm text-gray-500 mt-3">Memuat detail...</p>
+        </div>
+
+        {{-- Content (diisi JS) --}}
+        <div id="modal-content" class="hidden"></div>
+    </div>
+</div>
+
+{{-- Data transaksi (JSON, untuk JS) --}}
+<script>
+const transaksiData = {
+    @foreach($transaksis as $item)
+    {{ $item->transaksi_id }}: {
+        id:           {{ $item->transaksi_id }},
+        order_id:     "{{ $item->order_id }}",
+        nama_layanan: "{{ e($item->nama_layanan) }}",
+        harga_format: "{{ $item->harga_format }}",
+        durasi_label: "{{ $item->durasi_label }}",
+        status:       "{{ $item->status }}",
+        status_label: "{{ match($item->status) { 'success'=>'Berhasil','pending'=>'Menunggu','failed'=>'Gagal','cancelled'=>'Dibatalkan', default=>$item->status } }}",
+        payment_type: "{{ $item->payment_type ? strtoupper(str_replace('_',' ',$item->payment_type)) : '—' }}",
+        midtrans_id:  "{{ $item->midtrans_transaction_id ?? '—' }}",
+        aktif_mulai:  "{{ $item->aktif_mulai ? $item->aktif_mulai->format('d M Y') : '—' }}",
+        aktif_sampai: "{{ $item->aktif_sampai ? $item->aktif_sampai->format('d M Y') : ($item->isSuccess() ? 'Selamanya' : '—') }}",
+        is_aktif:     {{ $item->isAktif() ? 'true' : 'false' }},
+        is_success:   {{ $item->isSuccess() ? 'true' : 'false' }},
+        created_at:   "{{ $item->created_at->format('d M Y, H:i') }}",
+        updated_at:   "{{ $item->updated_at->format('d M Y, H:i') }}",
+        snap_token:   "{{ $item->snap_token ? 'Ada' : '—' }}",
+    },
+    @endforeach
+};
+</script>
+
+@push('scripts')
+<script>
+    const statusCfg = {
+        success:   { bg: 'bg-emerald-50',  text: 'text-emerald-700', dot: 'bg-emerald-500', label: 'Berhasil'   },
+        pending:   { bg: 'bg-yellow-50',   text: 'text-yellow-700',  dot: 'bg-yellow-400',  label: 'Menunggu'   },
+        failed:    { bg: 'bg-red-50',      text: 'text-red-700',     dot: 'bg-red-500',      label: 'Gagal'      },
+        cancelled: { bg: 'bg-gray-100',    text: 'text-gray-600',    dot: 'bg-gray-400',     label: 'Dibatalkan' },
+    };
+    
+    function showDetail(id) {
+        const modal   = document.getElementById('modal-detail');
+        const loading = document.getElementById('modal-loading');
+        const content = document.getElementById('modal-content');
+    
+        loading.classList.remove('hidden');
+        content.classList.add('hidden');
+        content.innerHTML = '';
+        modal.classList.remove('hidden');
+    
+        setTimeout(() => {
+            const d = transaksiData[id];
+            if (!d) {
+                loading.innerHTML = '<p class="text-red-500 text-sm py-8 text-center px-6">Data tidak ditemukan.</p>';
+                return;
+            }
+    
+            const cfg = statusCfg[d.status] || statusCfg.pending;
+    
+            // Header gradient berdasarkan status
+            const headerBg = d.status === 'success'   ? 'from-emerald-500 to-teal-600'
+                        : d.status === 'pending'   ? 'from-amber-400 to-yellow-500'
+                        : d.status === 'failed'    ? 'from-red-500 to-rose-600'
+                        : 'from-gray-400 to-gray-500';
+    
+            // Icon berdasarkan status
+            const headerIcon = d.status === 'success'
+                ? '<i class="fas fa-check-circle text-white text-3xl"></i>'
+                : d.status === 'pending'
+                ? '<i class="fas fa-clock text-white text-3xl"></i>'
+                : '<i class="fas fa-times-circle text-white text-3xl"></i>';
+    
+            // Footer berdasarkan status
+            const footerHtml = d.status === 'success'
+                ? `<div class="bg-emerald-50 border border-emerald-100 rounded-xl px-4 py-3 text-center">
+                    <p class="text-xs text-emerald-700 font-medium">
+                        <i class="fas fa-shield-alt mr-1"></i>
+                        Langganan ${d.is_aktif ? 'sedang aktif' : 'sudah berakhir'}
+                    </p>
+                </div>`
+                : d.status === 'pending'
+                ? `<div class="bg-yellow-50 border border-yellow-100 rounded-xl px-4 py-3 text-center">
+                    <p class="text-xs text-yellow-700 font-medium">
+                        <i class="fas fa-clock mr-1"></i>
+                        Menunggu konfirmasi pembayaran
+                    </p>
+                </div>`
+                : `<div class="bg-gray-50 border border-gray-200 rounded-xl px-4 py-3 text-center">
+                    <p class="text-xs text-gray-500">
+                        <i class="fas fa-info-circle mr-1"></i>
+                        Transaksi ini tidak aktif
+                    </p>
+                </div>`;
+    
+            content.innerHTML = `
+                <div>
+                    <div class="bg-gradient-to-br ${headerBg} px-6 pt-6 pb-8 relative">
+                        <button onclick="closeModal()"
+                                class="absolute top-4 right-4 w-7 h-7 rounded-full bg-white/20 hover:bg-white/30 flex items-center justify-center transition">
+                            <i class="fas fa-times text-white text-xs"></i>
+                        </button>
+                        <div class="flex flex-col items-center text-center">
+                            ${headerIcon}
+                            <p class="text-sky-500 font-bold text-lg mt-2">${cfg.label}</p>
+                            <p class="text-gray-400 text-xs mt-0.5 font-mono">${d.order_id}</p>
+                            <p class="text-sky-500 font-bold text-2xl mt-3">${d.harga_format}</p>
+                        </div>
+                    </div>
+    
+                    <div class="-mt-4 relative z-10">
+                        <svg viewBox="0 0 400 24" class="w-full" preserveAspectRatio="none" style="height:24px">
+                            <path d="M0,0 Q200,24 400,0 L400,24 L0,24 Z" fill="white"/>
+                        </svg>
+                    </div>
+    
+                    <div class="px-5 -mt-2 pb-2 space-y-0 divide-y divide-gray-100">
+                        ${row('Layanan',       d.nama_layanan)}
+                        ${row('Durasi',        d.durasi_label)}
+                        ${row('Metode Bayar',  d.payment_type)}
+                        ${row('ID Midtrans',   d.midtrans_id, 'mono')}
+                        ${row('Mulai Aktif',   d.aktif_mulai)}
+                        ${row('Aktif Hingga',  d.aktif_sampai, d.is_aktif ? 'green' : '')}
+                        ${row('Tgl Transaksi', d.created_at)}
+                        ${row('Tgl Update',    d.updated_at)}
+                    </div>
+    
+                    <div class="px-5 py-4 mt-1">
+                        ${footerHtml}
+                    </div>
+    
+                    <div class="px-5 pb-5">
+                        <button onclick="closeModal()"
+                                class="w-full py-2.5 bg-gray-100 hover:bg-gray-200 text-gray-600 text-sm font-medium rounded-xl transition">
+                            Tutup
+                        </button>
+                    </div>
+                </div>`;
+    
+            loading.classList.add('hidden');
+            content.classList.remove('hidden');
+        }, 200);
+    }
+    
+    function row(label, val, type = '') {
+        const valClass = type === 'mono'  ? 'font-mono text-xs text-gray-600 break-all'
+                    : type === 'green' ? 'font-semibold text-emerald-600'
+                    : 'text-gray-700';
+        return `
+            <div class="flex justify-between items-center py-2.5 gap-4">
+                <span class="text-xs text-gray-500 flex-shrink-0">${label}</span>
+                <span class="text-xs ${valClass} text-right">${val || '—'}</span>
+            </div>`;
+    }
+    
+    function closeModal() {
+        document.getElementById('modal-detail').classList.add('hidden');
+    }
+    function closeDetail(e) {
+        if (e.target === document.getElementById('modal-detail')) closeModal();
+    }
+    
+    document.addEventListener('keydown', e => { if (e.key === 'Escape') closeModal(); });
+</script>
+@endpush
+
 @endsection

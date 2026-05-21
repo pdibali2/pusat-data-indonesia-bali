@@ -9,7 +9,7 @@
     {{-- Header --}}
     <div class="page-header">
         <div>
-            <h2 class="text-lg font-semibold text-gray-200">Kelola User</h2>
+            <h2 class="text-lg font-semibold text-gray-600">Kelola User</h2>
             <p class="text-xs text-gray-500 mt-0.5">Manajemen akun pengguna sistem</p>
         </div>
         <a href="{{ route('admin.users.create') }}"
@@ -76,7 +76,7 @@
                     @foreach ($users as $i => $user)
                         <tr class="hover:bg-white/5 transition text-gray-300">
                             <td class="px-4 py-3 text-gray-500">{{ $users->firstItem() + $i }}</td>
-                            <td class="px-4 py-3 font-medium text-gray-200">{{ $user->name }}</td>
+                            <td class="px-4 py-3 font-medium text-gray-600">{{ $user->name }}</td>
                             <td class="px-4 py-3 text-gray-400">{{ $user->username }}</td>
                             <td class="px-4 py-3 text-gray-400">{{ $user->email }}</td>
                             <td class="px-4 py-3">

@@ -7,15 +7,15 @@
 <div class="max-w-2xl space-y-4">
 
     {{-- Breadcrumb --}}
-    <div class="flex items-center gap-2 text-xs text-gray-500">
+    <div class="flex items-center gap-2 text-xs text-gray-700">
         <a href="{{ route('admin.users.index') }}" class="hover:text-green-500 transition">Kelola User</a>
         <i class="fas fa-chevron-right text-[10px]"></i>
-        <span class="text-gray-300">Tambah User</span>
+        <span class="text-black">Tambah User</span>
     </div>
 
     {{-- Card --}}
     <div class="card-panel p-6">
-        <h2 class="text-sm font-semibold text-gray-200 mb-5">
+        <h2 class="text-sm font-semibold text-black mb-5">
             <i class="fas fa-user-plus text-green-400 mr-2"></i>Tambah User Baru
         </h2>
 

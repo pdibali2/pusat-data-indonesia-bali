@@ -37,7 +37,6 @@ use App\Http\Controllers\AdminTransaksiController;
     
     Route::get('/transaksi/signature-test', [TransaksiController::class, 'signatureTest'])
         ->name('transaksi.signature-test');
-
         
 
     Route::get('/', [LandingController::class, 'index'])->name('landing');
@@ -125,10 +124,11 @@ Route::middleware(['is.login', 'is.customer'])->group(function () {
 
     // TRANSAKSI — User (memerlukan login)
     Route::prefix('transaksi')->name('transaksi.')->group(function () {
-        Route::post('/checkout',              [TransaksiController::class, 'checkout'])->name('checkout');
-        Route::get('/riwayat',               [TransaksiController::class, 'riwayat'])->name('riwayat');
-        Route::get('/{transaksi}/detail',    [TransaksiController::class, 'detail'])->name('detail');
-        Route::get('/{transaksi}/status',    [TransaksiController::class, 'status'])->name('status');
+        Route::post('/checkout',                [TransaksiController::class, 'checkout'])->name('checkout');
+        Route::get('/riwayat',                  [TransaksiController::class, 'riwayat'])->name('riwayat');
+        Route::get('/{transaksi}/sukses',       [TransaksiController::class, 'sukses'])->name('sukses');   
+        Route::get('/{transaksi}/detail',       [TransaksiController::class, 'detail'])->name('detail');
+        Route::get('/{transaksi}/status',       [TransaksiController::class, 'status'])->name('status');
     });
     
     // ── Dimensi Lokasi ──────────────────────────────────────
