@@ -46,8 +46,8 @@
                                     <span class="text-white text-[10px] font-bold uppercase tracking-wider">Terbaik</span>
                                 </div>
                             @else
-                                <div class="border-b border-gray-100 py-2 px-6">
-                                    <span class="text-gray-400 text-xs font-bold uppercase tracking-widest">Paket</span>
+                                <div class="border-b border-stikom-core py-2 px-6">
+                                    <span class="text-stikom-core text-xs font-bold uppercase tracking-widest">Paket</span>
                                 </div>
                             @endif
 
@@ -83,10 +83,10 @@
                                         <li class="flex items-center gap-3 text-sm {{ !$fitur->aktif ? 'opacity-35' : '' }}">
                                             <div class="w-5 h-5 flex items-center justify-center shrink-0
                                                         {{ $fitur->aktif
-                                                            ? ($isPopular ? 'bg-stikom-core' : 'bg-stikom/10')
+                                                            ? ($isPopular ? 'bg-stikom-core' : 'bg-stikom-core')
                                                             : 'bg-white/10' }}">
                                                 <svg class="w-3 h-3 {{ $fitur->aktif
-                                                                ? ($isPopular ? 'text-white' : 'text-stikom')
+                                                                ? ($isPopular ? 'text-white' : 'text-white')
                                                                 : 'text-gray-400' }}"
                                                     fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
                                                     @if($fitur->aktif)
@@ -111,7 +111,7 @@
                                 class="block w-full py-3.5 text-sm font-black text-center transition-all duration-200
                                         {{ $isPopular
                                             ? 'bg-stikom-core hover:bg-[#2d9955] text-white'
-                                            : 'bg-stikom/10 hover:bg-stikom/20 text-stikom' }}">
+                                            : 'bg-stikom-core hover:bg-[#2d9955] text-white' }}">
                                     Berlangganan Sekarang
                                 </a>
                             </div>
