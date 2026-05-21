@@ -26,10 +26,10 @@
           class="card-panel p-3 flex flex-wrap gap-2">
         <input type="text" name="search" value="{{ request('search') }}"
                placeholder="Cari nama, email, username..."
-               class="flex-1 min-w-48 bg-white/5 border border-white/10 text-gray-300 text-xs rounded-lg px-3 py-2 placeholder-gray-600 focus:outline-none focus:border-green-400/50">
+               class="flex-1 min-w-48 bg-white/5 border text-gray-500 text-gray-300 text-xs rounded-lg px-3 py-2 placeholder-gray-600 focus:outline-none focus:border-green-400/50">
 
         <select name="group_id"
-                class="bg-white/5 border border-white/10 text-gray-300 text-xs rounded-lg px-3 py-2 focus:outline-none focus:border-green-400/50">
+                class="bg-white/5 border text-gray-500 text-gray-300 text-xs rounded-lg px-3 py-2 focus:outline-none focus:border-green-400/50">
             <option value="">Semua Group</option>
             @foreach ($groups as $group)
                 <option value="{{ $group->group_id }}" {{ request('group_id') == $group->group_id ? 'selected' : '' }}>
@@ -62,7 +62,7 @@
         @else
             <table class="w-full text-xs">
                 <thead>
-                    <tr class="border-b border-white/10 text-gray-400 bg-white/5">
+                    <tr class="border-b text-gray-500 text-gray-400 bg-white/5">
                         <th class="text-left px-4 py-3 font-semibold">#</th>
                         <th class="text-left px-4 py-3 font-semibold">Nama</th>
                         <th class="text-left px-4 py-3 font-semibold">Username</th>
@@ -118,7 +118,7 @@
 
             {{-- Pagination --}}
             @if ($users->hasPages())
-                <div class="px-4 py-3 border-t border-white/10">
+                <div class="px-4 py-3 border-t text-gray-500">
                     {{ $users->links() }}
                 </div>
             @endif

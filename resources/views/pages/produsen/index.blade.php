@@ -23,7 +23,7 @@
           class="card-panel p-3 flex gap-2">
         <input type="text" name="search" value="{{ request('search') }}"
                placeholder="Cari nama, email, contact person..."
-               class="flex-1 bg-white/5 border border-white/10 text-gray-300 text-xs rounded-lg px-3 py-2
+               class="flex-1 bg-white/5 border border-gray-600 text-gray-700 text-xs rounded-lg px-3 py-2
                       placeholder-gray-600 focus:outline-none focus:border-green-400/50">
         <button type="submit"
                 class="btn-primary">
@@ -47,7 +47,7 @@
         @else
             <table class="w-full text-xs">
                 <thead>
-                    <tr class="border-b border-white/10 text-gray-400 bg-white/5">
+                    <tr class="border-b border-gray-300 text-gray-400 bg-white/5">
                         <th class="text-left px-4 py-3 font-semibold">#</th>
                         <th class="text-left px-4 py-3 font-semibold">Nama Produsen</th>
                         <th class="text-left px-4 py-3 font-semibold">Contact Person</th>

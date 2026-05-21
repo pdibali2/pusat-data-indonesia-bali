@@ -257,9 +257,9 @@ const transaksiData = {
                         </button>
                         <div class="flex flex-col items-center text-center">
                             ${headerIcon}
-                            <p class="text-sky-500 font-bold text-lg mt-2">${cfg.label}</p>
-                            <p class="text-gray-400 text-xs mt-0.5 font-mono">${d.order_id}</p>
-                            <p class="text-sky-500 font-bold text-2xl mt-3">${d.harga_format}</p>
+                            <p class="text-white font-bold text-lg mt-2">${cfg.label}</p>
+                            <p class="text-white/80 text-xs mt-0.5 font-mono">${d.order_id}</p>
+                            <p class="text-white font-bold text-2xl mt-3">${d.harga_format}</p>
                         </div>
                     </div>
     

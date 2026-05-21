@@ -23,7 +23,7 @@
           class="card-panel p-3 flex gap-2">
         <input type="text" name="search" value="{{ request('search') }}"
                placeholder="Cari nama group..."
-               class="flex-1 bg-white/5 border border-white/10 text-gray-300 text-xs rounded-lg px-3 py-2
+               class="flex-1 bg-white/5 border border-gray-500 text-gray-700 text-xs rounded-lg px-3 py-2
                       placeholder-gray-600 focus:outline-none focus:border-green-400/50">
         <button type="submit"
                 class="btn-primary">
@@ -31,7 +31,7 @@
         </button>
         @if(request('search'))
             <a href="{{ route('admin.groups.index') }}"
-               class="bg-white/10 hover:bg-white/20 text-gray-400 text-xs px-4 py-2 rounded-lg transition">
+               class="bg-white/10 hover:bg-white/20 text-gray-700 text-xs px-4 py-2 rounded-lg transition">
                 <i class="fas fa-times"></i> Reset
             </a>
         @endif
@@ -47,7 +47,7 @@
         @else
             <table class="w-full text-xs">
                 <thead>
-                    <tr class="border-b border-white/10 text-gray-400 bg-white/5">
+                    <tr class="border-b border-gray-300 text-gray-400 bg-white/5">
                         <th class="text-left px-4 py-3 font-semibold">#</th>
                         <th class="text-left px-4 py-3 font-semibold">Nama Group</th>
                         <th class="text-left px-4 py-3 font-semibold">Jumlah User</th>
@@ -90,7 +90,7 @@
                 </tbody>
             </table>
             @if ($groups->hasPages())
-                <div class="px-4 py-3 border-t border-white/10">
+                <div class="px-4 py-3 border-t text-gray-500">
                     {{ $groups->links() }}
                 </div>
             @endif
