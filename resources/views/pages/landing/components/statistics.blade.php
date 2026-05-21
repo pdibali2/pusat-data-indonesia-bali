@@ -37,9 +37,6 @@
                     Data Kami <span class="text-[#3DB166]">dalam Angka</span>
                 </h2>
             </div>
-            <p class="text-white/40 text-sm max-w-xs leading-relaxed lg:text-right">
-                Terus berkembang setiap hari dengan tambahan data dan produsen baru.
-            </p>
         </div>
 
         {{-- Stats grid --}}
@@ -51,7 +48,6 @@
             $stats = [
                 [
                     'label'    => 'Total Data',
-                    'sub'      => 'Dataset aktif yang tersedia',
                     'value'    => $jumlahData,
                     'key'      => 'data',
                     'suffix'   => '',
@@ -59,7 +55,6 @@
                 ],
                 [
                     'label'    => 'Total Metadata',
-                    'sub'      => 'Metadata terdokumentasi',
                     'value'    => $jumlahMetadata,
                     'key'      => 'metadata',
                     'suffix'   => '',
@@ -67,7 +62,6 @@
                 ],
                 [
                     'label'    => 'Produsen Data',
-                    'sub'      => 'Instansi mitra terdaftar',
                     'value'    => $jumlahProdusen,
                     'key'      => 'produsen',
                     'suffix'   => '',
@@ -99,7 +93,7 @@
 
                     {{-- Label --}}
                     <div class="text-[#3DB166] font-bold text-sm uppercase tracking-widest mb-1">{{ $s['label'] }}</div>
-                    <div class="text-white/35 text-xs">{{ $s['sub'] }}</div>
+                    
 
                     {{-- Bottom bar --}}
                     <div class="absolute bottom-0 left-8 right-8 h-0.5 bg-[#3DB166] opacity-0 group-hover:opacity-50 transition-opacity duration-300"></div>
@@ -109,9 +103,7 @@
 
         {{-- CTA row below stats --}}
         <div class="mt-12 flex flex-col sm:flex-row items-center justify-between gap-6 border-t border-white/10 pt-10 fade-up">
-            <p class="text-white/40 text-sm">
-                Data diperbarui secara berkala oleh produsen data yang terdaftar.
-            </p>
+            
             <a href="{{ route('data.index') }}"
                class="inline-flex items-center gap-2 px-6 py-3 border border-white/20 text-white text-sm font-bold hover:border-[#3DB166] hover:text-[#3DB166] transition-all duration-200">
                 Lihat Semua Data
