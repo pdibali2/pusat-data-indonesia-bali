@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8"/>
     <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-    <title>{{ $nama }} — Pusat Data Indonesia Bali</title>
+    <title>{{ $nama }} Pusat Data Indonesia Bali</title>
     <meta name="description" content="Daftar metadata kategori {{ $nama }} di Pusat Data Indonesia Bali."/>
     <link rel="icon" href="{{ asset('favicon.ico') }}" type="image/x-icon"/>
     <meta name="csrf-token" content="{{ csrf_token() }}"/>

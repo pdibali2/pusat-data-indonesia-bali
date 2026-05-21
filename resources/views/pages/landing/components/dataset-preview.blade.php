@@ -14,7 +14,7 @@
                 <p class="text-gray-500 mt-2 text-base">Data terpilih yang siap Anda eksplorasi lebih lanjut.</p>
             </div>
             <a href="{{ route('metadata.index') }}"
-               class="shrink-0 inline-flex items-center gap-2 px-5 py-2.5 bg-stikom-core hover:bg-emerald-700 text-white text-sm font-bold hover:bg-[#002a52] transition-colors">
+               class="shrink-0 inline-flex items-center gap-2 px-5 py-2.5 bg-stikom-core hover:bg-emerald-700 text-white text-sm font-bold transition-colors">
                 Lihat Semua
                 <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7l5 5m0 0l-5 5m5-5H6"/>

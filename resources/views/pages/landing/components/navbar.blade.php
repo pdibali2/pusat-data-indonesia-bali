@@ -47,7 +47,7 @@ $col2 = $allKlasifikasi->slice($half);
                 {{-- Klasifikasi mega-dropdown --}}
                 <div class="relative" x-data="{ open: false }" @mouseenter="open = true" @mouseleave="open = false">
                     <button
-                        class="flex items-center gap-1.5 px-4 py-5 text-sm font-semibold transition-all duration-200 border-b-2 border-transparent"
+                        class="flex items-center gap-1.5 px-4 py-5 text-sm font-semibold transition-all duration-200 border-b-4 border-transparent"
                         :class="scrolled
                             ? 'text-stikom hover:text-stikom-core hover:border-stikom-core'
                             : 'text-white/90 hover:text-white hover:border-stikom-core/70'"
@@ -102,7 +102,7 @@ $col2 = $allKlasifikasi->slice($half);
                 {{-- Produk dropdown --}}
                 <div class="relative" x-data="{ open: false }" @mouseenter="open = true" @mouseleave="open = false">
                     <button
-                        class="flex items-center gap-1.5 px-4 py-5 text-sm font-semibold transition-all duration-200 border-b-2 border-transparent"
+                        class="flex items-center gap-1.5 px-4 py-5 text-sm font-semibold transition-all duration-200 border-b-4 border-transparent"
                         :class="scrolled
                             ? 'text-stikom hover:text-stikom-core hover:border-stikom-core'
                             : 'text-white/90 hover:text-white hover:border-stikom-core/70'"
@@ -145,7 +145,7 @@ $col2 = $allKlasifikasi->slice($half);
                 </div>
 
                 <a href="{{ route('langganan') }}"
-                   class="px-4 py-5 text-sm font-semibold transition-all duration-200 border-b-2 border-transparent"
+                   class="px-4 py-5 text-sm font-semibold transition-all duration-200 border-b-4 border-transparent"
                    :class="scrolled
                        ? 'text-stikom hover:text-stikom-core hover:border-stikom-core'
                        : 'text-white/90 hover:text-white hover:border-stikom-core/70'">
@@ -162,7 +162,7 @@ $col2 = $allKlasifikasi->slice($half);
 
                 @guest
                     <a href="{{ route('login') }}"
-                    class="ml-4 px-6 py-2.5 bg-stikom-core text-white text-sm font-bold transition-all duration-200 hover:bg-stikom-core/90 shadow-md hover:shadow-lg hover:-translate-y-0.5">
+                    class="ml-4 px-6 py-7 bg-stikom-core text-white text-sm font-bold transition-all duration-200 hover:bg-stikom-core/90 shadow-md hover:shadow-lg hover:-translate-y-0.5">
                         Login
                     </a>
                 @endguest

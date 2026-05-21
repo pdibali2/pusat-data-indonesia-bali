@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8"/>
     <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-    <title>Klasifikasi Data — Pusat Data Indonesia Bali</title>
+    <title>Klasifikasi Data Pusat Data Indonesia Bali</title>
     <meta name="description" content="Jelajahi semua kategori data yang tersedia di Pusat Data Indonesia Bali."/>
     <link rel="icon" href="{{ asset('favicon.ico') }}" type="image/x-icon"/>
     <meta name="csrf-token" content="{{ csrf_token() }}"/>
@@ -28,15 +28,15 @@
 
             <div class="relative z-10 max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
                 {{-- Badge --}}
-                <div class="inline-flex items-center gap-2 px-3 py-1.5 mb-6
+                {{-- <div class="inline-flex items-center gap-2 px-3 py-1.5 mb-6
                             bg-stikom-core/15 border border-stikom-core/40">
                     <div class="w-1.5 h-1.5 bg-stikom-core"></div>
-                    <span class="text-stikom-core text-[10px] font-bold uppercase tracking-[.12em] font-display">
+                    <span class="text-stikom-core text-[10px] font-bold uppercase tracking-[.12em] font-poppins">
                         Semua Klasifikasi
                     </span>
-                </div>
+                </div> --}}
 
-                <h1 class="text-3xl sm:text-4xl lg:text-5xl font-black text-white mb-4 font-display leading-tight">
+                <h1 class="text-3xl sm:text-4xl lg:text-5xl font-black font-poppins text-white mb-4 leading-tight">
                     Jelajahi Data<br>
                     <span class="text-stikom-core">Berdasarkan Kategori</span>
                 </h1>

@@ -1,22 +1,19 @@
 {{-- resources/views/pages/landing/components/features.blade.php --}}
 {{-- Redesign: STIKOM-style features — sharp cards, left-border accents, icon squares, navy/emerald --}}
 
-<section id="fitur" class="py-24 bg-white border-t border-gray-100" aria-labelledby="fitur-heading">
+<section id="fitur" class="py-6 bg-white border-t border-gray-100" aria-labelledby="fitur-heading">
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
 
         {{-- Section header --}}
         <div class="text-center max-w-2xl mx-auto mb-16 fade-up">
             <div class="flex items-center justify-center gap-3 mb-6">
-                <div class="h-px flex-1 max-w-16 bg-[#3DB166]/30"></div>
-                <span class="text-[#3DB166] text-xs font-bold uppercase tracking-widest">Keunggulan Platform</span>
-                <div class="h-px flex-1 max-w-16 bg-[#3DB166]/30"></div>
+                {{-- <div class="h-px flex-1 max-w-16 bg-stikom-core/30"></div>
+                <span class="text-stikom-core text-xs font-bold uppercase tracking-widest">Keunggulan Platform</span>
+                <div class="h-px flex-1 max-w-16 bg-stikom-core/30"></div> --}}
             </div>
             <h2 id="fitur-heading" class="text-3xl sm:text-4xl font-black font-poppins text-[#001734] leading-tight mb-4">
-                Kenapa Memilih <br><span class="text-[#3DB166]">Pusat Data Indonesia?</span>
+                Kenapa Memilih <br><span class="text-stikom-core">Pusat Data Indonesia?</span>
             </h2>
-            <p class="text-gray-500 text-lg leading-relaxed">
-                Solusi lengkap dari pencarian hingga visualisasi data hanya dalam satu platform.
-            </p>
         </div>
 
         @php
@@ -64,16 +61,16 @@
                      style="animation-delay: {{ $i * 0.08 }}s">
 
                     {{-- Top accent line on hover --}}
-                    <div class="absolute top-0 left-0 right-0 h-0.5 bg-[#3DB166] scale-x-0 group-hover:scale-x-100 transition-transform duration-300 origin-left"></div>
+                    <div class="absolute top-0 left-0 right-0 h-0.5 bg-stikom-core scale-x-0 group-hover:scale-x-100 transition-transform duration-300 origin-left"></div>
 
-                    <div class="w-11 h-11 bg-[#001734] group-hover:bg-[#3DB166] flex items-center justify-center mb-5 transition-colors duration-300">
-                        <svg class="w-5 h-5 text-[#3DB166] group-hover:text-white transition-colors duration-300"
+                    <div class="w-11 h-11 bg-[#001734] group-hover:bg-stikom-core flex items-center justify-center mb-5 transition-colors duration-300">
+                        <svg class="w-5 h-5 text-stikom-core group-hover:text-white transition-colors duration-300"
                              fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="{{ $f['icon'] }}"/>
                         </svg>
                     </div>
 
-                    <div class="text-[10px] font-bold uppercase tracking-widest text-[#3DB166] mb-2 group-hover:text-[#3DB166]">
+                    <div class="text-[10px] font-bold uppercase tracking-widest text-stikom-core mb-2 group-hover:text-stikom-core">
                         {{ $f['tag'] }}
                     </div>
                     <h3 class="text-base font-black text-[#001734] group-hover:text-white mb-3 transition-colors duration-300 font-poppins">
@@ -86,7 +83,7 @@
             @endforeach
 
             {{-- CTA card (last cell) --}}
-            <div class="relative p-7 bg-[#3DB166] border-b-0 border-r-0 fade-up flex flex-col justify-between min-h-48"
+            <div class="relative p-7 bg-stikom-core border-b-0 border-r-0 fade-up flex flex-col justify-between min-h-48"
                  style="animation-delay: 0.45s">
                 <div>
                     <div class="text-[10px] font-bold uppercase tracking-widest text-white/60 mb-2">Mulai Sekarang</div>

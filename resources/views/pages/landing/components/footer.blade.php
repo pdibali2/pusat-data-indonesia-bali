@@ -7,7 +7,7 @@ $footerKlasifikasi = [
 ];
 @endphp
 
-<footer class="bg-gray-950 text-white" role="contentinfo">
+<footer class="bg-blue-950 text-white" role="contentinfo">
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
 
         {{-- Main grid --}}

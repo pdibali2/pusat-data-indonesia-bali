@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8"/>
     <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-    <title>Langganan — Pusat Data Indonesia Bali</title>
+    <title>Langganan Pusat Data Indonesia Bali</title>
     <meta name="description" content="Pilih paket berlangganan Pusat Data Indonesia Bali untuk akses penuh ke seluruh data dan fitur platform."/>
     <link rel="icon" href="{{ asset('favicon.ico') }}" type="image/x-icon"/>
     <meta name="csrf-token" content="{{ csrf_token() }}"/>
@@ -25,14 +25,14 @@
                  aria-hidden="true"></div>
 
             <div class="relative z-10 max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
-                <div class="inline-flex items-center gap-2 px-3 py-1.5 mb-6
+                {{-- <div class="inline-flex items-center gap-2 px-3 py-1.5 mb-6
                             bg-stikom-core/15 border border-stikom-core/40">
                     <div class="w-1.5 h-1.5 bg-stikom-core"></div>
-                    <span class="text-stikom-core text-[10px] font-bold uppercase tracking-[.12em] font-display">
+                    <span class="text-stikom-core text-[10px] font-bold uppercase tracking-[.12em] font-poppins">
                         Paket Berlangganan
                     </span>
-                </div>
-                <h1 class="text-3xl sm:text-4xl lg:text-5xl font-black text-white mb-4 font-display leading-tight">
+                </div> --}}
+                <h1 class="text-3xl sm:text-4xl lg:text-5xl font-black font-poppins text-white mb-4 leading-tight">
                     Pilih Paket yang<br>
                     <span class="text-stikom-core">Sesuai Kebutuhan</span>
                 </h1>
