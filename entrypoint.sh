@@ -35,7 +35,7 @@ php artisan cache:clear || true
 #   php artisan migrate --force
 # fi
 
-echo " Running migrations..."
+echo "Running migrations:fresh and seeding..."
 php artisan migrate --force
 
 # ── 4. Import wilayah Bali ───────────────────────────────────────────────────

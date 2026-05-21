@@ -17,7 +17,7 @@
 
         <div class="w-full max-w-md shadow-xl border-b p-7 bg-stikom">
             <div class="sm:mx-auto sm:w-full sm:max-w-sm">
-                <h2 class="text-center text-xl/9 font-bold tracking-tight bg-linear-to-r from-white to-gray-300 bg-clip-text text-transparent">LOGIN</h2>
+                <h2 class="text-center text-xl/9 font-bold tracking-tight bg-linear-to-r from-white to-gray-300 bg-clip-text text-transparent">LOGIN PUSAT DATA</h2>
             </div>
         </div>
 

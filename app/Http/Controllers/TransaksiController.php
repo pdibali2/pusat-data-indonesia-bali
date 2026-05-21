@@ -84,17 +84,30 @@ class TransaksiController extends Controller
     {
         $payload = $request->all();
 
-        Log::info('Midtrans Notification', $payload);
+        Log::info('Midtrans Notification Received', [
+            'order_id' => $payload['order_id'] ?? '',
+            'transaction_status' => $payload['transaction_status'] ?? '',
+            'payment_type' => $payload['payment_type'] ?? '',
+        ]);
 
         // Verifikasi signature key untuk keamanan
-        $orderId           = $payload['order_id'] ?? '';
-        $statusCode        = $payload['status_code'] ?? '';
-        $grossAmount       = $payload['gross_amount'] ?? '';
-        $serverKey         = config('midtrans.server_key');
+        $orderId           = trim((string) ($payload['order_id'] ?? ''));
+        $statusCode        = trim((string) ($payload['status_code'] ?? ''));
+        $grossAmount       = trim((string) ($payload['gross_amount'] ?? ''));
+        $serverKey         = trim((string) config('midtrans.server_key'));
         $signatureKey      = hash('sha512', $orderId . $statusCode . $grossAmount . $serverKey);
 
-        if ($signatureKey !== ($payload['signature_key'] ?? '')) {
-            Log::warning('Midtrans: Invalid signature', ['order_id' => $orderId]);
+        // Bandingkan signature
+        $payloadSignature = trim((string) ($payload['signature_key'] ?? ''));
+        if ($signatureKey !== $payloadSignature) {
+            Log::warning('Midtrans: Invalid Signature', [
+                'order_id' => $orderId,
+                'expected' => $signatureKey,
+                'received' => $payloadSignature,
+                'gross_amount' => $grossAmount,
+                'status_code' => $statusCode,
+                'raw_payload' => $payload,
+            ]);
             return response()->json(['message' => 'Invalid signature'], 403);
         }
 
@@ -146,6 +159,13 @@ class TransaksiController extends Controller
         }
 
         $transaksi->update($updateData);
+
+        Log::info('Midtrans: Transaction Updated Successfully', [
+            'order_id' => $orderId,
+            'old_status' => $transaksi->status,
+            'new_status' => $newStatus,
+            'transaction_id' => $payload['transaction_id'] ?? null,
+        ]);
 
         return response()->json(['message' => 'OK']);
     }
@@ -264,5 +284,56 @@ class TransaksiController extends Controller
             Log::error('Midtrans HTTP Exception: ' . $e->getMessage());
             return null;
         }
+    }
+
+    // ── Debug: Test Webhook Endpoint ──────────────────────────
+    // URL: /transaksi/webhook-test
+    // Gunakan untuk test dengan curl
+    public function webhookTest(Request $request)
+    {
+        $payload = $request->all();
+        $jsonPayload = $request->json()->all();
+        $rawBody = $request->getContent();
+
+        Log::debug('Webhook Test Received', [
+            'payload' => $payload,
+            'json_payload' => $jsonPayload,
+            'raw_body' => $rawBody,
+            'headers' => $request->headers->all(),
+        ]);
+
+        return response()->json([
+            'message' => 'Webhook received',
+            'payload' => $payload,
+            'json_payload' => $jsonPayload,
+            'raw_body' => $rawBody,
+            'timestamp' => now(),
+            'log_file' => storage_path('logs/laravel.log'),
+        ]);
+    }
+
+    // ── Debug: Generate Test Signature ────────────────────────
+    // URL: /transaksi/signature-test?order_id=TEST001&status_code=200&gross_amount=10000
+    // Gunakan untuk generate signature untuk test
+    public function signatureTest(Request $request)
+    {
+        $orderId = $request->get('order_id', 'TEST001');
+        $statusCode = $request->get('status_code', '200');
+        $grossAmount = (int) $request->get('gross_amount', 10000);
+        
+        $serverKey = config('midtrans.server_key');
+        $signatureKey = hash('sha512', $orderId . $statusCode . $grossAmount . $serverKey);
+
+        return response()->json([
+            'order_id' => $orderId,
+            'status_code' => $statusCode,
+            'gross_amount' => $grossAmount,
+            'server_key' => substr($serverKey ?? '', 0, 10) . '...',
+            'signature_key' => $signatureKey,
+            'raw_string' => $orderId . $statusCode . $grossAmount . $serverKey,
+            'test_curl' => "curl -X POST https://yourdomain.com/transaksi/webhook-test \\
+  -H 'Content-Type: application/json' \\
+  -d '{\"order_id\":\"$orderId\",\"status_code\":\"$statusCode\",\"gross_amount\":$grossAmount,\"signature_key\":\"$signatureKey\",\"transaction_status\":\"settlement\",\"transaction_id\":\"test-123\",\"payment_type\":\"bank_transfer\"}'",
+        ]);
     }
 }

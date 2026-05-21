@@ -25,10 +25,18 @@ use App\Http\Controllers\AdminTransaksiController;
     Route::post('/login', [AuthController::class, 'login']);
     Route::post('/logout',[AuthController::class, 'logout']);
 
-    // Transaksi notification (Midtrans callback)
+    // Transaksi notification (Midtrans callback)   
     Route::post('/transaksi/notification', [TransaksiController::class, 'notification'])
         ->name('transaksi.notification')
         ->withoutMiddleware([VerifyCsrfToken::class]);
+
+    // Debug endpoints (HAPUS di PRODUCTION!)
+    Route::post('/transaksi/webhook-test', [TransaksiController::class, 'webhookTest'])
+        ->name('transaksi.webhook-test')
+        ->withoutMiddleware([VerifyCsrfToken::class]);
+    
+    Route::get('/transaksi/signature-test', [TransaksiController::class, 'signatureTest'])
+        ->name('transaksi.signature-test');
 
         
 
