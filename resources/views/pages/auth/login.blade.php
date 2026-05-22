@@ -15,7 +15,7 @@
 
     <div class="flex min-h-full w-100 flex-col justify-center px-4 py-12 lg:px-4  bg-red">
 
-        <div class="w-full max-w-md shadow-xl border-b p-7 bg-stikom">
+        <div class="w-full max-w-md shadow-xl border-b p-7 bg-stikom-blue">
             <div class="sm:mx-auto sm:w-full sm:max-w-sm">
                 <h2 class="text-center text-xl/9 font-bold tracking-tight bg-linear-to-r from-white to-gray-300 bg-clip-text text-transparent">LOGIN PUSAT DATA</h2>
             </div>
@@ -66,7 +66,7 @@
                 </div>
 
                 <div class="mt-10">
-                    <button type="submit" class="btn flex w-full justify-center rounded-sm bg-linear-to-r from-emerald-500 to-emerald-400 px-3 py-1.5 text-white text-sm/6 font-semibold hover:from-emerald-700 hover:to-emerald-600 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-emerald-500 shadow-lg shadow-green-500/30 transition duration-300 ease-in-out hover:scale-104">Login</button>
+                    <button type="submit" class="btn flex w-full justify-center rounded-sm bg-linear-to-r from-blue-500 to-blue-400 px-3 py-1.5 text-white text-sm/6 font-semibold hover:from-blue-700 hover:to-blue-600 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-500 shadow-lg shadow-blue-500/30 transition duration-300 ease-in-out hover:scale-104">Login</button>
                 </div>
                 </form>
             </div>

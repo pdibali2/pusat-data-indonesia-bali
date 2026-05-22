@@ -235,17 +235,17 @@
         align-items: center;
         gap: 0.5rem;
         padding: 0.7rem 1rem;
-        border-radius: 0.75rem;
+        border-radius: 0.5rem;
         font-size: 0.94rem;
         font-weight: 600;
         color: #ffffff;
-        background-color: var(--stikom-accent-core);
+        background-color: var(--color-stikom-blue);
         transition: background-color 0.2s ease, transform 0.2s ease;
         text-decoration: none;
     }
 
     .btn-primary:hover {
-        background-color: rgb(47, 147, 85);
+        background-color: rgb(47, 72, 147);
         transform: translateY(-1px);
     }
 

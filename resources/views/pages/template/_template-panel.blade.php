@@ -185,8 +185,8 @@
             </p>
         </div>
         <a href="{{ route('template.create') }}"
-           class="px-4 py-2 bg-sky-500 hover:bg-sky-600 text-white text-sm font-semibold rounded-lg
-                  shadow-md shadow-sky-400/30 flex items-center gap-2 transition-colors">
+           class="px-4 py-2 btn-primary text-sm font-semibold rounded-lg
+                  shadow-md shadow-blue-400/30 flex items-center gap-2 transition-colors">
             <i class="fas fa-plus"></i> Buat Template
         </a>
     </div>
@@ -212,7 +212,7 @@
                     <p class="font-medium text-gray-500">Belum ada template</p>
                     <p class="text-xs text-gray-400">Buat template pertama Anda untuk memudahkan akses data</p>
                     <a href="{{ route('template.create') }}"
-                       class="mt-1 px-4 py-2 bg-sky-500 hover:bg-sky-600 text-white
+                       class="mt-1 px-4 py-2 bg-stikom-blue hover:bg-blue-700 text-white
                               text-xs font-semibold rounded-lg transition-colors">
                         <i class="fas fa-plus mr-1"></i> Buat Template
                     </a>
@@ -241,7 +241,7 @@
                                     text-xs font-semibold items-center cursor-pointer transition-all duration-150
                                     {{ $isActive
                                         ? 'border-sky-500 bg-sky-500 text-white'
-                                        : 'border-sky-300 text-sky-700 hover:bg-sky-600 hover:text-white' }}"
+                                        : 'border-sky-300 text-sky-500 hover:bg-sky-500 hover:text-white' }}"
                              onclick="selectTemplate({{ $tmpl->tampilan_id }})">
 
                             <div class="col-span-6">
@@ -266,7 +266,7 @@
                             <div class="col-span-1 flex gap-2 justify-end"
                                  onclick="event.stopPropagation()">
                                 <a href="{{ route('template.edit', $tmpl->tampilan_id) }}"
-                                   class="{{ $isActive ? 'text-white/70 hover:text-white' : 'text-sky-400 hover:text-sky-600' }} transition-colors"
+                                   class="{{ $isActive ? 'text-white/80 hover:text-white' : 'text-sky-400 hover:text-white' }} transition-colors"
                                    title="Edit">
                                     <i class="fas fa-edit"></i>
                                 </a>
@@ -275,7 +275,7 @@
                                       onsubmit="return confirm('Hapus template \'{{ addslashes($tmpl->nama_tampilan) }}\'?')">
                                     @csrf @method('DELETE')
                                     <button type="submit"
-                                            class="{{ $isActive ? 'text-white/70 hover:text-white' : 'text-sky-400 hover:text-red-500' }} transition-colors"
+                                            class="{{ $isActive ? 'text-white/80 hover:text-white' : 'text-sky-400 hover:text-white' }} transition-colors"
                                             title="Hapus">
                                         <i class="fas fa-trash"></i>
                                     </button>

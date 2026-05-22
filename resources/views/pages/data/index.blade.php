@@ -51,21 +51,21 @@
             </div>
             <div class="flex gap-2">
                 <a href="{{ route('data.create') }}"
-                class="px-4 py-2 bg-sky-500 hover:bg-sky-600 text-white text-sm font-semibold rounded-lg
-                        shadow-md shadow-sky-400/30 flex items-center gap-2 transition-colors">
+                class="px-4 py-2 btn-primary text-sm font-semibold rounded-lg
+                        shadow-md shadow-blue-400/30 flex items-center gap-2 transition-colors">
                     <i class="fas fa-plus"></i> Input Data
                 </a>
                 <a href="{{ route('data.approval') }}"
-                    class="px-4 py-2 bg-emerald-500 hover:bg-emerald-600 text-white text-sm font-semibold rounded-lg
+                    class="px-4 py-2 btn-primary text-sm font-semibold rounded-lg
                             flex items-center gap-2 transition-colors">
                     <i class="fas fa-list"></i> Daftar Data
                 </a>
                 @if(isset($pendingCount) && $pendingCount > 0)
                     <a href="{{ route('data.approval') }}"
-                    class="px-4 py-2 bg-amber-500 hover:bg-amber-600 text-white text-sm font-semibold rounded-lg
+                    class="px-4 py-2 bg-stikom-accent hover:bg-yellow-600 text-white text-sm font-semibold rounded-lg
                             flex items-center gap-2 transition-colors">
                         <i class="fas fa-clock"></i> Approval
-                        <span class="bg-white text-amber-600 text-xs font-bold px-1.5 py-0.5 rounded-full">
+                        <span class="bg-stikom-red text-white text-xs font-bold px-1.5 py-0.5 rounded-full">
                             {{ $pendingCount }}
                         </span>
                     </a>
