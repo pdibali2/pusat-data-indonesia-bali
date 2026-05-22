@@ -106,8 +106,8 @@
                                 <a href="{{ route('langganan') }}"
                                 class="block w-full py-3.5 text-sm font-black text-center transition-all duration-200
                                         {{ $isPopular
-                                            ? 'bg-stikom-blue hover:bg-blue-700 text-white'
-                                            : 'bg-stikom-blue hover:bg-blue-700 text-white' }}">
+                                            ? 'bg-stikom-accent hover:bg-yellow-600 text-stikom hover:text-white'
+                                            : 'bg-stikom-accent hover:bg-yellow-600 text-stikom hover:text-white' }}">
                                     Berlangganan Sekarang
                                 </a>
                             </div>

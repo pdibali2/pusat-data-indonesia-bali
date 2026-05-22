@@ -155,14 +155,14 @@ $col2 = $allKlasifikasi->slice($half);
                 {{-- CTA Auth --}}
                 @auth
                     <a href="{{ route('data.index') }}"
-                    class="ml-4 px-6 py-2.5 bg-stikom-accent text-white text-sm font-bold transition-all duration-200 hover:bg-stikom-accent/90 shadow-md hover:shadow-lg hover:-translate-y-0.5">
+                    class="ml-4 px-6 py-4 bg-stikom-accent hover:bg-yellow-600 text-stikom hover:text-white text-sm font-bold transition-all duration-200 shadow-md hover:shadow-lg hover:-translate-y-0.5">
                         Halaman Data
                     </a>
                 @endauth
 
                 @guest
                     <a href="{{ route('login') }}"
-                    class="ml-4 px-6 py-7 bg-stikom-accent text-black text-sm font-bold transition-all duration-200 hover:bg-stikom-accent/90 shadow-md hover:shadow-lg hover:-translate-y-0.5">
+                    class="ml-4 px-6 py-4 bg-stikom-accent text-black text-sm font-bold transition-all duration-200 hover:bg-stikom-accent/90 shadow-md hover:shadow-lg hover:-translate-y-0.5">
                         Login
                     </a>
                 @endguest

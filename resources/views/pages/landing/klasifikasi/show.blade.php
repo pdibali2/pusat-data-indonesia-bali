@@ -16,7 +16,7 @@
     <main class="pb-20 min-h-screen">
 
         {{-- ═══ PAGE HEADER ════════════════════════════════════════════ --}}
-        <div class="bg-stikom py-20 pb-14 relative overflow-hidden border-l-4 border-stikom-core">
+        <div class="bg-stikom py-20 pb-14 relative overflow-hidden border-l-4 border-stikom-blue">
             {{-- Grid pattern --}}
             <div class="absolute inset-0 opacity-[.06]" aria-hidden="true"
                  style="background-image:repeating-linear-gradient(0deg,rgba(255,255,255,.4) 0,rgba(255,255,255,.4) 1px,transparent 1px,transparent 40px),repeating-linear-gradient(90deg,rgba(255,255,255,.4) 0,rgba(255,255,255,.4) 1px,transparent 1px,transparent 40px)">
@@ -44,9 +44,9 @@
                     <div>
                         {{-- Badge --}}
                         <div class="inline-flex items-center gap-2 px-3 py-1.5 mb-4
-                                    bg-stikom-core/15 border border-stikom-core/40">
-                            <div class="w-1.5 h-1.5 bg-stikom-core"></div>
-                            <span class="text-stikom-core text-[10px] font-bold uppercase tracking-[.12em] font-display">
+                                    bg-stikom-accent/15 border border-stikom-accent/40">
+                            <div class="w-1.5 h-1.5 bg-stikom-accent"></div>
+                            <span class="text-stikom-accent text-[10px] font-bold uppercase tracking-[.12em] font-display">
                                 Klasifikasi
                             </span>
                         </div>
@@ -57,7 +57,7 @@
 
                     {{-- Total count card --}}
                     <div class="shrink-0 bg-white/[.08] border border-white/10 px-6 py-4 text-center">
-                        <div class="text-3xl font-black text-stikom-core font-display">
+                        <div class="text-3xl font-black text-stikom-accent font-display">
                             {{ $metadataList->total() }}
                         </div>
                         <div class="text-[10px] text-white/40 uppercase tracking-widest mt-1 font-body">
@@ -65,6 +65,23 @@
                         </div>
                     </div>
                 </div>
+            </div>
+        </div>
+
+        {{-- ═══ SEARCH BAR ════════════════════════════════════════════ --}}
+        <div class="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 -mt-5 relative z-10 mb-10">
+            <div class="bg-white border-l-4 border-stikom-red shadow-xl shadow-stikom/10 flex items-center gap-3 px-5 py-4">
+                <svg class="w-4 h-4 text-gray-400 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0"/>
+                </svg>
+                <input
+                    id="search-metadata"
+                    type="search"
+                    placeholder="Cari metadata..."
+                    class="flex-1 bg-transparent text-sm text-gray-700 placeholder-gray-400 outline-none font-body"
+                    autocomplete="off"
+                />
+                <span class="text-[10px] font-bold text-gray-300 uppercase tracking-widest hidden sm:block">ENTER ↵</span>
             </div>
         </div>
 
@@ -84,8 +101,8 @@
             @else
                 {{-- Section label --}}
                 <div class="flex items-center gap-3 mb-5">
-                    <div class="w-0.5 h-7 bg-stikom-core shrink-0"></div>
-                    <span class="text-[10px] font-bold text-stikom-core uppercase tracking-[.12em] font-display">
+                    <div class="w-0.5 h-7 bg-stikom-blue shrink-0"></div>
+                    <span class="text-[10px] font-bold text-stikom-blue uppercase tracking-[.12em] font-display">
                         Daftar Metadata
                     </span>
                 </div>
@@ -94,7 +111,7 @@
                     @foreach($metadataList as $meta)
                         <div
                             class="metadata-item group bg-white border border-gray-100 border-l-4 border-l-transparent
-                                   shadow-sm hover:border-l-stikom-core hover:shadow-md
+                                   shadow-sm hover:border-l-stikom-blue hover:shadow-md
                                    transition-all duration-200 cursor-pointer overflow-hidden"
                             data-id="{{ $meta->metadata_id }}"
                             data-nama="{{ $meta->nama }}"
@@ -103,7 +120,7 @@
                             <div class="flex items-start sm:items-center gap-4 px-5 py-4">
                                 {{-- Icon --}}
                                 <div class="w-10 h-10 bg-stikom/5 group-hover:bg-stikom flex items-center justify-center shrink-0 transition-colors duration-200 mt-0.5 sm:mt-0">
-                                    <svg class="w-5 h-5 text-stikom group-hover:text-stikom-core transition-colors duration-200"
+                                    <svg class="w-5 h-5 text-stikom group-hover:text-stikom-blue transition-colors duration-200"
                                          fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8"
                                               d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/>
@@ -148,8 +165,8 @@
 
                                 {{-- Lock badge + arrow --}}
                                 <div class="shrink-0 flex items-center gap-2">
-                                    <div class="hidden sm:flex items-center gap-1.5 text-[11px] text-stikom-accent
-                                                bg-stikom-accent/10 border border-stikom-accent/25
+                                    <div class="hidden sm:flex items-center gap-1.5 text-[11px] text-stikom-blue
+                                                bg-stikom-blue/10 border border-stikom-blue/25
                                                 px-2.5 py-1.5 font-bold font-body">
                                         <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
                                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
@@ -157,14 +174,19 @@
                                         </svg>
                                         Berlangganan
                                     </div>
-                                    <svg class="w-4 h-4 text-gray-300 group-hover:text-stikom-core group-hover:translate-x-0.5 transition-all duration-200"
+                                    <svg class="w-4 h-4 text-gray-300 group-hover:text-stikom-blue group-hover:translate-x-0.5 transition-all duration-200"
                                          fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/>
                                     </svg>
                                 </div>
                             </div>
                         </div>
-                    @endforeach
+                        @endforeach
+                        <div id="search-empty" class="hidden text-center py-10">
+                            <p class="text-sm text-gray-400 font-body">
+                                Metadata tidak ditemukan.
+                            </p>
+                        </div>
                 </div>
 
                 {{-- ═══ PAGINATION ═══════════════════════════════════════ --}}
@@ -190,7 +212,7 @@
                             {{-- Page numbers --}}
                             @foreach($metadataList->getUrlRange(max(1,$metadataList->currentPage()-2), min($metadataList->lastPage(),$metadataList->currentPage()+2)) as $page => $url)
                                 @if($page == $metadataList->currentPage())
-                                    <span class="px-3.5 py-2 text-sm font-black bg-stikom text-white font-display">{{ $page }}</span>
+                                    <span class="px-3.5 py-2 text-sm font-black bg-stikom-red text-white font-display">{{ $page }}</span>
                                 @else
                                     <a href="{{ $url }}"
                                        class="px-3.5 py-2 text-sm text-gray-600 hover:bg-white hover:shadow-sm transition-all font-body">
@@ -240,11 +262,11 @@
 
         {{-- Panel --}}
         <div class="relative z-10 w-full max-w-md bg-white overflow-hidden shadow-2xl
-                    scale-95 transition-transform duration-200 border-l-4 border-stikom-core"
+                    scale-95 transition-transform duration-200 border-l-4 border-stikom-blue"
              id="modal-panel">
 
             {{-- Top accent bar --}}
-            <div class="h-1 bg-stikom-core"></div>
+            <div class="h-1 bg-stikom-blue"></div>
 
             <div class="px-8 py-8">
                 {{-- Lock icon --}}
@@ -270,7 +292,7 @@
                     @endphp
                     @foreach($benefits as $b)
                         <li class="flex items-start gap-3 text-sm text-gray-600 font-body">
-                            <div class="w-4 h-4 bg-stikom-core flex items-center justify-center shrink-0 mt-0.5">
+                            <div class="w-4 h-4 bg-stikom-blue flex items-center justify-center shrink-0 mt-0.5">
                                 <svg class="w-2.5 h-2.5" fill="none" stroke="white" viewBox="0 0 24 24" aria-hidden="true">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7"/>
                                 </svg>
@@ -284,7 +306,7 @@
                 <div class="flex flex-col gap-3">
                     <a href="{{ route('langganan') }}"
                        class="w-full py-3.5 text-sm font-black text-center
-                              bg-stikom text-white hover:bg-stikom-core
+                              bg-stikom-accent text-black hover:text-white hover:bg-yellow-600
                               transition-colors duration-200 font-display">
                         Lihat Paket Berlangganan
                     </a>
@@ -300,16 +322,21 @@
     </div>
 
     {{-- Back to Top --}}
-    <button id="back-to-top"
-            onclick="window.scrollTo({ top: 0, behavior: 'smooth' })"
-            class="fixed bottom-6 right-6 z-50 w-12 h-12 bg-stikom text-stikom-core shadow-xl
-                   flex items-center justify-center opacity-0 translate-y-4 pointer-events-none
-                   transition-all duration-300 hover:bg-stikom-core hover:text-white hover:scale-110"
-            aria-label="Kembali ke atas">
+    <button
+        id="back-to-top"
+        onclick="window.scrollTo({ top: 0, behavior: 'smooth' })"
+        class="fixed bottom-6 right-6 z-50 w-12 h-12 bg-stikom-red text-white
+               shadow-xl shadow-stikom-red/30 flex items-center justify-center
+               opacity-0 translate-y-4 pointer-events-none
+               transition-all duration-300 hover:bg-stikom-red hover:scale-110
+               focus:outline-none focus:ring-2 focus:ring-stikom-red focus:ring-offset-2"
+        aria-label="Kembali ke atas"
+    >
         <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 10l7-7m0 0l7 7m-7-7v18"/>
         </svg>
     </button>
+
 
     <script>
     // ── Back to top ───────────────────────────────────────────────
@@ -346,6 +373,34 @@
     }
 
     document.addEventListener('keydown', e => { if (e.key === 'Escape') hideSubscribeGate(); });
+
+    (function () {
+        const input = document.getElementById('search-metadata');
+        const cards = document.querySelectorAll('.metadata-item');
+
+        input.addEventListener('input', () => {
+            const q = input.value.toLowerCase().trim();
+
+            let visible = 0;
+
+            cards.forEach(card => {
+                const nama = (card.dataset.nama || '').toLowerCase();
+
+                const match = nama.includes(q);
+
+                card.style.display = match ? '' : 'none';
+
+                if (match) visible++;
+            });
+
+            // Optional: tampilkan pesan jika tidak ada hasil
+            const noResult = document.getElementById('search-empty');
+
+            if (noResult) {
+                noResult.classList.toggle('hidden', visible > 0);
+            }
+        });
+    })();
     </script>
 
 </body>
