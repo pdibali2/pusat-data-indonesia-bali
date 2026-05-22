@@ -28,7 +28,7 @@
                 <div>
                     <label for="username" class="block text-sm/6 font-medium text-gray-900">Username</label>
                     <div class="mt-2">
-                    <input id="username" type="username" name="username" required autocomplete="username" class="block w-full rounded-sm bg-black/1 px-3 py-1.5 text-base text-black outline-1 -outline-offset-1 outline-black/30 placeholder:text-stikom-core focus:outline-2 focus:-outline-offset-2 focus:outline-stikom-core sm:text-sm/6" />
+                    <input id="username" type="username" name="username" required autocomplete="username" class="block w-full rounded-sm bg-black/1 px-3 py-1.5 text-base text-black outline-1 -outline-offset-1 outline-black/30 placeholder:text-stikom-blue focus:outline-2 focus:-outline-offset-2 focus:outline-stikom-blue sm:text-sm/6" />
                     @error('username')
                         <p class="mt-1 text-xs text-red-500">{{ $message }}</p>
                     @enderror
@@ -46,7 +46,7 @@
                             name="password" 
                             required 
                             autocomplete="current-password"
-                            class="block w-full rounded-sm bg-black/1 px-3 py-1.5 pr-10 text-base text-black outline-1 -outline-offset-1 outline-black/30 placeholder:text-stikom-core focus:outline-2 focus:-outline-offset-2 focus:outline-stikom-core sm:text-sm/6"
+                            class="block w-full rounded-sm bg-black/1 px-3 py-1.5 pr-10 text-base text-black outline-1 -outline-offset-1 outline-black/30 placeholder:text-stikom-blue focus:outline-2 focus:-outline-offset-2 focus:outline-stikom-blue sm:text-sm/6"
                         />
                         @error('password')
                             <p class="mt-1 text-xs text-red-500">{{ $message }}</p>

@@ -50,7 +50,7 @@
                             <div class="p-8">
                                 {{-- Nama paket --}}
                                 <div class="text-xs font-bold uppercase tracking-widest mb-3
-                                            {{ $isPopular ? 'text-stikom-blue/60' : 'text-gray-400' }}">
+                                            {{ $isPopular ? 'text-white' : 'text-gray-400' }}">
                                     {{ $plan->nama_layanan ?? 'Paket' }}
                                 </div>
 
@@ -81,7 +81,7 @@
                                                         {{ $fitur->aktif
                                                             ? ($isPopular ? 'bg-stikom-blue' : 'bg-stikom-blue')
                                                             : 'bg-white/10' }}">
-                                                <svg class="w-3 h-3 {{ $fitur->aktif
+                                                <svg class="w-3 h-3 {{ $fitur->aktif    
                                                                 ? ($isPopular ? 'text-white' : 'text-white')
                                                                 : 'text-gray-400' }}"
                                                     fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">

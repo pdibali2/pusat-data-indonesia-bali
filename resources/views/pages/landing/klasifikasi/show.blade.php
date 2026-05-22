@@ -78,10 +78,18 @@
                     id="search-metadata"
                     type="search"
                     placeholder="Cari metadata..."
+                    data-klasifikasi="{{ $nama }}"
                     class="flex-1 bg-transparent text-sm text-gray-700 placeholder-gray-400 outline-none font-body"
                     autocomplete="off"
                 />
-                <span class="text-[10px] font-bold text-gray-300 uppercase tracking-widest hidden sm:block">ENTER ↵</span>
+                {{-- Spinner saat loading --}}
+                <span id="search-loading" class="hidden" aria-label="Memuat...">
+                    <svg class="w-4 h-4 text-gray-300 animate-spin" fill="none" viewBox="0 0 24 24">
+                        <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"/>
+                        <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z"/>
+                    </svg>
+                </span>
+                <span id="search-hint" class="text-[10px] font-bold text-gray-300 uppercase tracking-widest hidden sm:block">ENTER ↵</span>
             </div>
         </div>
 
@@ -107,138 +115,70 @@
                     </span>
                 </div>
 
-                <div class="space-y-2">
+                {{-- Container kartu — id dipakai oleh AJAX --}}
+                <div id="metadata-container" class="space-y-2">
                     @foreach($metadataList as $meta)
-                        <div
-                            class="metadata-item group bg-white border border-gray-100 border-l-4 border-l-transparent
-                                   shadow-sm hover:border-l-stikom-blue hover:shadow-md
-                                   transition-all duration-200 cursor-pointer overflow-hidden"
-                            data-id="{{ $meta->metadata_id }}"
-                            data-nama="{{ $meta->nama }}"
-                            onclick="showSubscribeGate()"
-                        >
-                            <div class="flex items-start sm:items-center gap-4 px-5 py-4">
-                                {{-- Icon --}}
-                                <div class="w-10 h-10 bg-stikom/5 group-hover:bg-stikom flex items-center justify-center shrink-0 transition-colors duration-200 mt-0.5 sm:mt-0">
-                                    <svg class="w-5 h-5 text-stikom group-hover:text-stikom-blue transition-colors duration-200"
-                                         fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8"
-                                              d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/>
-                                    </svg>
-                                </div>
-
-                                {{-- Info --}}
-                                <div class="flex-1 min-w-0">
-                                    <h2 class="text-sm font-bold text-gray-800 group-hover:text-stikom transition-colors duration-200 line-clamp-1 mb-1 font-body">
-                                        {{ $meta->nama }}
-                                    </h2>
-                                    <div class="flex flex-wrap gap-x-4 gap-y-1 text-[11px] text-gray-400 font-body">
-                                        @if($meta->satuan_data)
-                                            <span class="flex items-center gap-1">
-                                                <svg class="w-3 h-3 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                                          d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z"/>
-                                                </svg>
-                                                {{ $meta->satuan_data }}
-                                            </span>
-                                        @endif
-                                        @if($meta->frekuensi_penerbitan)
-                                            <span class="flex items-center gap-1">
-                                                <svg class="w-3 h-3 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                                          d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/>
-                                                </svg>
-                                                {{ $meta->frekuensi_penerbitan }}
-                                            </span>
-                                        @endif
-                                        @if($meta->tahun_mulai_data)
-                                            <span class="flex items-center gap-1">
-                                                <svg class="w-3 h-3 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                                          d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/>
-                                                </svg>
-                                                Sejak {{ $meta->tahun_mulai_data }}
-                                            </span>
-                                        @endif
-                                    </div>
-                                </div>
-
-                                {{-- Lock badge + arrow --}}
-                                <div class="shrink-0 flex items-center gap-2">
-                                    <div class="hidden sm:flex items-center gap-1.5 text-[11px] text-stikom-blue
-                                                bg-stikom-blue/10 border border-stikom-blue/25
-                                                px-2.5 py-1.5 font-bold font-body">
-                                        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
-                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                                  d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/>
-                                        </svg>
-                                        Berlangganan
-                                    </div>
-                                    <svg class="w-4 h-4 text-gray-300 group-hover:text-stikom-blue group-hover:translate-x-0.5 transition-all duration-200"
-                                         fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/>
-                                    </svg>
-                                </div>
-                            </div>
-                        </div>
-                        @endforeach
-                        <div id="search-empty" class="hidden text-center py-10">
-                            <p class="text-sm text-gray-400 font-body">
-                                Metadata tidak ditemukan.
-                            </p>
-                        </div>
+                        @include('pages.landing.klasifikasi._card', ['meta' => $meta])
+                    @endforeach
                 </div>
 
-                {{-- ═══ PAGINATION ═══════════════════════════════════════ --}}
-                @if($metadataList->hasPages())
-                    <div class="mt-8 flex justify-center">
-                        <div class="flex items-center gap-1">
-                            {{-- Previous --}}
-                            @if($metadataList->onFirstPage())
-                                <span class="px-3 py-2 text-sm text-gray-300 cursor-not-allowed">
-                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/>
-                                    </svg>
-                                </span>
-                            @else
-                                <a href="{{ $metadataList->previousPageUrl() }}"
-                                   class="px-3 py-2 text-sm text-gray-600 hover:bg-white hover:shadow-sm transition-all">
-                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/>
-                                    </svg>
-                                </a>
-                            @endif
+                {{-- Pesan tidak ditemukan (di luar loop) --}}
+                <div id="search-empty" class="hidden text-center py-10">
+                    <p class="text-sm text-gray-400 font-body">Metadata tidak ditemukan.</p>
+                </div>
 
-                            {{-- Page numbers --}}
-                            @foreach($metadataList->getUrlRange(max(1,$metadataList->currentPage()-2), min($metadataList->lastPage(),$metadataList->currentPage()+2)) as $page => $url)
-                                @if($page == $metadataList->currentPage())
-                                    <span class="px-3.5 py-2 text-sm font-black bg-stikom-red text-white font-display">{{ $page }}</span>
+                {{-- Pagination — disembunyikan saat search aktif --}}
+                <div id="pagination-wrapper">
+                    @if($metadataList->hasPages())
+                        <div class="mt-8 flex justify-center">
+                            <div class="flex items-center gap-1">
+                                {{-- Previous --}}
+                                @if($metadataList->onFirstPage())
+                                    <span class="px-3 py-2 text-sm text-gray-300 cursor-not-allowed">
+                                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/>
+                                        </svg>
+                                    </span>
                                 @else
-                                    <a href="{{ $url }}"
-                                       class="px-3.5 py-2 text-sm text-gray-600 hover:bg-white hover:shadow-sm transition-all font-body">
-                                        {{ $page }}
+                                    <a href="{{ $metadataList->previousPageUrl() }}"
+                                       class="px-3 py-2 text-sm text-gray-600 hover:bg-white hover:shadow-sm transition-all">
+                                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/>
+                                        </svg>
                                     </a>
                                 @endif
-                            @endforeach
 
-                            {{-- Next --}}
-                            @if($metadataList->hasMorePages())
-                                <a href="{{ $metadataList->nextPageUrl() }}"
-                                   class="px-3 py-2 text-sm text-gray-600 hover:bg-white hover:shadow-sm transition-all">
-                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/>
-                                    </svg>
-                                </a>
-                            @else
-                                <span class="px-3 py-2 text-sm text-gray-300 cursor-not-allowed">
-                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/>
-                                    </svg>
-                                </span>
-                            @endif
+                                {{-- Page numbers --}}
+                                @foreach($metadataList->getUrlRange(max(1,$metadataList->currentPage()-2), min($metadataList->lastPage(),$metadataList->currentPage()+2)) as $page => $url)
+                                    @if($page == $metadataList->currentPage())
+                                        <span class="px-3.5 py-2 text-sm font-black bg-stikom-red text-white font-display">{{ $page }}</span>
+                                    @else
+                                        <a href="{{ $url }}"
+                                           class="px-3.5 py-2 text-sm text-gray-600 hover:bg-white hover:shadow-sm transition-all font-body">
+                                            {{ $page }}
+                                        </a>
+                                    @endif
+                                @endforeach
+
+                                {{-- Next --}}
+                                @if($metadataList->hasMorePages())
+                                    <a href="{{ $metadataList->nextPageUrl() }}"
+                                       class="px-3 py-2 text-sm text-gray-600 hover:bg-white hover:shadow-sm transition-all">
+                                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/>
+                                        </svg>
+                                    </a>
+                                @else
+                                    <span class="px-3 py-2 text-sm text-gray-300 cursor-not-allowed">
+                                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/>
+                                        </svg>
+                                    </span>
+                                @endif
+                            </div>
                         </div>
-                    </div>
-                @endif
+                    @endif
+                </div>
             @endif
 
         </div>
@@ -287,9 +227,7 @@
 
                 {{-- Benefits --}}
                 <ul class="space-y-2.5 mb-8">
-                    @php
-                    $benefits = ['Akses semua data', 'Template tampilan data'];
-                    @endphp
+                    @php $benefits = ['Akses semua data', 'Template tampilan data']; @endphp
                     @foreach($benefits as $b)
                         <li class="flex items-start gap-3 text-sm text-gray-600 font-body">
                             <div class="w-4 h-4 bg-stikom-blue flex items-center justify-center shrink-0 mt-0.5">
@@ -337,18 +275,17 @@
         </svg>
     </button>
 
-
     <script>
     // ── Back to top ───────────────────────────────────────────────
     (function () {
         const btn = document.getElementById('back-to-top');
         window.addEventListener('scroll', () => {
             const past = window.scrollY > 300;
-            btn.classList.toggle('opacity-0',           !past);
-            btn.classList.toggle('translate-y-4',       !past);
-            btn.classList.toggle('pointer-events-none', !past);
-            btn.classList.toggle('opacity-100',          past);
-            btn.classList.toggle('translate-y-0',        past);
+            btn.classList.toggle('opacity-0',            !past);
+            btn.classList.toggle('translate-y-4',        !past);
+            btn.classList.toggle('pointer-events-none',  !past);
+            btn.classList.toggle('opacity-100',           past);
+            btn.classList.toggle('translate-y-0',         past);
         }, { passive: true });
     })();
 
@@ -374,32 +311,132 @@
 
     document.addEventListener('keydown', e => { if (e.key === 'Escape') hideSubscribeGate(); });
 
+    // ── AJAX Search ───────────────────────────────────────────────
     (function () {
-        const input = document.getElementById('search-metadata');
-        const cards = document.querySelectorAll('.metadata-item');
+        const input      = document.getElementById('search-metadata');
+        const container  = document.getElementById('metadata-container');
+        const noResult   = document.getElementById('search-empty');
+        const pagination = document.getElementById('pagination-wrapper');
+        const loading    = document.getElementById('search-loading');
+        const hint       = document.getElementById('search-hint');
+        const klasifikasi = input.dataset.klasifikasi ?? '';
+
+        // Simpan HTML awal (server-side render) untuk reset
+        const originalHTML = container.innerHTML;
+        let debounceTimer  = null;
+        let isFetching     = false;
 
         input.addEventListener('input', () => {
-            const q = input.value.toLowerCase().trim();
+            clearTimeout(debounceTimer);
 
-            let visible = 0;
+            const q = input.value.trim();
 
-            cards.forEach(card => {
-                const nama = (card.dataset.nama || '').toLowerCase();
-
-                const match = nama.includes(q);
-
-                card.style.display = match ? '' : 'none';
-
-                if (match) visible++;
-            });
-
-            // Optional: tampilkan pesan jika tidak ada hasil
-            const noResult = document.getElementById('search-empty');
-
-            if (noResult) {
-                noResult.classList.toggle('hidden', visible > 0);
+            // Kurang dari 2 karakter → kembalikan ke kondisi awal
+            if (q.length < 2) {
+                container.innerHTML = originalHTML;
+                pagination.classList.remove('hidden');
+                noResult.classList.add('hidden');
+                return;
             }
+
+            debounceTimer = setTimeout(() => fetchResults(q), 350);
         });
+
+        async function fetchResults(q) {
+            if (isFetching) return;
+            isFetching = true;
+
+            loading.classList.remove('hidden');
+            hint.classList.add('hidden');
+            pagination.classList.add('hidden');
+
+            try {
+                const params   = new URLSearchParams({ q, klasifikasi });
+                const response = await fetch(`/search-metadata?${params}`, {
+                    headers: { 'X-Requested-With': 'XMLHttpRequest' },
+                });
+
+                if (!response.ok) throw new Error(`HTTP ${response.status}`);
+
+                const items = await response.json();
+                renderResults(items);
+            } catch (err) {
+                console.error('Search error:', err);
+            } finally {
+                isFetching = false;
+                loading.classList.add('hidden');
+                hint.classList.remove('hidden');
+            }
+        }
+
+        function renderResults(items) {
+            container.innerHTML = '';
+
+            if (items.length === 0) {
+                noResult.classList.remove('hidden');
+                return;
+            }
+
+            noResult.classList.add('hidden');
+
+            const iconBar = `<svg class="w-5 h-5 text-stikom group-hover:text-stikom-blue transition-colors duration-200" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/></svg>`;
+            const iconTag  = `<svg class="w-3 h-3 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z"/></svg>`;
+            const iconClock = `<svg class="w-3 h-3 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>`;
+            const iconCal  = `<svg class="w-3 h-3 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>`;
+            const iconLock = `<svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/></svg>`;
+            const iconArrow = `<svg class="w-4 h-4 text-gray-300 group-hover:text-stikom-blue group-hover:translate-x-0.5 transition-all duration-200" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg>`;
+
+            items.forEach(item => {
+                const satuan    = item.satuan_data
+                    ? `<span class="flex items-center gap-1">${iconTag}${esc(item.satuan_data)}</span>` : '';
+                const frekuensi = item.frekuensi_penerbitan
+                    ? `<span class="flex items-center gap-1">${iconClock}${esc(item.frekuensi_penerbitan)}</span>` : '';
+                const tahun     = item.tahun_mulai_data
+                    ? `<span class="flex items-center gap-1">${iconCal}Sejak ${esc(String(item.tahun_mulai_data))}</span>` : '';
+
+                const card = document.createElement('div');
+                card.className = [
+                    'metadata-item group bg-white border border-gray-100 border-l-4',
+                    'border-l-transparent shadow-sm hover:border-l-stikom-blue hover:shadow-md',
+                    'transition-all duration-200 cursor-pointer overflow-hidden',
+                ].join(' ');
+                card.dataset.id   = item.metadata_id;
+                card.dataset.nama = item.nama;
+                card.setAttribute('onclick', 'showSubscribeGate()');
+
+                card.innerHTML = `
+                    <div class="flex items-start sm:items-center gap-4 px-5 py-4">
+                        <div class="w-10 h-10 bg-stikom/5 group-hover:bg-stikom flex items-center justify-center shrink-0 transition-colors duration-200 mt-0.5 sm:mt-0">
+                            ${iconBar}
+                        </div>
+                        <div class="flex-1 min-w-0">
+                            <h2 class="text-sm font-bold text-gray-800 group-hover:text-stikom transition-colors duration-200 line-clamp-1 mb-1 font-body">
+                                ${esc(item.nama)}
+                            </h2>
+                            <div class="flex flex-wrap gap-x-4 gap-y-1 text-[11px] text-gray-400 font-body">
+                                ${satuan}${frekuensi}${tahun}
+                            </div>
+                        </div>
+                        <div class="shrink-0 flex items-center gap-2">
+                            <div class="hidden sm:flex items-center gap-1.5 text-[11px] text-stikom-blue bg-stikom-blue/10 border border-stikom-blue/25 px-2.5 py-1.5 font-bold font-body">
+                                ${iconLock}Berlangganan
+                            </div>
+                            ${iconArrow}
+                        </div>
+                    </div>`;
+
+                container.appendChild(card);
+            });
+        }
+
+        /** Escape HTML untuk mencegah XSS dari data server */
+        function esc(str) {
+            return String(str)
+                .replace(/&/g, '&amp;')
+                .replace(/</g, '&lt;')
+                .replace(/>/g, '&gt;')
+                .replace(/"/g, '&quot;');
+        }
     })();
     </script>
 

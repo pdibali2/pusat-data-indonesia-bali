@@ -25,6 +25,10 @@ use App\Http\Controllers\AdminTransaksiController;
     Route::post('/login', [AuthController::class, 'login']);
     Route::post('/logout',[AuthController::class, 'logout']);
 
+    Route::get('/statistik/{metadataId}', [LandingController::class, 'dataShow'])
+        ->name('landing.data.show')
+        ->whereNumber('metadataId');
+
     // Transaksi notification (Midtrans callback)   
     Route::post('/transaksi/notification', [TransaksiController::class, 'notification'])
         ->name('transaksi.notification')
@@ -46,6 +50,7 @@ use App\Http\Controllers\AdminTransaksiController;
         ->name('klasifikasi.index');
     Route::get('/klasifikasi/{klasifikasi}', [LandingController::class, 'klasifikasiShow'])
         ->name('klasifikasi.show');
+        
         
     // ─────────────────────────────────────────────────────────────
     // TEMPLATE TAMPILAN — Sebagian bisa diakses tanpa login

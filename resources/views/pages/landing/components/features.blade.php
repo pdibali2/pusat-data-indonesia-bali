@@ -31,13 +31,13 @@
             [
                 'icon'  => 'M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z',
                 'title' => 'Ekspor Mudah',
-                'desc'  => 'Unduh data dalam berbagai format — Excel, PDF, atau JSON — dengan satu klik. Cocok untuk analisis lebih lanjut.',
+                'desc'  => 'Unduh data dalam berbagai format dengan satu klik. Cocok untuk analisis lebih lanjut.',
                 'tag'   => 'Ekspor',
             ],
             [
                 'icon'  => 'M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z',
                 'title' => 'Visualisasi Data',
-                'desc'  => 'Tampilkan data dalam bentuk grafik, tabel interaktif, dan sparkline langsung di platform tanpa perlu tools tambahan.',
+                'desc'  => 'Tampilkan data dalam bentuk grafik da tabel interaktif di platform tanpa perlu tools tambahan.',
                 'tag'   => 'Visualisasi',
             ],
         ];

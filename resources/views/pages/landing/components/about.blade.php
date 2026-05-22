@@ -3,64 +3,163 @@
         <div class="grid lg:grid-cols-2 gap-16 items-center">
 
             {{-- Illustration Panel --}}
-            <div class="fade-up order-2 lg:order-1">
-                <div class="relative">
+<div class="fade-up order-2 lg:order-1">
+    <div class="relative">
 
-                    {{-- Main mockup card --}}
-                    <div class="relative bg-white border border-gray-200 p-0 shadow-xl overflow-hidden">
+        {{-- Badge floating top-right --}}
+        <div class="absolute -top-4 -right-4 z-10 bg-stikom-accent text-stikom px-4 py-2 shadow-lg text-sm font-black">
+            <div class="flex items-center gap-2">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                </svg>
+                Kustomisasi Tampilan
+            </div>
+        </div>
 
-                        {{-- Card header bar --}}
-                        <div class="bg-[#001734] px-6 py-3 flex items-center gap-2">
-                            <div class="w-2.5 h-2.5 bg-red-400"></div>
-                            <div class="w-2.5 h-2.5 bg-yellow-400"></div>
-                            <div class="w-2.5 h-2.5 bg-green-400"></div>
-                            <div class="ml-3 h-5 flex-1 bg-white/10"></div>
-                            {{-- <span class="text-white/40 text-xs font-mono">pusat-data-bali.id</span> --}}
-                        </div>
+        {{-- Main mockup card --}}
+        <div class="bg-white border border-gray-200 shadow-xl overflow-hidden rounded-sm">
 
-                        <div class="p-6 space-y-3">
+            {{-- Browser bar --}}
+            <div class="bg-[#001734] px-5 py-2.5 flex items-center gap-2">
+                <div class="w-2.5 h-2.5 rounded-full bg-red-400"></div>
+                <div class="w-2.5 h-2.5 rounded-full bg-yellow-400"></div>
+                <div class="w-2.5 h-2.5 rounded-full bg-green-400"></div>
+                <div class="ml-3 h-5 flex-1 bg-white/10 rounded-sm"></div>
+            </div>
 
-                            {{-- Mini bar chart --}}
-                            <div class="mt-4 border border-gray-100 p-4 bg-gray-50">
-                                <div class="flex items-center justify-between mb-3">
-                                    <span class="text-xs font-bold text-gray-500 uppercase tracking-wider">Data Trend</span>
-                                    <span class="text-xs font-black text-stikom-core">+12.5% ↑</span>
-                                </div>
-                                <div class="flex items-end gap-1.5 h-16">
-                                    @foreach([40, 55, 45, 70, 60, 85, 65, 90, 55, 95, 72, 88] as $h)
-                                        <div class="flex-1 transition-all duration-500 hover:opacity-100"
-                                             style="height:{{ $h }}%; background: {{ $loop->last ? '#3DB166' : '#001734' }}; opacity: {{ $loop->last ? '1' : '0.7' }}"></div>
-                                    @endforeach
-                                </div>
-                                <div class="mt-2 flex gap-1.5">
-                                    @foreach(['Jan','Feb','Mar','Apr','Mei','Jun','Jul','Agu','Sep','Okt','Nov','Des'] as $m)
-                                        <span class="flex-1 text-[9px] text-gray-400 text-center">{{ $m }}</span>
-                                    @endforeach
-                                </div>
-                            </div>
-                        </div>
-                    </div>
+            {{-- Page header --}}
+            <div class="px-5 py-3 border-b border-gray-100 flex items-center justify-between">
+                <div>
+                    <div class="text-sm font-bold text-[#001734]">Tampilkan Data</div>
+                    <div class="text-[10px] text-gray-400 mt-0.5">Pilih template → frekuensi → rentang periode → klik Tampilkan Data</div>
+                </div>
+                <div class="bg-stikom-blue text-white text-[10px] font-bold px-3 py-1.5">+ Buat Template</div>
+            </div>
 
-                    {{-- Badge floating top-right --}}
-                    <div class="absolute -top-4 -right-4 bg-stikom-blue text-white px-4 py-2 shadow-lg text-sm font-black">
-                        <div class="flex items-center gap-2">
-                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
-                            </svg>
-                            Kustomisasi Tampilan
-                        </div>
-                    </div>
-
-                    {{-- Badge floating bottom-left --}}
-                    <div class="absolute -bottom-4 -left-4 bg-stikom border border-stikom-accent/30 shadow-xl px-4 py-3">
-                        <div class="text-[10px] text-white/80 mb-0.5 uppercase tracking-wider font-semibold">Status Data</div>
-                        {{-- <div class="text-base font-black text-white flex items-center gap-1.5">
-                            <span class="w-2 h-2 bg-stikom-accent animate-pulse"></span>
-                            Real-time
-                        </div> --}}
+            {{-- Step 1: Pilih Template --}}
+            <div class="px-5 py-3 border-b border-gray-100">
+                <div class="flex items-center gap-2 mb-2">
+                    <div class="w-5 h-5 rounded-full bg-stikom-blue text-white text-[10px] font-bold flex items-center justify-center flex-shrink-0">1</div>
+                    <span class="text-xs font-bold text-[#001734]">Pilih Template</span>
+                </div>
+                <div class="text-[10px] text-gray-400 mb-2">Daftar Template (1)</div>
+                <div class="bg-stikom-blue text-white px-3 py-2.5 flex items-center justify-between">
+                    <div>
+                        <div class="text-xs font-bold">Template Tampilan 1</div>
                     </div>
                 </div>
             </div>
+
+            {{-- Step 2: Frekuensi --}}
+            <div class="px-5 py-3 border-b border-gray-100">
+                <div class="flex items-center gap-2 mb-2.5">
+                    <div class="w-5 h-5 rounded-full bg-stikom-blue text-white text-[10px] font-bold flex items-center justify-center flex-shrink-0">2</div>
+                    <span class="text-xs font-bold text-[#001734]">Pilih Frekuensi Rentang Waktu</span>
+                </div>
+                <div class="grid grid-cols-6 gap-1.5">
+                    @foreach([
+                        ['10 Tahunan','0','Setiap 10 tahun', false],
+                        ['Tahunan','1','Per tahun', true],
+                        ['Semesteran','0','S1 / S2', false],
+                        ['Kuartal','0','Q1 – Q4', false],
+                        ['Bulanan','0','Jan – Des', false],
+                        ['Custom','1','Rentang bebas', false],
+                    ] as [$name, $count, $desc, $active])
+                    <div class="border {{ $active ? 'border-2 border-stikom-blue' : 'border-gray-200' }} p-1.5 text-center">
+                        <div class="text-[9px] font-bold {{ $active ? 'text-stikom-blue' : 'text-gray-600' }}">{{ $name }}</div>
+                        <div class="text-[9px] text-gray-400">{{ $desc }}</div>
+                    </div>
+                    @endforeach
+                </div>
+            </div>
+
+            {{-- Step 3: Rentang Periode --}}
+            <div class="px-5 py-3 border-b border-gray-100">
+                <div class="flex items-center gap-2 mb-2.5">
+                    <div class="w-5 h-5 rounded-full bg-stikom-blue text-white text-[10px] font-bold flex items-center justify-center flex-shrink-0">3</div>
+                    <span class="text-xs font-bold text-[#001734]">Tentukan Rentang Periode</span>
+                </div>
+                {{-- <div class="flex flex-wrap gap-1.5 mb-2.5">
+                    @foreach(['5 Tahun Terakhir','10 Tahun Terakhir','15 Tahun Terakhir','20 Tahun Terakhir'] as $p)
+                    <span class="border border-stikom-blue text-stikom-blue text-[9px] px-2.5 py-1 rounded-full">{{ $p }}</span>
+                    @endforeach
+                </div> --}}
+                <div class="flex items-center gap-2">
+                    <div>
+                        <div class="text-[9px] text-gray-400 mb-1">Dari Tahun</div>
+                        <div class="border border-gray-200 text-[10px] px-2 py-1 text-gray-700">2021 ▾</div>
+                    </div>
+                    <span class="text-gray-400 mt-3">—</span>
+                    <div>
+                        <div class="text-[9px] text-gray-400 mb-1">Sampai Tahun</div>
+                        <div class="border border-gray-200 text-[10px] px-2 py-1 text-gray-700">2025 ▾</div>
+                    </div>
+                </div>
+            </div>
+
+            {{-- Submit --}}
+            <div class="px-5 py-3 border-b border-gray-100">
+                <div class="inline-flex items-center gap-1.5 bg-stikom-blue text-white text-xs font-bold px-4 py-2">
+                    <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h18M3 6h18M3 14h18M3 18h18"/></svg>
+                    Tampilkan Data
+                </div>
+            </div>
+
+            {{-- Result table --}}
+            <div class="px-5 py-3">
+                <div class="flex items-end justify-between mb-2">
+                    <div>
+                        <div class="text-xs font-bold text-[#001734]">Menampilkan 1 baris data</div>
+                        
+                    </div>
+                    <div class="border border-gray-200 text-[9px] text-gray-400 px-2 py-1">✕ Reset</div>
+                </div>
+                <div class="overflow-x-auto">
+                    <table class="w-full text-[9px] border-collapse">
+                        <thead>
+                            <tr class="bg-gray-50">
+                                <th class="text-left text-gray-500 font-semibold px-2 py-1.5 border border-gray-100" rowspan="2">Nama Metadata / Wilayah</th>
+                                <th class="text-center text-gray-500 font-semibold px-2 py-1 border border-gray-100" colspan="5">Tahun</th>
+                                <th class="text-center text-gray-500 font-semibold px-2 py-1.5 border border-gray-100" rowspan="2">Satuan</th>
+                                <th class="text-center text-gray-500 font-semibold px-2 py-1.5 border border-gray-100" rowspan="2">Sumber</th>
+                                <th class="text-center text-gray-500 font-semibold px-2 py-1.5 border border-gray-100" rowspan="2">Aksi</th>
+                            </tr>
+                            <tr class="bg-gray-50">
+                                @foreach(['2021','2022','2023','2024','2025'] as $y)
+                                <th class="text-center text-gray-500 font-semibold px-2 py-1 border border-gray-100">{{ $y }}</th>
+                                @endforeach
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td class="px-2 py-2 border border-gray-100">
+                                    <div class="font-bold text-stikom">Angka Partisipasi Kasar Laki-laki </div>
+                                    <div class="text-gray-400 mt-0.5">Kependudukan</div>
+                                    <div class="text-gray-400 mt-0.5">Provinsi Bali</div>
+                                </td>
+                                <td class="text-center px-2 py-2 border border-gray-100 font-semibold text-stikom">10</td>
+                                <td class="text-center px-2 py-2 border border-gray-100 font-semibold text-stikom">12</td>
+                                <td class="text-center px-2 py-2 border border-gray-100 font-semibold text-stikom">16</td>
+                                <td class="text-center px-2 py-2 border border-gray-100 font-semibold text-stikom">20</td>
+                                <td class="text-center px-2 py-2 border border-gray-100 font-semibold text-stikom">26</td>
+                                <td class="text-center px-2 py-2 border border-gray-100 text-gray-400">Jiwa/km2</td>
+                                <td class="text-center px-2 py-2 border border-gray-100 text-gray-400">Prov. Bali</td>
+                                <td class="text-center px-2 py-2 border border-gray-100">
+                                    <span class="border border-gray-200 text-gray-400 px-1.5 py-0.5">Grafik</span>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        {{-- Badge floating bottom-left --}}
+        {{-- <div class="absolute -bottom-4 -left-4 bg-stikom border border-stikom-accent/30 shadow-xl px-4 py-3">
+            <div class="text-[10px] text-white/80 mb-0.5 uppercase tracking-wider font-semibold">Status Data</div>
+        </div> --}}
+    </div>
+</div>
 
             {{-- Text content --}}
             <div class="fade-up order-1 lg:order-2" style="animation-delay:0.15s">
