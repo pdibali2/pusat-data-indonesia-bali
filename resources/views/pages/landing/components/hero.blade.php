@@ -24,8 +24,8 @@
 
     {{-- Subtle glow blobs --}}
     <div class="absolute inset-0 overflow-hidden pointer-events-none" aria-hidden="true">
-        <div class="absolute top-1/4 -left-32 w-80 h-80 bg-stikom-core/10 blur-[80px]"></div>
-        <div class="absolute bottom-1/4 -right-32 w-96 h-96 bg-stikom-core/8 blur-[100px]"></div>
+        <div class="absolute top-1/4 -left-32 w-80 h-80 bg-stikom-accent/10 blur-[80px]"></div>
+        <div class="absolute bottom-1/4 -right-32 w-96 h-96 bg-stikom-accent/8 blur-[100px]"></div>
     </div>
 
     {{-- Decorative data lines (right side) --}}
@@ -43,19 +43,19 @@
     <div class="relative z-10 max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 text-center pt-32 pb-24">
 
         {{-- Label badge --}}
-        {{-- <div class="inline-flex items-center gap-2 px-4 py-1.5 bg-stikom-core/15 border border-stikom-core/40 mb-8 fade-up" style="animation-delay:0.1s">
-            <span class="w-1.5 h-1.5 bg-stikom-core animate-pulse"></span>
-            <span class="text-stikom-core text-xs font-bold tracking-widest uppercase">Platform Layanan Satu Data</span>
+        {{-- <div class="inline-flex items-center gap-2 px-4 py-1.5 bg-stikom-accent/15 border border-stikom-accent/40 mb-8 fade-up" style="animation-delay:0.1s">
+            <span class="w-1.5 h-1.5 bg-stikom-accent animate-pulse"></span>
+            <span class="text-stikom-accent text-xs font-bold tracking-widest uppercase">Platform Layanan Satu Data</span>
         </div> --}}
 
         {{-- Heading --}}
-        <h1 class="text-4xl sm:text-5xl lg:text-6xl font-poppins font-bold tracking-normal text-white leading-tight mb-2 fade-up"
+        <h1 class="text-4xl sm:text-5xl lg:text-6xl font-poppins font-bold tracking-normal text-stikom-accent leading-tight mb-2 fade-up"
             style="animation-delay:0.2s">
             Pusat Data Indonesia Bali
         </h1>
         
 
-        <p class="text-white/55 text-base sm:text-lg max-w-2xl mx-auto mb-10 leading-relaxed fade-up"
+        <p class="text-white/80 text-base sm:text-lg max-w-2xl mx-auto mb-10 leading-relaxed fade-up"
            style="animation-delay:0.3s">
             Layanan penyedia data terpusat untuk memudahkan pengguna menemukan
             dan mengakses data sesuai kebutuhan.
@@ -65,12 +65,12 @@
         <div class="relative z-60 max-w-2xl mx-auto mb-8 fade-up" style="animation-delay:0.4s"
              x-data="heroSearch()">
             <div class="relative">
-                <div class="flex items-center bg-white shadow-2xl shadow-black/50 overflow-visible border-l-4 border-stikom-core">
+                <div class="flex items-center bg-white shadow-2xl shadow-black/50 overflow-visible border-l-4 border-stikom-red">
                     <div class="pl-5 pr-3 shrink-0">
                         <svg x-show="!loading" class="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-4.35-4.35M17 11A6 6 0 1 1 5 11a6 6 0 0 1 12 0z"/>
                         </svg>
-                        <svg x-show="loading" class="w-5 h-5 text-stikom-core animate-spin" fill="none" viewBox="0 0 24 24" aria-hidden="true">
+                        <svg x-show="loading" class="w-5 h-5 text-gray-400 animate-spin" fill="none" viewBox="0 0 24 24" aria-hidden="true">
                             <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"/>
                             <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z"/>
                         </svg>
@@ -82,14 +82,14 @@
                         @keydown.enter="goToSearch"
                         @keydown.escape="close"
                         @focus="query.length >= 2 && search()"
-                        placeholder="Cari metadata, dataset, indikator..."
+                        placeholder="Cari metadata..."
                         class="flex-1 py-4 pr-4 bg-transparent text-gray-800 placeholder-gray-400 text-base outline-none font-poppins"
                         aria-label="Cari metadata"
                         autocomplete="off"
                     />
                     <button
                         @click="goToSearch"
-                        class="m-0 px-6 py-4 bg-stikom text-white text-sm font-bold transition-colors duration-200 shrink-0 hover:bg-stikom-core self-stretch flex items-center">
+                        class="m-0 px-6 py-4 bg-stikom text-white text-sm font-bold transition-colors duration-200 shrink-0 hover:bg-stikom-red self-stretch flex items-center">
                         Cari
                     </button>
                 </div>
@@ -100,7 +100,7 @@
                      x-transition:enter-start="opacity-0 translate-y-1"
                      x-transition:enter-end="opacity-100 translate-y-0"
                      @click.outside="close"
-                     class="absolute top-full left-0 right-0 mt-0 bg-white shadow-2xl border border-gray-100 border-t-2 border-t-stikom-core overflow-hidden overflow-y-auto max-h-80 z-999"
+                     class="absolute top-full left-0 right-0 mt-0 bg-white shadow-2xl border border-gray-100 border-t-2 border-t-stikom-accent overflow-hidden overflow-y-auto max-h-80 z-999"
                      role="listbox">
                     <template x-if="suggestions.length === 0 && !loading && query.length >= 2">
                         <div class="px-5 py-4 text-xs text-gray-400 flex items-center gap-3">
@@ -112,10 +112,10 @@
                     </template>
                     <template x-for="item in suggestions" :key="item.metadata_id">
                         <a :href="`/klasifikasi/${slugify(item.klasifikasi)}`"
-                           class="flex items-center gap-4 px-5 py-3.5 hover:bg-stikom-core/8 border-b border-gray-50 last:border-0 transition-colors cursor-pointer border-l-2 border-l-transparent hover:border-l-stikom-core"
+                           class="flex items-center gap-4 px-5 py-3.5 hover:bg-stikom-accent/8 border-b border-gray-50 last:border-0 transition-colors cursor-pointer border-l-2 border-l-transparent hover:border-l-stikom-accent"
                            role="option">
                             <div class="w-8 h-8 bg-stikom flex items-center justify-center shrink-0">
-                                <svg class="w-4 h-4 text-stikom-core" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                                <svg class="w-4 h-4 text-stikom-accent" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
                                 </svg>
                             </div>
@@ -133,7 +133,7 @@
         <div class="relative z-10 flex flex-wrap justify-center gap-2 mb-12 fade-up" style="animation-delay:0.5s">
             @foreach($klasifikasiAktif as $k)
                 <a href="{{ route('klasifikasi.show', ['klasifikasi' => \Illuminate\Support\Str::slug($k->nama_klasifikasi)]) }}"
-                   class="px-3.5 py-1.5 bg-white/8 border border-white/15 text-white/70 text-xs font-medium hover:bg-stikom-core/20 hover:text-stikom-core hover:border-stikom-core/50 transition-all duration-200 backdrop-blur-sm">
+                   class="px-3.5 py-1.5 bg-white/8 border border-white/15 text-white/70 text-xs font-medium hover:bg-stikom-accent/20 hover:text-stikom-accent hover:border-stikom-accent/50 transition-all duration-200 backdrop-blur-sm">
                     {{ $k->nama_klasifikasi }}
                 </a>
             @endforeach
@@ -142,7 +142,7 @@
         {{-- CTA --}}
         <div class="flex flex-col sm:flex-row items-center justify-center gap-4 fade-up" style="animation-delay:0.6s">
             <a href="{{ route('data.index') }}"
-               class="group inline-flex items-center gap-2 px-8 py-3.5 bg-stikom-core text-white font-black text-sm transition-all duration-200 shadow-xl hover:bg-[#2d9955] hover:shadow-stikom-core/30 hover:-translate-y-0.5">
+               class="group inline-flex items-center gap-2 px-8 py-3.5 bg-stikom-accent text-black hover:text-white font-black text-sm transition-all duration-200 shadow-xl hover:bg-stikom-accent hover:shadow-stikom-accent/30 hover:-translate-y-0.5">
                 <svg class="w-4 h-4 group-hover:translate-x-0.5 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M13 7l5 5m0 0l-5 5m5-5H6"/>
                 </svg>
@@ -161,7 +161,7 @@
                 <div class="text-[10px] font-semibold uppercase tracking-wider text-white/40 mt-0.5">Total Data</div>
             </div>
             <div class="px-6 py-4 text-center">
-                <div class="text-2xl font-black text-stikom-core font-poppins">{{ number_format($jumlahMetadata ?? 0) }}</div>
+                <div class="text-2xl font-black text-stikom-accent font-poppins">{{ number_format($jumlahMetadata ?? 0) }}</div>
                 <div class="text-[10px] font-semibold uppercase tracking-wider text-white/40 mt-0.5">Metadata</div>
             </div>
             <div class="px-6 py-4 text-center">
@@ -172,7 +172,7 @@
     </div>
 
     {{-- Bottom border accent --}}
-    <div class="absolute bottom-0 left-0 right-0 h-0.5 bg-linear-to-r from-transparent via-stikom-core to-transparent" aria-hidden="true"></div>
+    <div class="absolute bottom-0 left-0 right-0 h-0.5 bg-linear-to-r from-transparent via-stikom-accent to-transparent" aria-hidden="true"></div>
 </section>
 
 <script>

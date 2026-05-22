@@ -63,11 +63,11 @@
     <button
         id="back-to-top"
         onclick="window.scrollTo({ top: 0, behavior: 'smooth' })"
-        class="fixed bottom-6 right-6 z-50 w-12 h-12 bg-stikom-core text-white
-               shadow-xl shadow-stikom-core/30 flex items-center justify-center
+        class="fixed bottom-6 right-6 z-50 w-12 h-12 bg-stikom-red text-white
+               shadow-xl shadow-stikom-red/30 flex items-center justify-center
                opacity-0 translate-y-4 pointer-events-none
-               transition-all duration-300 hover:bg-stikom-core hover:scale-110
-               focus:outline-none focus:ring-2 focus:ring-stikom-core focus:ring-offset-2"
+               transition-all duration-300 hover:bg-stikom-red hover:scale-110
+               focus:outline-none focus:ring-2 focus:ring-stikom-red focus:ring-offset-2"
         aria-label="Kembali ke atas"
     >
         <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">

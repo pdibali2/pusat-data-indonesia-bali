@@ -4,22 +4,11 @@
         {{-- Header --}}
         <div class="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-4 mb-12 fade-up">
             <div>
-                <div class="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-stikom/5 border border-stikom/10 mb-4">
-                    <div class="w-1.5 h-1.5 rounded-full bg-stikom-core"></div>
-                    <span class="text-stikom text-xs font-bold uppercase tracking-wider">Produk Unggulan</span>
-                </div>
-                <h2 id="produk-heading" class="text-3xl sm:text-4xl font-black font-poppins text-stikom leading-tight">
-                    Preview <span class="text-stikom-core">Dataset Terbaru</span>
+                <h2 id="produk-heading" class="text-3xl sm:text-4xl font-black font-poppins text-stikom-blue leading-tight">
+                    Preview Dataset Terbaru</span>
                 </h2>
-                <p class="text-gray-500 mt-2 text-base">Data terpilih yang siap Anda eksplorasi lebih lanjut.</p>
+                <p class="text-gray-500 mt-2 text-base">Data yang siap Anda eksplorasi lebih lanjut.</p>
             </div>
-            <a href="{{ route('metadata.index') }}"
-               class="shrink-0 inline-flex items-center gap-2 px-5 py-2.5 bg-stikom-core hover:bg-emerald-700 text-white text-sm font-bold transition-colors">
-                Lihat Semua
-                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7l5 5m0 0l-5 5m5-5H6"/>
-                </svg>
-            </a>
         </div>
 
         {{-- Cards grid --}}
@@ -84,7 +73,7 @@
 
                         {{-- Trend badge --}}
                         <div class="absolute bottom-3 right-4 flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-bold
-                                    {{ $trend === 'up' ? 'bg-emerald-500/20 text-emerald-300' : 'bg-red-500/20 text-red-300' }}">
+                                    {{ $trend === 'up' ? 'bg-blue-500/20 text-blue-300' : 'bg-red-500/20 text-red-300' }}">
                             <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
                                 @if($trend === 'up')
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M13 7l5 5m0 0l-5 5m5-5H6"/>
@@ -99,7 +88,7 @@
                     {{-- Card body --}}
                     <div class="p-5">
                         <div class="flex items-start justify-between gap-2 mb-3">
-                            <h3 class="text-sm font-bold text-stikom leading-snug line-clamp-2 group-hover:text-stikom-core transition-colors duration-200"
+                            <h3 class="text-sm font-bold text-stikom leading-snug line-clamp-2 group-hover:text-stikom-blue transition-colors duration-200"
                                 style="-webkit-text-stroke: 0px;">
                                 {{ $meta->nama }}
                             </h3>
@@ -109,7 +98,7 @@
                         </div>
 
                         <div class="flex items-center gap-2 mb-4">
-                            <span class="px-2 py-0.5 rounded-full bg-stikom-core/15 text-stikom text-xs font-semibold">
+                            <span class="px-2 py-0.5 rounded-full bg-stikom-blue/15 text-stikom text-xs font-semibold">
                                 {{ $meta->klasifikasi->nama_klasifikasi }}
                             </span>
                             <span class="text-gray-400 text-xs">sejak {{ $meta->tahun_mulai_data }}</span>
@@ -118,9 +107,9 @@
                         {{-- Pilihan unduh format --}}
                         <div class="border-t border-gray-50 pt-4" x-data="{ showFormat: false }">
                             <div class="flex items-center justify-between">
-                                <button
+                                {{-- <button
                                     @click="showFormat = !showFormat"
-                                    class="flex items-center gap-1.5 text-xs font-semibold text-stikom hover:text-stikom-core transition-colors group/dl"
+                                    class="flex items-center gap-1.5 text-xs font-semibold text-stikom hover:text-stikom-blue transition-colors group/dl"
                                     aria-label="Pilih format unduh"
                                 >
                                     <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
@@ -130,10 +119,10 @@
                                     <svg class="w-3 h-3 transition-transform" :class="showFormat ? 'rotate-180' : ''" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M19 9l-7 7-7-7"/>
                                     </svg>
-                                </button>
+                                </button> --}}
                                 <a href="{{ route('langganan') }}"
-                                   class="flex items-center gap-1 text-xs font-bold text-stikom hover:text-stikom-core transition-colors">
-                                    Lihat Detail
+                                   class="flex items-center gap-1 text-xs font-bold text-stikom hover:text-stikom-accent transition-colors">
+                                    Lihat Deta
                                     <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/>
                                     </svg>
@@ -147,7 +136,7 @@
                                  x-transition:enter-end="opacity-100 translate-y-0"
                                  class="mt-3 flex items-center gap-2 flex-wrap">
                                 @foreach([
-                                    ['label' => 'Excel', 'icon' => 'M3 10h18M3 14h18M10 3v18M14 3v18M5 3h14a2 2 0 012 2v14a2 2 0 01-2 2H5a2 2 0 01-2-2V5a2 2 0 012-2z', 'color' => 'text-emerald-600 bg-emerald-50 hover:bg-emerald-100'],
+                                    ['label' => 'Excel', 'icon' => 'M3 10h18M3 14h18M10 3v18M14 3v18M5 3h14a2 2 0 012 2v14a2 2 0 01-2 2H5a2 2 0 01-2-2V5a2 2 0 012-2z', 'color' => 'text-blue-600 bg-blue-50 hover:bg-blue-100'],
                                     ['label' => 'PDF',   'icon' => 'M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z',               'color' => 'text-red-600 bg-red-50 hover:bg-red-100'],
                                     ['label' => 'JSON',  'icon' => 'M10 20l4-16m4 4l4 4-4 4M6 16l-4-4 4-4',                                                                                     'color' => 'text-blue-600 bg-blue-50 hover:bg-blue-100'],
                                 ] as $fmt)
@@ -184,7 +173,7 @@
         {{-- CTA bawah --}}
         <div class="text-center mt-12 fade-up">
             <a href="{{ route('langganan') }}"
-               class="inline-flex items-center gap-2 px-7 py-3.5 bg-stikom-core text-white font-black text-sm hover:bg-emerald-700 transition-all duration-200 shadow-lg hover:scale-105">
+               class="inline-flex items-center gap-2 px-7 py-3.5 bg-stikom-accent text-black hover:text-white font-black text-sm hover:bg-yellow-600 transition-all duration-200 shadow-lg hover:scale-105">
                 <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z"/>
                 </svg>

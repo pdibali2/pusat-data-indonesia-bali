@@ -23,7 +23,7 @@ $col2 = $allKlasifikasi->slice($half);
             <a href="{{ route('landing') }}"
                class="flex items-center gap-3 group shrink-0"
                aria-label="Pusat Data Indonesia Bali">
-                <div class="w-9 h-9 bg-stikom-core flex items-center justify-center transition-transform duration-200 group-hover:scale-110">
+                <div class="w-9 h-9 bg-stikom-accent flex items-center justify-center transition-transform duration-200 group-hover:scale-110">
                     <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                               d="M4 7v10c0 2.21 3.582 4 8 4s8-1.79 8-4V7M4 7c0 2.21 3.582 4 8 4s8-1.79 8-4M4 7c0-2.21 3.582-4 8-4s8 1.79 8 4"/>
@@ -35,7 +35,7 @@ $col2 = $allKlasifikasi->slice($half);
                         Pusat Data Indonesia Bali
                     </div>
                     {{-- <div class="text-[10px] font-semibold tracking-widest uppercase transition-colors duration-300"
-                         :class="scrolled ? 'text-stikom-core' : 'text-stikom-core'">
+                         :class="scrolled ? 'text-stikom-accent' : 'text-stikom-accent'">
                         Provinsi Bali
                     </div> --}}
                 </div>
@@ -49,8 +49,8 @@ $col2 = $allKlasifikasi->slice($half);
                     <button
                         class="flex items-center gap-1.5 px-4 py-5 text-sm font-semibold transition-all duration-200 border-b-4 border-transparent"
                         :class="scrolled
-                            ? 'text-stikom hover:text-stikom-core hover:border-stikom-core'
-                            : 'text-white/90 hover:text-white hover:border-stikom-core/70'"
+                            ? 'text-stikom hover:text-stikom-accent hover:border-stikom-accent'
+                            : 'text-white/90 hover:text-white hover:border-stikom-accent/70'"
                         aria-haspopup="true" :aria-expanded="open"
                     >
                         Klasifikasi
@@ -68,12 +68,12 @@ $col2 = $allKlasifikasi->slice($half);
                          x-transition:leave="transition ease-in duration-100"
                          x-transition:leave-start="opacity-100 translate-y-0"
                          x-transition:leave-end="opacity-0 translate-y-1"
-                         class="absolute top-full left-0 mt-0 w-96 bg-white shadow-2xl z-50 overflow-hidden border-t-2 border-stikom-core"
+                         class="absolute top-full left-0 mt-0 w-96 bg-white shadow-2xl z-50 overflow-hidden border-t-2 border-stikom-accent"
                          role="menu">
                         <div class="px-5 py-3 bg-stikom flex items-center justify-between">
                             <span class="text-white text-xs font-bold uppercase tracking-widest">Semua Klasifikasi</span>
                             <a href="{{ route('klasifikasi.index') }}"
-                               class="text-stikom-core text-xs font-semibold hover:underline flex items-center gap-1">
+                               class="text-stikom-accent text-xs font-semibold hover:underline flex items-center gap-1">
                                 Lihat semua
                                 <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M13 7l5 5m0 0l-5 5m5-5H6"/>
@@ -84,14 +84,14 @@ $col2 = $allKlasifikasi->slice($half);
                             <div class="border-r border-gray-100 py-2">
                                 @foreach($col1 as $k)
                                     <a href="{{ route('klasifikasi.show', ['klasifikasi' => Str::slug($k)]) }}"
-                                       class="block px-4 py-2 text-xs text-gray-600 hover:bg-stikom-core/10 hover:text-stikom font-medium transition-colors border-l-2 border-transparent hover:border-stikom-core"
+                                       class="block px-4 py-2 text-xs text-gray-600 hover:bg-stikom-accent/10 hover:text-stikom font-medium transition-colors border-l-2 border-transparent hover:border-stikom-accent"
                                        role="menuitem">{{ $k }}</a>
                                 @endforeach
                             </div>
                             <div class="py-2">
                                 @foreach($col2 as $k)
                                     <a href="{{ route('klasifikasi.show', ['klasifikasi' => Str::slug($k)]) }}"
-                                       class="block px-4 py-2 text-xs text-gray-600 hover:bg-stikom-core/10 hover:text-stikom font-medium transition-colors border-l-2 border-transparent hover:border-stikom-core"
+                                       class="block px-4 py-2 text-xs text-gray-600 hover:bg-stikom-accent/10 hover:text-stikom font-medium transition-colors border-l-2 border-transparent hover:border-stikom-accent"
                                        role="menuitem">{{ $k }}</a>
                                 @endforeach
                             </div>
@@ -104,8 +104,8 @@ $col2 = $allKlasifikasi->slice($half);
                     <button
                         class="flex items-center gap-1.5 px-4 py-5 text-sm font-semibold transition-all duration-200 border-b-4 border-transparent"
                         :class="scrolled
-                            ? 'text-stikom hover:text-stikom-core hover:border-stikom-core'
-                            : 'text-white/90 hover:text-white hover:border-stikom-core/70'"
+                            ? 'text-stikom hover:text-stikom-accent hover:border-stikom-accent'
+                            : 'text-white/90 hover:text-white hover:border-stikom-accent/70'"
                         aria-haspopup="true" :aria-expanded="open"
                     >
                         Produk
@@ -122,21 +122,21 @@ $col2 = $allKlasifikasi->slice($half);
                          x-transition:leave="transition ease-in duration-100"
                          x-transition:leave-start="opacity-100 translate-y-0"
                          x-transition:leave-end="opacity-0 translate-y-1"
-                         class="absolute top-full left-0 mt-0 w-52 bg-white shadow-xl border border-gray-100 border-t-2 border-t-stikom-core py-2 z-50"
+                         class="absolute top-full left-0 mt-0 w-52 bg-white shadow-xl border border-gray-100 border-t-2 border-t-stikom-accent py-2 z-50"
                          role="menu">
                         <a href="{{ route('data.index') }}"
-                           class="flex items-center gap-3 px-4 py-2.5 text-sm text-gray-700 hover:bg-stikom-core/10 hover:text-stikom transition-colors border-l-2 border-transparent hover:border-stikom-core"
+                           class="flex items-center gap-3 px-4 py-2.5 text-sm text-gray-700 hover:bg-stikom-accent/10 hover:text-stikom transition-colors border-l-2 border-transparent hover:border-stikom-accent"
                            role="menuitem">
-                            <svg class="w-4 h-4 text-stikom-core" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                            <svg class="w-4 h-4 text-stikom-accent" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                                       d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/>
                             </svg>
                             Data Series
                         </a>
                         <a href="{{ route('data.index') }}"
-                           class="flex items-center gap-3 px-4 py-2.5 text-sm text-gray-700 hover:bg-stikom-core/10 hover:text-stikom transition-colors border-l-2 border-transparent hover:border-stikom-core"
+                           class="flex items-center gap-3 px-4 py-2.5 text-sm text-gray-700 hover:bg-stikom-accent/10 hover:text-stikom transition-colors border-l-2 border-transparent hover:border-stikom-accent"
                            role="menuitem">
-                            <svg class="w-4 h-4 text-stikom-core" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                            <svg class="w-4 h-4 text-stikom-accent" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 10h16M4 14h16M4 18h16"/>
                             </svg>
                             Multiple Data
@@ -147,22 +147,22 @@ $col2 = $allKlasifikasi->slice($half);
                 <a href="{{ route('langganan') }}"
                    class="px-4 py-5 text-sm font-semibold transition-all duration-200 border-b-4 border-transparent"
                    :class="scrolled
-                       ? 'text-stikom hover:text-stikom-core hover:border-stikom-core'
-                       : 'text-white/90 hover:text-white hover:border-stikom-core/70'">
+                       ? 'text-stikom hover:text-stikom-accent hover:border-stikom-accent'
+                       : 'text-white/90 hover:text-white hover:border-stikom-accent/70'">
                     Langganan
                 </a>
 
                 {{-- CTA Auth --}}
                 @auth
                     <a href="{{ route('data.index') }}"
-                    class="ml-4 px-6 py-2.5 bg-stikom-core text-white text-sm font-bold transition-all duration-200 hover:bg-stikom-core/90 shadow-md hover:shadow-lg hover:-translate-y-0.5">
+                    class="ml-4 px-6 py-2.5 bg-stikom-accent text-white text-sm font-bold transition-all duration-200 hover:bg-stikom-accent/90 shadow-md hover:shadow-lg hover:-translate-y-0.5">
                         Halaman Data
                     </a>
                 @endauth
 
                 @guest
                     <a href="{{ route('login') }}"
-                    class="ml-4 px-6 py-7 bg-stikom-core text-white text-sm font-bold transition-all duration-200 hover:bg-stikom-core/90 shadow-md hover:shadow-lg hover:-translate-y-0.5">
+                    class="ml-4 px-6 py-7 bg-stikom-accent text-black text-sm font-bold transition-all duration-200 hover:bg-stikom-accent/90 shadow-md hover:shadow-lg hover:-translate-y-0.5">
                         Login
                     </a>
                 @endguest
@@ -193,12 +193,12 @@ $col2 = $allKlasifikasi->slice($half);
          x-transition:leave="transition ease-in duration-150"
          x-transition:leave-start="opacity-100 translate-y-0"
          x-transition:leave-end="opacity-0 -translate-y-2"
-         class="lg:hidden bg-white border-t-2 border-stikom-core shadow-xl max-h-[80vh] overflow-y-auto">
+         class="lg:hidden bg-white border-t-2 border-stikom-accent shadow-xl max-h-[80vh] overflow-y-auto">
         <div class="max-w-7xl mx-auto px-4 py-4 space-y-0.5">
 
             <div x-data="{ open: false }">
                 <button @click="open = !open"
-                        class="w-full flex items-center justify-between px-4 py-3 text-sm font-semibold text-stikom hover:bg-stikom-core/10 hover:text-stikom-core transition-colors border-l-2 border-transparent hover:border-stikom-core">
+                        class="w-full flex items-center justify-between px-4 py-3 text-sm font-semibold text-stikom hover:bg-stikom-accent/10 hover:text-stikom-accent transition-colors border-l-2 border-transparent hover:border-stikom-accent">
                     Klasifikasi
                     <svg class="w-4 h-4 transition-transform" :class="open ? 'rotate-180' : ''"
                          fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
@@ -209,14 +209,14 @@ $col2 = $allKlasifikasi->slice($half);
                     @foreach($allKlasifikasi as $k)
                         <a href="{{ route('klasifikasi.show', ['klasifikasi' => Str::slug($k)]) }}"
                            @click="mobileOpen = false"
-                           class="block px-4 py-2 text-sm text-gray-600 hover:text-stikom hover:bg-stikom-core/10 border-l-2 border-transparent hover:border-stikom-core transition-colors">{{ $k }}</a>
+                           class="block px-4 py-2 text-sm text-gray-600 hover:text-stikom hover:bg-stikom-accent/10 border-l-2 border-transparent hover:border-stikom-accent transition-colors">{{ $k }}</a>
                     @endforeach
                 </div>
             </div>
 
             <div x-data="{ open: false }">
                 <button @click="open = !open"
-                        class="w-full flex items-center justify-between px-4 py-3 text-sm font-semibold text-stikom hover:bg-stikom-core/10 hover:text-stikom-core transition-colors border-l-2 border-transparent hover:border-stikom-core">
+                        class="w-full flex items-center justify-between px-4 py-3 text-sm font-semibold text-stikom hover:bg-stikom-accent/10 hover:text-stikom-accent transition-colors border-l-2 border-transparent hover:border-stikom-accent">
                     Produk
                     <svg class="w-4 h-4 transition-transform" :class="open ? 'rotate-180' : ''"
                          fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
@@ -225,14 +225,14 @@ $col2 = $allKlasifikasi->slice($half);
                 </button>
                 <div x-show="open" class="mt-0.5 ml-4 space-y-0">
                     <a href="{{ route('data.index') }}" @click="mobileOpen = false"
-                       class="block px-4 py-2 text-sm text-gray-600 hover:text-stikom border-l-2 border-transparent hover:border-stikom-core hover:bg-stikom-core/10 transition-colors">Data Series</a>
+                       class="block px-4 py-2 text-sm text-gray-600 hover:text-stikom border-l-2 border-transparent hover:border-stikom-accent hover:bg-stikom-accent/10 transition-colors">Data Series</a>
                     <a href="{{ route('data.index') }}" @click="mobileOpen = false"
-                       class="block px-4 py-2 text-sm text-gray-600 hover:text-stikom border-l-2 border-transparent hover:border-stikom-core hover:bg-stikom-core/10 transition-colors">Multiple Data</a>
+                       class="block px-4 py-2 text-sm text-gray-600 hover:text-stikom border-l-2 border-transparent hover:border-stikom-accent hover:bg-stikom-accent/10 transition-colors">Multiple Data</a>
                 </div>
             </div>
 
             <a href="{{ route('langganan') }}" @click="mobileOpen = false"
-               class="block px-4 py-3 text-sm font-semibold text-stikom hover:bg-stikom-core/10 hover:text-stikom-core border-l-2 border-transparent hover:border-stikom-core transition-colors">
+               class="block px-4 py-3 text-sm font-semibold text-stikom hover:bg-stikom-accent/10 hover:text-stikom-accent border-l-2 border-transparent hover:border-stikom-accent transition-colors">
                 Langganan
             </a>
 
@@ -240,14 +240,14 @@ $col2 = $allKlasifikasi->slice($half);
                 @auth
                     <a href="{{ route('data.index') }}"
                     @click="mobileOpen = false"
-                    class="block w-full text-center px-4 py-3 text-sm font-bold bg-stikom-core text-white hover:bg-[#2d9955] transition-colors">
+                    class="block w-full text-center px-4 py-3 text-sm font-bold bg-stikom-accent text-white hover:bg-[#2d9955] transition-colors">
                         Halaman Data
                     </a>
                 @endauth
 
                 @guest
                     <a href="{{ route('login') }}"
-                    class="block w-full text-center px-4 py-3 text-sm font-bold bg-stikom-core text-white hover:bg-[#2d9955] transition-colors">
+                    class="block w-full text-center px-4 py-3 text-sm font-bold bg-stikom-accent text-black hover:bg-[#2d9955] transition-colors">
                         Login
                     </a>
                 @endguest

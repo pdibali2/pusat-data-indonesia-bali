@@ -1,7 +1,4 @@
-{{-- resources/views/pages/landing/components/statistics.blade.php --}}
-{{-- Redesign: STIKOM-style statistics — dark navy BG, dot pattern, animated counters, sharp cards --}}
-
-<section id="statistik" class="py-24 bg-[#001734] relative overflow-hidden" aria-labelledby="statistik-heading">
+<section id="statistik" class="py-24 bg-stikom relative overflow-hidden" aria-labelledby="statistik-heading">
 
     {{-- Dot pattern overlay --}}
     <div class="absolute inset-0 opacity-[0.08]" aria-hidden="true">
@@ -16,12 +13,12 @@
     </div>
 
     {{-- Left accent bar --}}
-    <div class="absolute left-0 top-0 bottom-0 w-1 bg-[#3DB166]" aria-hidden="true"></div>
+    <div class="absolute left-0 top-0 bottom-0 w-1 bg-stikom-blue" aria-hidden="true"></div>
 
     {{-- Subtle glow --}}
     <div class="absolute inset-0 overflow-hidden pointer-events-none" aria-hidden="true">
-        <div class="absolute top-0 left-1/4 w-72 h-72 bg-[#3DB166]/10 blur-[80px]"></div>
-        <div class="absolute bottom-0 right-1/4 w-96 h-72 bg-[#3DB166]/8 blur-[100px]"></div>
+        <div class="absolute top-0 left-1/4 w-72 h-72 bg-stikom-blue/10 blur-[80px]"></div>
+        <div class="absolute bottom-0 right-1/4 w-96 h-72 bg-stikom-blue/8 blur-[100px]"></div>
     </div>
 
     <div class="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -30,11 +27,11 @@
         <div class="flex flex-col lg:flex-row lg:items-end lg:justify-between gap-8 mb-16 fade-up">
             <div>
                 <div class="flex items-center gap-3 mb-4">
-                    <div class="w-1 h-8 bg-[#3DB166]"></div>
-                    <span class="text-[#3DB166] text-xs font-bold uppercase tracking-widest">Statistik Platform</span>
+                    <div class="w-1 h-8 bg-stikom-blue"></div>
+                    <span class="text-stikom-blue text-xs font-bold uppercase tracking-widest">Statistik Platform</span>
                 </div>
                 <h2 id="statistik-heading" class="text-3xl sm:text-4xl font-black font-poppins text-white leading-tight">
-                    Data Kami <span class="text-[#3DB166]">dalam Angka</span>
+                    Data Kami <span class="text-stikom-blue">dalam Angka</span>
                 </h2>
             </div>
         </div>
@@ -75,11 +72,11 @@
                      style="animation-delay: {{ $i * 0.12 }}s">
 
                     {{-- Top accent line on hover --}}
-                    <div class="absolute top-0 left-0 right-0 h-0.5 bg-[#3DB166] scale-x-0 group-hover:scale-x-100 transition-transform duration-300 origin-left"></div>
+                    <div class="absolute top-0 left-0 right-0 h-0.5 bg-stikom-blue scale-x-0 group-hover:scale-x-100 transition-transform duration-300 origin-left"></div>
 
                     {{-- Icon --}}
-                    <div class="w-12 h-12 bg-[#3DB166]/15 border border-[#3DB166]/30 flex items-center justify-center mb-6 group-hover:bg-[#3DB166] group-hover:border-[#3DB166] transition-all duration-300">
-                        <svg class="w-6 h-6 text-[#3DB166] group-hover:text-white transition-colors duration-300"
+                    <div class="w-12 h-12 bg-stikom-blue/15 border border-stikom-blue/30 flex items-center justify-center mb-6 group-hover:bg-stikom-blue group-hover:border-stikom-blue transition-all duration-300">
+                        <svg class="w-6 h-6 text-stikom-blue group-hover:text-white transition-colors duration-300"
                              fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="{{ $s['icon'] }}"/>
                         </svg>
@@ -92,26 +89,26 @@
                          data-key="{{ $s['key'] }}">0</div>
 
                     {{-- Label --}}
-                    <div class="text-[#3DB166] font-bold text-sm uppercase tracking-widest mb-1">{{ $s['label'] }}</div>
+                    <div class="text-stikom-blue font-bold text-sm uppercase tracking-widest mb-1">{{ $s['label'] }}</div>
                     
 
                     {{-- Bottom bar --}}
-                    <div class="absolute bottom-0 left-8 right-8 h-0.5 bg-[#3DB166] opacity-0 group-hover:opacity-50 transition-opacity duration-300"></div>
+                    <div class="absolute bottom-0 left-8 right-8 h-0.5 bg-stikom-blue opacity-0 group-hover:opacity-50 transition-opacity duration-300"></div>
                 </div>
             @endforeach
         </div>
 
         {{-- CTA row below stats --}}
-        <div class="mt-12 flex flex-col sm:flex-row items-center justify-between gap-6 border-t border-white/10 pt-10 fade-up">
+        {{-- <div class="mt-12 flex flex-col sm:flex-row items-center justify-between gap-6 border-t border-white/10 pt-10 fade-up">
             
             <a href="{{ route('data.index') }}"
-               class="inline-flex items-center gap-2 px-6 py-3 border border-white/20 text-white text-sm font-bold hover:border-[#3DB166] hover:text-[#3DB166] transition-all duration-200">
+               class="inline-flex items-center gap-2 px-6 py-3 border border-white/20 text-white text-sm font-bold hover:border-stikom-blue hover:text-stikom-blue transition-all duration-200">
                 Lihat Semua Data
                 <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7l5 5m0 0l-5 5m5-5H6"/>
                 </svg>
             </a>
-        </div>
+        </div> --}}
     </div>
 </section>
 

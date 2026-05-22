@@ -1,18 +1,10 @@
-{{-- resources/views/pages/landing/components/features.blade.php --}}
-{{-- Redesign: STIKOM-style features — sharp cards, left-border accents, icon squares, navy/emerald --}}
-
 <section id="fitur" class="py-6 bg-white border-t border-gray-100" aria-labelledby="fitur-heading">
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
 
         {{-- Section header --}}
         <div class="text-center max-w-2xl mx-auto mb-16 fade-up">
-            <div class="flex items-center justify-center gap-3 mb-6">
-                {{-- <div class="h-px flex-1 max-w-16 bg-stikom-core/30"></div>
-                <span class="text-stikom-core text-xs font-bold uppercase tracking-widest">Keunggulan Platform</span>
-                <div class="h-px flex-1 max-w-16 bg-stikom-core/30"></div> --}}
-            </div>
-            <h2 id="fitur-heading" class="text-3xl sm:text-4xl font-black font-poppins text-[#001734] leading-tight mb-4">
-                Kenapa Memilih <br><span class="text-stikom-core">Pusat Data Indonesia?</span>
+            <h2 id="fitur-heading" class="text-3xl sm:text-4xl font-black font-poppins text-stikom leading-tight mb-4">
+                Kenapa Memilih <br><span class="text-stikom-blue">Pusat Data Indonesia?</span>
             </h2>
         </div>
 
@@ -54,26 +46,26 @@
         <div class="grid sm:grid-cols-2 lg:grid-cols-3 gap-0 border border-gray-200">
 
             @foreach($features as $i => $f)
-                <div class="group relative p-7 border-b border-r border-gray-200 hover:bg-[#001734] transition-all duration-300 cursor-default fade-up
+                <div class="group relative p-7 border-b border-r border-gray-200 hover:bg-stikom transition-all duration-300 cursor-default fade-up
                             {{ $i >= 3 ? 'border-b-0' : '' }}
                             {{ ($i + 1) % 3 === 0 ? 'border-r-0' : '' }}
                             {{ $i === 2 ? 'sm:border-r-0 lg:border-r border-gray-200' : '' }}"
                      style="animation-delay: {{ $i * 0.08 }}s">
 
-                    {{-- Top accent line on hover --}}
-                    <div class="absolute top-0 left-0 right-0 h-0.5 bg-stikom-core scale-x-0 group-hover:scale-x-100 transition-transform duration-300 origin-left"></div>
+                    {{-- Top blue line on hover --}}
+                    <div class="absolute top-0 left-0 right-0 h-0.5 bg-stikom-blue scale-x-0 group-hover:scale-x-100 transition-transform duration-300 origin-left"></div>
 
-                    <div class="w-11 h-11 bg-[#001734] group-hover:bg-stikom-core flex items-center justify-center mb-5 transition-colors duration-300">
-                        <svg class="w-5 h-5 text-stikom-core group-hover:text-white transition-colors duration-300"
+                    <div class="w-11 h-11 bg-stikom-blue group-hover:bg-stikom-blue flex items-center justify-center mb-5 transition-colors duration-300">
+                        <svg class="w-5 h-5 text-white group-hover:text-stikom transition-colors duration-300"
                              fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="{{ $f['icon'] }}"/>
                         </svg>
                     </div>
 
-                    <div class="text-[10px] font-bold uppercase tracking-widest text-stikom-core mb-2 group-hover:text-stikom-core">
+                    <div class="text-[10px] font-bold uppercase tracking-widest text-stikom-blue mb-2 group-hover:text-stikom-blue">
                         {{ $f['tag'] }}
                     </div>
-                    <h3 class="text-base font-black text-[#001734] group-hover:text-white mb-3 transition-colors duration-300 font-poppins">
+                    <h3 class="text-base font-black text-stikom group-hover:text-white mb-3 transition-colors duration-300 font-poppins">
                         {{ $f['title'] }}
                     </h3>
                     <p class="text-gray-500 group-hover:text-white/60 text-sm leading-relaxed transition-colors duration-300">
@@ -83,7 +75,7 @@
             @endforeach
 
             {{-- CTA card (last cell) --}}
-            <div class="relative p-7 bg-stikom-core border-b-0 border-r-0 fade-up flex flex-col justify-between min-h-48"
+            <div class="relative p-7 bg-stikom-blue border-b-0 border-r-0 fade-up flex flex-col justify-between min-h-48"
                  style="animation-delay: 0.45s">
                 <div>
                     <div class="text-[10px] font-bold uppercase tracking-widest text-white/60 mb-2">Mulai Sekarang</div>
@@ -93,7 +85,7 @@
                     </p>
                 </div>
                 <a href="{{ route('langganan') }}"
-                   class="mt-6 inline-flex items-center gap-2 px-5 py-2.5 bg-[#001734] text-white font-bold text-sm hover:bg-[#002a52] transition-colors w-fit">
+                   class="mt-6 inline-flex items-center gap-2 px-5 py-2.5 bg-stikom-accent text-black hover:text-white font-bold text-sm hover:bg-yellow-600 transition-colors w-fit">
                     Berlangganan
                     <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7l5 5m0 0l-5 5m5-5H6"/>
