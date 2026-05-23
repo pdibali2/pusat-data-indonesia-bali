@@ -17,19 +17,19 @@
             @forelse($produkUnggulan as $i => $meta)
 
                 @php
-                    $currentYear = now()->year;
-                    $startYear   = $currentYear - 4;
+                    $lastYear = now()->year - 1; // Ambil data hingga tahun lalu untuk memastikan data sudah tersedia
+                    $startYear   = $lastYear - 4;
 
                     $dataPoints = $meta->data()
                         ->where('data.status', \App\Models\Data::STATUS_AVAILABLE)
                         ->join('time', 'data.time_id', '=', 'time.time_id')
-                        ->whereBetween('time.year', [$startYear, $currentYear])
+                        ->whereBetween('time.year', [$startYear, $lastYear])
                         ->groupBy('time.year')
                         ->orderBy('time.year')
                         ->selectRaw('time.year, SUM(data.number_value) as nilai')
                         ->pluck('nilai', 'year');
 
-                    $years = range($startYear, $currentYear);
+                    $years = range($startYear, $lastYear);
                     $vals  = collect($years)
                         ->map(fn($y) => isset($dataPoints[$y]) ? (float) $dataPoints[$y] : null)
                         ->filter()
