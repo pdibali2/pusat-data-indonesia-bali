@@ -137,11 +137,11 @@
                                     <div class="text-gray-400 mt-0.5">Kependudukan</div>
                                     <div class="text-gray-400 mt-0.5">Provinsi Bali</div>
                                 </td>
-                                <td class="text-center px-2 py-2 border border-gray-100 font-semibold text-stikom">10</td>
-                                <td class="text-center px-2 py-2 border border-gray-100 font-semibold text-stikom">12</td>
-                                <td class="text-center px-2 py-2 border border-gray-100 font-semibold text-stikom">16</td>
-                                <td class="text-center px-2 py-2 border border-gray-100 font-semibold text-stikom">20</td>
-                                <td class="text-center px-2 py-2 border border-gray-100 font-semibold text-stikom">26</td>
+                                <td class="text-center px-2 py-2 border border-gray-100 font-semibold text-stikom">101</td>
+                                <td class="text-center px-2 py-2 border border-gray-100 font-semibold text-stikom">120</td>
+                                <td class="text-center px-2 py-2 border border-gray-100 font-semibold text-stikom">165</td>
+                                <td class="text-center px-2 py-2 border border-gray-100 font-semibold text-stikom">202</td>
+                                <td class="text-center px-2 py-2 border border-gray-100 font-semibold text-stikom">260</td>
                                 <td class="text-center px-2 py-2 border border-gray-100 text-gray-400">Jiwa/km2</td>
                                 <td class="text-center px-2 py-2 border border-gray-100 text-gray-400">Prov. Bali</td>
                                 <td class="text-center px-2 py-2 border border-gray-100">

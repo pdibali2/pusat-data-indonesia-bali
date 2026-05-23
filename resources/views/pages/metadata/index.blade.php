@@ -35,10 +35,7 @@
         {{-- Tombol Export Metadata --}}
         <button onclick="openExportModal()"
                 class="flex items-center gap-2 px-3 py-1.5 rounded-md text-xs font-semibold
-                       text-white transition-colors shadow-sm"
-                style="background:#059669;"
-                onmouseover="this.style.background='#047857'"
-                onmouseout="this.style.background='#059669'">
+                       text-white transition-colors shadow-sm btn-primary">
             <i class="fas fa-file-excel"></i>
             Export Metadata
         </button>
@@ -46,10 +43,7 @@
         {{-- [BARU] Tombol Export Template Metadata --}}
         <button onclick="openTemplateModal()"
                 class="flex items-center gap-2 px-3 py-1.5 rounded-md text-xs font-semibold
-                       text-white transition-colors shadow-sm"
-                style="background:#7c3aed;"
-                onmouseover="this.style.background='#6d28d9'"
-                onmouseout="this.style.background='#7c3aed'">
+                       text-white transition-colors shadow-sm btn-primary">
             <i class="fas fa-table-columns"></i>
             Export Template
         </button>
@@ -57,10 +51,7 @@
         {{-- Tombol Tambah --}}
         <a href="{{ route('metadata.create') }}"
            class="flex items-center gap-2 px-3 py-1.5 rounded-md text-xs font-semibold
-                  text-white transition-colors shadow-sm"
-           style="background:#0284c7;"
-           onmouseover="this.style.background='#0369a1'"
-           onmouseout="this.style.background='#0284c7'">
+                  text-white transition-colors shadow-sm btn-primary">
             <i class="fas fa-plus"></i>
             Tambah Metadata
         </a>
@@ -95,10 +86,7 @@
                 <i class="fas fa-search absolute left-2.5 top-1/2 -translate-y-1/2 text-gray-400 text-xs"></i>
             </div>
             <button type="submit"
-                    class="px-3 py-1.5 text-xs font-semibold text-white rounded-md transition-colors"
-                    style="background:#0284c7;"
-                    onmouseover="this.style.background='#0369a1'"
-                    onmouseout="this.style.background='#0284c7'">
+                    class="px-3 py-1.5 text-xs font-semibold text-white rounded-md transition-colors btn-primary">
                 Cari
             </button>
         </form>
@@ -291,10 +279,7 @@
                         <td class="px-4 py-3 text-center">
                             <a href="{{ route('metadata.detail', $item->metadata_id) }}"
                                class="inline-flex items-center gap-1 px-2.5 py-1.5 text-xs font-semibold
-                                      text-white rounded-md transition-colors shadow-sm"
-                               style="background:#0284c7;"
-                               onmouseover="this.style.background='#0369a1'"
-                               onmouseout="this.style.background='#0284c7'">
+                                      text-white rounded-md transition-colors shadow-sm btn-primary">
                                 <i class="fas fa-eye"></i>
                                 Detail
                             </a>

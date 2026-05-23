@@ -59,7 +59,7 @@
 
         {{-- Lock badge + arrow --}}
         <div class="shrink-0 flex items-center gap-2">
-            <div class="hidden sm:flex items-center gap-1.5 text-[11px] text-stikom-blue
+            {{-- <div class="hidden sm:flex items-center gap-1.5 text-[11px] text-stikom-blue
                         bg-stikom-blue/10 border border-stikom-blue/25
                         px-2.5 py-1.5 font-bold font-body">
                 <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
@@ -67,7 +67,7 @@
                           d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/>
                 </svg>
                 Berlangganan
-            </div>
+            </div> --}}
             <svg class="w-4 h-4 text-gray-300 group-hover:text-stikom-blue group-hover:translate-x-0.5 transition-all duration-200"
                  fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/>

@@ -16,11 +16,11 @@
 
         /* ── Custom scrollbar ── */
         ::-webkit-scrollbar { width: 6px; height: 6px; }
-        ::-webkit-scrollbar-track { background: #0d1526; }
-        ::-webkit-scrollbar-thumb { background: #2a3a5c; border-radius: 3px; }
-        ::-webkit-scrollbar-thumb:hover { background: #eab308; }
+        ::-webkit-scrollbar-track { background: #f1f5f9; }
+        ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 3px; }
+        ::-webkit-scrollbar-thumb:hover { background: #1a56db; }
 
-        /* ── Hero gradient ── */
+        /* ── Hero: tetap dark navy ── */
         .hero-bg {
             background: linear-gradient(135deg, #060d1f 0%, #0d1a35 50%, #0a1628 100%);
             position: relative;
@@ -31,10 +31,9 @@
             inset: 0;
             background:
                 radial-gradient(ellipse 55% 70% at 85% 30%, rgba(234,179,8,.07) 0%, transparent 60%),
-                radial-gradient(ellipse 40% 50% at 15% 80%, rgba(59,130,246,.08) 0%, transparent 55%);
+                radial-gradient(ellipse 40% 50% at 15% 80%, rgba(26,86,219,.10) 0%, transparent 55%);
             pointer-events: none;
         }
-        /* Grid pattern overlay */
         .hero-bg::after {
             content: '';
             position: absolute;
@@ -46,19 +45,19 @@
             pointer-events: none;
         }
 
-        /* ── Stat cards ── */
+        /* ── Stat cards — light ── */
         .stat-card {
-            border-left: 3px solid #eab308;
+            border-left: 3px solid #1a56db;
             transition: transform .2s, box-shadow .2s;
         }
         .stat-card:hover {
             transform: translateY(-2px);
-            box-shadow: 0 8px 24px rgba(0,0,0,.25);
+            box-shadow: 0 8px 24px rgba(26,86,219,.10);
         }
 
         /* ── Table row hover ── */
         .data-row { transition: background .15s; }
-        .data-row:hover { background: rgba(234,179,8,.05); }
+        .data-row:hover { background: #eff6ff; }
 
         /* ── Tab active indicator ── */
         .tab-btn {
@@ -79,9 +78,9 @@
         /* ── Chart toggle ── */
         .chart-btn { transition: background .15s, color .15s, border-color .15s; }
         .chart-btn.active {
-            background: #eab308;
-            border-color: #eab308;
-            color: #060d1f;
+            background: #1a56db;
+            border-color: #1a56db;
+            color: #fff;
         }
 
         /* ── Animations ── */
@@ -94,12 +93,11 @@
         .d2 { animation-delay: .12s; }
         .d3 { animation-delay: .18s; }
         .d4 { animation-delay: .24s; }
-        .d5 { animation-delay: .30s; }
 
         /* ── Gate modal ── */
         .gate-overlay {
             position: fixed; inset: 0;
-            background: rgba(6,13,31,.8);
+            background: rgba(6,13,31,.75);
             backdrop-filter: blur(6px);
             z-index: 9000;
             display: flex;
@@ -124,9 +122,9 @@
             gap: 4px;
             font-size: .7rem;
             font-weight: 600;
-            background: rgba(234,179,8,.1);
-            color: #eab308;
-            border: 1px solid rgba(234,179,8,.25);
+            background: #eff6ff;
+            color: #1a56db;
+            border: 1px solid #bfdbfe;
             padding: 2px 8px;
             border-radius: 3px;
             white-space: nowrap;
@@ -146,14 +144,30 @@
             padding: .28rem .7rem;
             border-radius: 2px;
         }
+
+        /* ── Section divider accent ── */
+        .section-label {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .section-label::before {
+            content: '';
+            width: 4px;
+            height: 16px;
+            background: #1a56db;
+            border-radius: 2px;
+            display: inline-block;
+            flex-shrink: 0;
+        }
     </style>
 </head>
-<body class="bg-white text-stikom">
+<body class="bg-slate-50 text-slate-800">
 
     @include('pages.landing.components.navbar')
 
-    {{-- ════════════════════════════ HERO ════════════════════════════ --}}
-    <section class="hero-bg relative z-0 font-poppins">
+    {{-- ════════════════ HERO (tetap dark) ════════════════ --}}
+    <section class="hero-bg relative z-0">
         <div class="max-w-6xl mx-auto px-6 pt-24 pb-0 relative z-10">
 
             {{-- Breadcrumb --}}
@@ -172,48 +186,35 @@
 
             <div class="flex flex-col lg:flex-row lg:items-start lg:justify-between gap-6">
                 <div class="flex-1 min-w-0">
-                    {{-- Classification badge --}}
                     <div class="mb-3 fade-up d1">
                         <span class="klasifikasi-badge">
                             ■ {{ $metadata->klasifikasi?->nama_klasifikasi ?? 'Data Statistik' }}
                         </span>
                     </div>
-
-                    {{-- Title --}}
-                    <h1 class="text-3xl lg:text-4xl font-extrabold font-poppins text-white leading-tight mb-4 max-w-2xl fade-up d2">
+                    <h1 class="text-3xl lg:text-4xl font-extrabold text-white leading-tight mb-4 max-w-2xl fade-up d2">
                         {{ $metadata->nama }}
                     </h1>
-
-                    {{-- Meta pills --}}
                     <div class="flex flex-wrap gap-2 mb-6 fade-up d3">
                         @if($metadata->satuan_data)
-                        <span class="inline-flex items-center gap-1.5 text-xs font-500 text-slate-400 bg-white/5 border border-white/10 px-3 py-1.5 rounded-sm">
-                            <svg class="w-3 h-3 opacity-60" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z"/>
-                            </svg>
+                        <span class="inline-flex items-center gap-1.5 text-xs text-slate-400 bg-white/5 border border-white/10 px-3 py-1.5 rounded-sm">
+                            <svg class="w-3 h-3 opacity-60" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z"/></svg>
                             Satuan: {{ $metadata->satuan_data }}
                         </span>
                         @endif
                         @if($metadata->frekuensi_penerbitan)
-                        <span class="inline-flex items-center gap-1.5 text-xs font-500 text-slate-400 bg-white/5 border border-white/10 px-3 py-1.5 rounded-sm">
-                            <svg class="w-3 h-3 opacity-60" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/>
-                            </svg>
+                        <span class="inline-flex items-center gap-1.5 text-xs text-slate-400 bg-white/5 border border-white/10 px-3 py-1.5 rounded-sm">
+                            <svg class="w-3 h-3 opacity-60" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
                             {{ $metadata->frekuensi_penerbitan }}
                         </span>
                         @endif
                         @if($metadata->tahun_mulai_data)
-                        <span class="inline-flex items-center gap-1.5 text-xs font-500 text-slate-400 bg-white/5 border border-white/10 px-3 py-1.5 rounded-sm">
-                            <svg class="w-3 h-3 opacity-60" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/>
-                            </svg>
+                        <span class="inline-flex items-center gap-1.5 text-xs text-slate-400 bg-white/5 border border-white/10 px-3 py-1.5 rounded-sm">
+                            <svg class="w-3 h-3 opacity-60" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
                             Sejak {{ $metadata->tahun_mulai_data }}
                         </span>
                         @endif
-                        <span class="inline-flex items-center gap-1.5 text-xs font-500 text-slate-400 bg-white/5 border border-white/10 px-3 py-1.5 rounded-sm">
-                            <svg class="w-3 h-3 opacity-60" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"/>
-                            </svg>
+                        <span class="inline-flex items-center gap-1.5 text-xs text-slate-400 bg-white/5 border border-white/10 px-3 py-1.5 rounded-sm">
+                            <svg class="w-3 h-3 opacity-60" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"/></svg>
                             {{ $metadata->produsen?->nama_produsen ?? 'Sumber tidak tersedia' }}
                         </span>
                     </div>
@@ -223,21 +224,17 @@
             {{-- Tabs --}}
             <nav class="flex mt-2 border-b border-white/10 fade-up d4" role="tablist">
                 <button class="tab-btn active text-white text-sm font-700 uppercase tracking-wider px-5 py-3.5"
-                        data-tab="grafik" role="tab">
-                    Grafik &amp; Tabel
-                </button>
+                        data-tab="grafik" role="tab">Grafik &amp; Tabel</button>
                 <button class="tab-btn text-slate-500 text-sm font-700 uppercase tracking-wider px-5 py-3.5 hover:text-slate-300"
-                        data-tab="info" role="tab">
-                    Informasi Metadata
-                </button>
+                        data-tab="info" role="tab">Informasi Metadata</button>
             </nav>
         </div>
     </section>
 
-    {{-- ════════════════════════════ BODY ════════════════════════════ --}}
+    {{-- ════════════════ BODY (light) ════════════════ --}}
     <div class="max-w-6xl mx-auto px-6 py-8 pb-16">
 
-        {{-- ── TAB: GRAFIK & TABEL ──────────────────────────── --}}
+        {{-- ── TAB: GRAFIK & TABEL ── --}}
         <div class="tab-panel" id="panel-grafik">
 
             @php
@@ -247,65 +244,60 @@
             @endphp
 
             {{-- Stat Cards --}}
-            <div class="grid grid-cols-2 lg:grid-cols-4 gap-3 mb-6 fade-up d1">
-                <div class="stat-card bg-[#111d35] rounded px-5 py-4">
-                    <div class="text-xs font-700 uppercase tracking-widest text-slate-500 mb-2">Data Terbaru</div>
-                    <div class="text-2xl font-extrabold text-white leading-none">
+            {{-- <div class="grid grid-cols-2 lg:grid-cols-4 gap-3 mb-6 fade-up d1">
+                <div class="stat-card bg-white rounded px-5 py-4 shadow-sm border border-slate-200">
+                    <div class="text-xs font-700 uppercase tracking-widest text-slate-400 mb-2">Data Terbaru</div>
+                    <div class="text-2xl font-extrabold text-slate-800 leading-none">
                         @if($latestRow && !is_null($latestRow['value']))
                             {{ number_format((float)$latestRow['value'], $dec, ',', '.') }}
                         @else —
                         @endif
                     </div>
-                    <div class="text-xs text-slate-500 mt-1.5">{{ $metadata->satuan_data }} · {{ $latestRow['period'] ?? '—' }}</div>
+                    <div class="text-xs text-slate-400 mt-1.5">{{ $metadata->satuan_data }} · {{ $latestRow['period'] ?? '—' }}</div>
                 </div>
-                <div class="stat-card bg-[#111d35] rounded px-5 py-4">
-                    <div class="text-xs font-700 uppercase tracking-widest text-slate-500 mb-2">Tertinggi</div>
-                    <div class="text-2xl font-extrabold text-yellow-400 leading-none">
+                <div class="stat-card bg-white rounded px-5 py-4 shadow-sm border border-slate-200">
+                    <div class="text-xs font-700 uppercase tracking-widest text-slate-400 mb-2">Tertinggi</div>
+                    <div class="text-2xl font-extrabold text-blue-600 leading-none">
                         {{ $values->isNotEmpty() ? number_format((float)$values->max(), $dec, ',', '.') : '—' }}
                     </div>
-                    <div class="text-xs text-slate-500 mt-1.5">{{ $metadata->satuan_data }}</div>
+                    <div class="text-xs text-slate-400 mt-1.5">{{ $metadata->satuan_data }}</div>
                 </div>
-                <div class="stat-card bg-[#111d35] rounded px-5 py-4">
-                    <div class="text-xs font-700 uppercase tracking-widest text-slate-500 mb-2">Terendah</div>
-                    <div class="text-2xl font-extrabold text-blue-400 leading-none">
+                <div class="stat-card bg-white rounded px-5 py-4 shadow-sm border border-slate-200">
+                    <div class="text-xs font-700 uppercase tracking-widest text-slate-400 mb-2">Terendah</div>
+                    <div class="text-2xl font-extrabold text-slate-500 leading-none">
                         {{ $values->isNotEmpty() ? number_format((float)$values->min(), $dec, ',', '.') : '—' }}
                     </div>
-                    <div class="text-xs text-slate-500 mt-1.5">{{ $metadata->satuan_data }}</div>
+                    <div class="text-xs text-slate-400 mt-1.5">{{ $metadata->satuan_data }}</div>
                 </div>
-                <div class="stat-card bg-[#111d35] rounded px-5 py-4">
-                    <div class="text-xs font-700 uppercase tracking-widest text-slate-500 mb-2">Rata-rata</div>
-                    <div class="text-2xl font-extrabold text-slate-200 leading-none">
+                <div class="stat-card bg-white rounded px-5 py-4 shadow-sm border border-slate-200">
+                    <div class="text-xs font-700 uppercase tracking-widest text-slate-400 mb-2">Rata-rata</div>
+                    <div class="text-2xl font-extrabold text-yellow-500 leading-none">
                         {{ $values->isNotEmpty() ? number_format((float)$values->avg(), $dec, ',', '.') : '—' }}
                     </div>
-                    <div class="text-xs text-slate-500 mt-1.5">{{ $metadata->satuan_data }}</div>
+                    <div class="text-xs text-slate-400 mt-1.5">{{ $metadata->satuan_data }}</div>
                 </div>
-            </div>
+            </div> --}}
 
             {{-- Chart Card --}}
-            <div class="bg-[#111d35] border border-white/10 rounded mb-6 p-6 fade-up d2">
+            <div class="bg-white border border-slate-200 rounded mb-6 p-6 shadow-sm fade-up d2">
                 <div class="flex items-start justify-between flex-wrap gap-3 mb-5">
                     <div>
-                        <div class="flex items-center gap-2 mb-1">
-                            <span class="w-1 h-4 bg-yellow-400 inline-block rounded-sm"></span>
-                            <span class="text-xs font-800 uppercase tracking-widest text-slate-300">{{ $metadata->nama }}</span>
+                        <div class="section-label mb-1">
+                            <span class="text-xs font-800 uppercase tracking-widest text-slate-700">{{ $metadata->nama }}</span>
                         </div>
-                        <div class="text-xs text-slate-500 pl-3">
+                        <div class="text-xs text-slate-400 pl-4">
                             Periode {{ $yearStart }}–{{ $yearEnd }} &nbsp;·&nbsp; Satuan: {{ $metadata->satuan_data }}
                         </div>
                     </div>
                     <div class="flex gap-1">
                         <button id="btn-bar" onclick="setChartType('bar')"
-                                class="chart-btn active inline-flex items-center gap-1.5 text-xs font-600 border border-white/10 text-slate-400 px-3 py-1.5 rounded-sm">
-                            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/>
-                            </svg>
+                                class="chart-btn active inline-flex items-center gap-1.5 text-xs font-600 border border-slate-200 text-slate-500 px-3 py-1.5 rounded-sm">
+                            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/></svg>
                             Bar
                         </button>
                         <button id="btn-line" onclick="setChartType('line')"
-                                class="chart-btn inline-flex items-center gap-1.5 text-xs font-600 border border-white/10 text-slate-400 px-3 py-1.5 rounded-sm">
-                            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 12l3-3 3 3 4-4M8 21l4-4 4 4M3 4h18M4 4h16v12a1 1 0 01-1 1H5a1 1 0 01-1-1V4z"/>
-                            </svg>
+                                class="chart-btn inline-flex items-center gap-1.5 text-xs font-600 border border-slate-200 text-slate-500 px-3 py-1.5 rounded-sm">
+                            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 12l3-3 3 3 4-4M8 21l4-4 4 4M3 4h18M4 4h16v12a1 1 0 01-1 1H5a1 1 0 01-1-1V4z"/></svg>
                             Line
                         </button>
                     </div>
@@ -316,19 +308,15 @@
             </div>
 
             {{-- Data Table --}}
-            <div class="bg-[#111d35] border border-white/10 rounded overflow-hidden fade-up d3">
-                {{-- Table header --}}
-                <div class="flex items-center justify-between px-6 py-4 border-b border-white/10 flex-wrap gap-3">
-                    <div class="flex items-center gap-2">
-                        <span class="w-1 h-4 bg-yellow-400 inline-block rounded-sm"></span>
-                        <span class="text-xs font-800 uppercase tracking-widest text-slate-300">
+            <div class="bg-white border border-slate-200 rounded overflow-hidden shadow-sm fade-up d3">
+                <div class="flex items-center justify-between px-6 py-4 border-b border-slate-100 bg-slate-50 flex-wrap gap-3">
+                    <div class="section-label">
+                        <span class="text-xs font-800 uppercase tracking-widest text-slate-700">
                             Data Periode {{ $yearStart }}–{{ $yearEnd }}
                         </span>
                     </div>
-                    <span class="inline-flex items-center gap-1.5 text-xs text-slate-500 border border-white/10 px-3 py-1 rounded-sm">
-                        <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"/>
-                        </svg>
+                    <span class="inline-flex items-center gap-1.5 text-xs text-slate-400 border border-slate-200 bg-white px-3 py-1 rounded-sm">
+                        <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"/></svg>
                         Sumber: {{ $metadata->produsen?->nama_produsen ?? 'Tidak diketahui' }}
                     </span>
                 </div>
@@ -336,39 +324,35 @@
                 <div class="overflow-x-auto">
                     <table class="w-full text-sm">
                         <thead>
-                            <tr class="bg-[#0d1a35] border-b border-white/10">
-                                <th class="text-left px-6 py-3 text-xs font-700 uppercase tracking-widest text-slate-400">Indikator</th>
-                                <th class="text-left px-6 py-3 text-xs font-700 uppercase tracking-widest text-slate-400">Periode</th>
-                                <th class="text-right px-6 py-3 text-xs font-700 uppercase tracking-widest text-yellow-500">{{ $metadata->satuan_data }}</th>
+                            <tr class="bg-[#0d1a35]">
+                                <th class="text-left px-6 py-3 text-xs font-700 uppercase tracking-widest text-slate-300">Indikator</th>
+                                <th class="text-left px-6 py-3 text-xs font-700 uppercase tracking-widest text-slate-300">Periode</th>
+                                <th class="text-right px-6 py-3 text-xs font-700 uppercase tracking-widest text-yellow-400">{{ $metadata->satuan_data }}</th>
                             </tr>
                         </thead>
                         <tbody>
                             @forelse($tableRows as $row)
-                            <tr class="data-row border-b border-white/5 last:border-b-0">
-                                <td class="px-6 py-4 text-slate-300 font-500">{{ $metadata->nama }}</td>
+                            <tr class="data-row border-b border-slate-100 last:border-b-0">
+                                <td class="px-6 py-4 text-slate-700 font-500">{{ $metadata->nama }}</td>
                                 <td class="px-6 py-4">
                                     <span class="period-chip">
-                                        <svg class="w-2.5 h-2.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/>
-                                        </svg>
+                                        <svg class="w-2.5 h-2.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
                                         {{ $row['period'] }}
                                     </span>
                                 </td>
-                                <td class="px-6 py-4 text-right font-700 font-mono text-slate-200 tabular-nums">
+                                <td class="px-6 py-4 text-right font-700 font-mono text-slate-800 tabular-nums">
                                     @if(!is_null($row['value']))
                                         {{ number_format((float)$row['value'], $dec, ',', '.') }}
                                     @else
-                                        <span class="text-slate-600 font-400">—</span>
+                                        <span class="text-slate-300 font-400">—</span>
                                     @endif
                                 </td>
                             </tr>
                             @empty
                             <tr>
                                 <td colspan="3" class="px-6 py-12 text-center">
-                                    <svg class="w-10 h-10 mx-auto mb-3 opacity-25 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.4" d="M9.172 16.172a4 4 0 015.656 0M9 10h.01M15 10h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
-                                    </svg>
-                                    <p class="text-slate-500 text-sm">Data untuk periode {{ $yearStart }}–{{ $yearEnd }} belum tersedia.</p>
+                                    <svg class="w-10 h-10 mx-auto mb-3 opacity-25 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.4" d="M9.172 16.172a4 4 0 015.656 0M9 10h.01M15 10h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                                    <p class="text-slate-400 text-sm">Data untuk periode {{ $yearStart }}–{{ $yearEnd }} belum tersedia.</p>
                                 </td>
                             </tr>
                             @endforelse
@@ -376,16 +360,13 @@
                     </table>
                 </div>
 
-                {{-- Table footer --}}
-                <div class="flex items-center justify-between px-6 py-3.5 border-t border-white/10 bg-[#0d1a35] flex-wrap gap-3">
-                    <span class="text-xs text-slate-500">
+                <div class="flex items-center justify-between px-6 py-3.5 border-t border-slate-100 bg-slate-50 flex-wrap gap-3">
+                    <span class="text-xs text-slate-400">
                         Menampilkan {{ count($tableRows) }} baris · Data lengkap tersedia untuk pelanggan
                     </span>
                     <button onclick="showGate()"
-                            class="inline-flex items-center gap-1.5 text-xs font-700 text-yellow-400 hover:text-yellow-300 transition-colors uppercase tracking-wider">
-                        <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/>
-                        </svg>
+                            class="inline-flex items-center gap-1.5 text-xs font-700 text-blue-600 hover:text-blue-800 transition-colors uppercase tracking-wider">
+                        <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/></svg>
                         Akses Data Lengkap →
                     </button>
                 </div>
@@ -393,112 +374,108 @@
 
         </div>{{-- /panel-grafik --}}
 
-        {{-- ── TAB: INFORMASI METADATA ──────────────────────── --}}
+        {{-- ── TAB: INFORMASI METADATA ── --}}
         <div class="tab-panel hidden" id="panel-info">
             <div class="grid grid-cols-1 md:grid-cols-2 gap-4 fade-up">
 
-                <div class="info-card bg-[#111d35] border border-white/10 rounded p-5 md:col-span-2">
-                    <div class="text-xs font-800 uppercase tracking-widest text-slate-500 mb-2">Konsep</div>
-                    <div class="text-sm text-slate-300 leading-relaxed">{{ $metadata->konsep }}</div>
+                <div class="info-card bg-white border border-slate-200 rounded p-5 shadow-sm md:col-span-2">
+                    <div class="text-xs font-800 uppercase tracking-widest text-slate-400 mb-2">Konsep</div>
+                    <div class="text-sm text-slate-700 leading-relaxed">{{ $metadata->konsep }}</div>
                 </div>
 
-                <div class="info-card bg-[#111d35] border border-white/10 rounded p-5 md:col-span-2">
-                    <div class="text-xs font-800 uppercase tracking-widest text-slate-500 mb-2">Definisi</div>
-                    <div class="text-sm text-slate-300 leading-relaxed">{{ $metadata->definisi }}</div>
+                <div class="info-card bg-white border border-slate-200 rounded p-5 shadow-sm md:col-span-2">
+                    <div class="text-xs font-800 uppercase tracking-widest text-slate-400 mb-2">Definisi</div>
+                    <div class="text-sm text-slate-700 leading-relaxed">{{ $metadata->definisi }}</div>
                 </div>
 
-                <div class="info-card bg-[#111d35] border border-white/10 rounded p-5">
-                    <div class="text-xs font-800 uppercase tracking-widest text-slate-500 mb-2">Metodologi</div>
-                    <div class="text-sm text-slate-300 leading-relaxed">{{ $metadata->metodologi }}</div>
+                <div class="info-card bg-white border border-slate-200 rounded p-5 shadow-sm">
+                    <div class="text-xs font-800 uppercase tracking-widest text-slate-400 mb-2">Metodologi</div>
+                    <div class="text-sm text-slate-700 leading-relaxed">{{ $metadata->metodologi }}</div>
                 </div>
 
-                <div class="info-card bg-[#111d35] border border-white/10 rounded p-5">
-                    <div class="text-xs font-800 uppercase tracking-widest text-slate-500 mb-2">Penjelasan Metodologi</div>
-                    <div class="text-sm text-slate-300 leading-relaxed">{{ $metadata->penjelasan_metodologi }}</div>
+                <div class="info-card bg-white border border-slate-200 rounded p-5 shadow-sm">
+                    <div class="text-xs font-800 uppercase tracking-widest text-slate-400 mb-2">Penjelasan Metodologi</div>
+                    <div class="text-sm text-slate-700 leading-relaxed">{{ $metadata->penjelasan_metodologi }}</div>
                 </div>
 
                 @if($metadata->asumsi)
-                <div class="info-card bg-[#111d35] border border-white/10 rounded p-5 md:col-span-2">
-                    <div class="text-xs font-800 uppercase tracking-widest text-slate-500 mb-2">Asumsi</div>
-                    <div class="text-sm text-slate-300 leading-relaxed">{{ $metadata->asumsi }}</div>
+                <div class="info-card bg-white border border-slate-200 rounded p-5 shadow-sm md:col-span-2">
+                    <div class="text-xs font-800 uppercase tracking-widest text-slate-400 mb-2">Asumsi</div>
+                    <div class="text-sm text-slate-700 leading-relaxed">{{ $metadata->asumsi }}</div>
                 </div>
                 @endif
 
-                <div class="info-card bg-[#111d35] border border-white/10 rounded p-5">
-                    <div class="text-xs font-800 uppercase tracking-widest text-slate-500 mb-2">Tipe Data</div>
-                    <div class="text-sm text-slate-300">{{ $metadata->tipe_data }}</div>
+                <div class="info-card bg-white border border-slate-200 rounded p-5 shadow-sm">
+                    <div class="text-xs font-800 uppercase tracking-widest text-slate-400 mb-2">Tipe Data</div>
+                    <div class="text-sm text-slate-700">{{ $metadata->tipe_data }}</div>
                 </div>
 
-                <div class="info-card bg-[#111d35] border border-white/10 rounded p-5">
-                    <div class="text-xs font-800 uppercase tracking-widest text-slate-500 mb-2">Satuan Data</div>
-                    <div class="text-sm text-slate-300">{{ $metadata->satuan_data }}</div>
+                <div class="info-card bg-white border border-slate-200 rounded p-5 shadow-sm">
+                    <div class="text-xs font-800 uppercase tracking-widest text-slate-400 mb-2">Satuan Data</div>
+                    <div class="text-sm text-slate-700">{{ $metadata->satuan_data }}</div>
                 </div>
 
-                <div class="info-card bg-[#111d35] border border-white/10 rounded p-5">
-                    <div class="text-xs font-800 uppercase tracking-widest text-slate-500 mb-2">Frekuensi Penerbitan</div>
-                    <div class="text-sm text-slate-300">{{ $metadata->frekuensi_penerbitan }}</div>
+                <div class="info-card bg-white border border-slate-200 rounded p-5 shadow-sm">
+                    <div class="text-xs font-800 uppercase tracking-widest text-slate-400 mb-2">Frekuensi Penerbitan</div>
+                    <div class="text-sm text-slate-700">{{ $metadata->frekuensi_penerbitan }}</div>
                 </div>
 
-                <div class="info-card bg-[#111d35] border border-white/10 rounded p-5">
-                    <div class="text-xs font-800 uppercase tracking-widest text-slate-500 mb-2">Tahun Mulai Data</div>
-                    <div class="text-sm text-slate-300">{{ $metadata->tahun_mulai_data }}</div>
+                <div class="info-card bg-white border border-slate-200 rounded p-5 shadow-sm">
+                    <div class="text-xs font-800 uppercase tracking-widest text-slate-400 mb-2">Tahun Mulai Data</div>
+                    <div class="text-sm text-slate-700">{{ $metadata->tahun_mulai_data }}</div>
                 </div>
 
-                <div class="info-card bg-[#111d35] border border-white/10 rounded p-5 md:col-span-2">
-                    <div class="text-xs font-800 uppercase tracking-widest text-slate-500 mb-2">Produsen / Sumber Data</div>
-                    <div class="text-sm text-slate-300">{{ $metadata->produsen?->nama_produsen ?? '—' }}</div>
+                <div class="info-card bg-white border border-slate-200 rounded p-5 shadow-sm md:col-span-2">
+                    <div class="text-xs font-800 uppercase tracking-widest text-slate-400 mb-2">Produsen / Sumber Data</div>
+                    <div class="text-sm text-slate-700">{{ $metadata->produsen?->nama_produsen ?? '—' }}</div>
                 </div>
 
             </div>
-        </div>{{-- /panel-info --}}
+        </div>
 
-    </div>{{-- /body --}}
+    </div>
 
-    {{-- ════════════════════════════ GATE MODAL ════════════════════════════ --}}
+    {{-- ════════════════ GATE MODAL ════════════════ --}}
     <div class="gate-overlay" id="subscribeGate" role="dialog" aria-modal="true" aria-labelledby="gateTitle">
-        <div class="gate-modal bg-[#111d35] border border-white/10 rounded-lg w-full max-w-md p-8 text-center shadow-2xl">
-            <div class="w-14 h-14 rounded-full bg-yellow-400/10 border border-yellow-400/25 flex items-center justify-center mx-auto mb-4">
-                <svg class="w-7 h-7 text-yellow-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <div class="gate-modal bg-white rounded-lg w-full max-w-md p-8 text-center shadow-2xl border border-slate-100">
+            <div class="w-14 h-14 rounded-full bg-blue-50 border border-blue-100 flex items-center justify-center mx-auto mb-4">
+                <svg class="w-7 h-7 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/>
                 </svg>
             </div>
-            <h2 class="text-xl font-800 text-white mb-2" id="gateTitle">Data Lengkap Tersedia</h2>
-            <p class="text-sm text-slate-400 leading-relaxed mb-6">
+            <h2 class="text-xl font-800 text-slate-800 mb-2" id="gateTitle">Data Lengkap Tersedia</h2>
+            <p class="text-sm text-slate-500 leading-relaxed mb-6">
                 Anda sedang melihat pratinjau data publik.<br/>
-                Berlangganan untuk mengakses seluruh dataset
+                Berlangganan untuk mengakses seluruh dataset.
             </p>
             <a href="{{ route('langganan') }}"
-               class="block w-full bg-yellow-400 hover:bg-yellow-300 text-[#060d1f] font-700 text-sm py-3 rounded transition-colors mb-2">
+               class="block w-full bg-[#0d1a35] hover:bg-[#1a56db] text-white font-700 text-sm py-3 rounded transition-colors mb-2">
                 Lihat Paket Langganan
             </a>
-            <button onclick="closeGate()"
-                    class="text-xs text-slate-500 hover:text-slate-300 transition-colors">
-                Lanjutkan lihat pratinjau
+            <button onclick="closeGate()" class="text-xs text-slate-400 hover:text-slate-600 transition-colors">
+                <- Lanjutkan lihat pratinjau
             </button>
         </div>
     </div>
 
-    {{-- ════════════════════════════ SCRIPTS ════════════════════════════ --}}
+    {{-- ════════════════ SCRIPTS ════════════════ --}}
     <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
     <script>
-    // ── Data from PHP ────────────────────────────────────────
     const chartLabels = @json($chartLabels);
     const chartValues = @json($chartValues);
     const satuan      = @json($metadata->satuan_data);
     const flagDesimal = {{ $metadata->flag_desimal ?? 0 }};
 
-    // ── Theme ────────────────────────────────────────────────
-    const YELLOW     = '#eab308';
-    const YELLOW_A   = 'rgba(234,179,8,.12)';
-    const BLUE       = '#60a5fa';
-    const BLUE_A     = 'rgba(96,165,250,.12)';
-    const GRID_COLOR = 'rgba(255,255,255,.05)';
-    const TICK_COLOR = '#64748b';
+    const C_BLUE      = '#1a56db';
+    const C_BLUE_BAR  = 'rgba(26,86,219,.75)';
+    const C_BLUE_FILL = 'rgba(26,86,219,.08)';
+    const C_YELLOW    = '#eab308';
+    const GRID_COLOR  = 'rgba(0,0,0,.05)';
+    const TICK_COLOR  = '#94a3b8';
 
     Chart.defaults.font.family = "'Plus Jakarta Sans', sans-serif";
 
     let mainChart;
-    let currentType = 'bar';
 
     function fmt(v) {
         if (v === null || v === undefined) return '—';
@@ -509,25 +486,24 @@
     }
 
     function buildDataset(type) {
+        const lastIdx = chartValues.map((v,i) => v !== null ? i : -1).filter(i => i >= 0).pop();
         if (type === 'bar') return {
             label: satuan,
             data: chartValues,
-            backgroundColor: chartValues.map((_, i) =>
-                i === chartValues.filter(v => v !== null).length - 1 ? YELLOW : 'rgba(234,179,8,.45)'
-            ),
+            backgroundColor: chartValues.map((_, i) => i === lastIdx ? C_YELLOW : C_BLUE_BAR),
             borderColor: 'transparent',
             borderWidth: 0,
-            borderRadius: 4,
+            borderRadius: 5,
             borderSkipped: false,
         };
         return {
             label: satuan,
             data: chartValues,
-            borderColor: YELLOW,
-            backgroundColor: YELLOW_A,
+            borderColor: C_BLUE,
+            backgroundColor: C_BLUE_FILL,
             borderWidth: 2.5,
-            pointBackgroundColor: YELLOW,
-            pointBorderColor: '#111d35',
+            pointBackgroundColor: C_BLUE,
+            pointBorderColor: '#fff',
             pointBorderWidth: 2,
             pointRadius: 5,
             pointHoverRadius: 7,
@@ -565,7 +541,7 @@
                 scales: {
                     x: {
                         grid: { display: false },
-                        border: { color: 'rgba(255,255,255,.08)' },
+                        border: { color: '#e2e8f0' },
                         ticks: { color: TICK_COLOR, font: { size: 11, weight: '600' } },
                     },
                     y: {
@@ -580,7 +556,6 @@
     }
 
     function setChartType(type) {
-        currentType = type;
         document.getElementById('btn-bar').classList.toggle('active', type === 'bar');
         document.getElementById('btn-line').classList.toggle('active', type === 'line');
         initChart(type);
@@ -588,7 +563,6 @@
 
     document.addEventListener('DOMContentLoaded', () => initChart('bar'));
 
-    // ── Tabs ─────────────────────────────────────────────────
     document.querySelectorAll('.tab-btn').forEach(btn => {
         btn.addEventListener('click', () => {
             document.querySelectorAll('.tab-btn').forEach(b => {
@@ -604,23 +578,16 @@
             const panel = document.getElementById('panel-' + btn.dataset.tab);
             panel.classList.remove('hidden');
             panel.classList.add('block');
-            if (btn.dataset.tab === 'grafik' && mainChart) {
-                setTimeout(() => mainChart.resize(), 50);
-            }
+            if (btn.dataset.tab === 'grafik' && mainChart) setTimeout(() => mainChart.resize(), 50);
         });
     });
 
-    // Show grafik panel initially
     document.getElementById('panel-grafik').classList.remove('hidden');
     document.getElementById('panel-grafik').classList.add('block');
 
-    // ── Gate modal ────────────────────────────────────────────
     function showGate()  { document.getElementById('subscribeGate').classList.add('open'); }
     function closeGate() { document.getElementById('subscribeGate').classList.remove('open'); }
-
-    document.getElementById('subscribeGate').addEventListener('click', function(e) {
-        if (e.target === this) closeGate();
-    });
+    document.getElementById('subscribeGate').addEventListener('click', function(e) { if (e.target === this) closeGate(); });
     document.addEventListener('keydown', e => { if (e.key === 'Escape') closeGate(); });
     </script>
 

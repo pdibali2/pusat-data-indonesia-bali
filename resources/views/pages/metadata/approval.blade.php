@@ -307,10 +307,7 @@
 
                                 <a href="{{ route('metadata.detail', ['metadata' => $item->metadata_id, 'from' => 'approval']) }}"
                                    class="inline-flex items-center gap-1 px-2.5 py-1.5 text-xs font-semibold
-                                          text-white rounded-md transition-colors shadow-sm"
-                                   style="background:#0284c7;"
-                                   onmouseover="this.style.background='#0369a1'"
-                                   onmouseout="this.style.background='#0284c7'">
+                                          text-white rounded-md transition-colors shadow-sm btn-primary">
                                     <i class="fas fa-clipboard-check"></i>
                                     Detail
                                 </a>
