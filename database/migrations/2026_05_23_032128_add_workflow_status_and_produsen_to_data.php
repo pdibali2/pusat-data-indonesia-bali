@@ -13,7 +13,7 @@ return new class extends Migration
             // ── produsen_id ─────────────────────────────────────
             if (!Schema::hasColumn('data', 'produsen_id')) {
 
-                $table->unsignedInteger('produsen_id')
+                $table->integer('produsen_id')
                       ->nullable()
                       ->after('status');
 
@@ -45,7 +45,7 @@ return new class extends Migration
             // ── reviewed_by ────────────────────────────────────
             if (!Schema::hasColumn('data', 'reviewed_by')) {
 
-                $table->unsignedInteger('reviewed_by')
+                $table->integer('reviewed_by')
                       ->nullable()
                       ->after('reviewer_note');
 
