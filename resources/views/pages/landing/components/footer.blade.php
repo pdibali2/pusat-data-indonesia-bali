@@ -23,7 +23,7 @@ $footerKlasifikasi = [
                     </div>
                 </div>
                 <p class="text-white/50 text-sm leading-relaxed mb-6">
-                    Menyediakan menyediakan dan menampilkan data sesuai dengan kustomisasi pengguna.
+                    Menyediakan dan menampilkan data sesuai dengan kustomisasi pengguna.
                 </p>
                 <a href="{{ route('langganan') }}"
                    class="inline-flex items-center gap-2 px-5 py-2.5 bg-stikom-accent hover:bg-yellow-600 text-stikom  hover:text-white text-sm font-black transition-colors">

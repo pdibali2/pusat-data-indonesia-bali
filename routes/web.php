@@ -15,10 +15,12 @@ use App\Http\Controllers\WaktuController;
 use App\Http\Controllers\DataController;
 use App\Http\Controllers\DataExportController;
 use App\Http\Controllers\TemplateController;
+use App\Http\Controllers\TemplateExportController;
 use App\Http\Controllers\LayananController;
 use App\Http\Controllers\LandingController;
 use App\Http\Controllers\TransaksiController;
 use App\Http\Controllers\AdminTransaksiController;
+use App\Http\Controllers\AnomalyControlController;
 
     // ── Auth ─────────────────────────────────────────────────────
     Route::get('/login',  [AuthController::class, 'loginView'])->name('login');
@@ -98,6 +100,13 @@ use App\Http\Controllers\AdminTransaksiController;
         // Show (AJAX) — untuk panel di halaman index data
         Route::get('/{tampilan}/show',    [TemplateController::class, 'show'])->name('show');
     });
+
+    // ── Template Export: Excel / PDF / JSON ───────────────────────
+    Route::prefix('template-export')->name('template.export.')->group(function () {
+        Route::post('/excel', [TemplateExportController::class, 'excel'])->name('excel');
+        Route::post('/pdf',   [TemplateExportController::class, 'pdf'])->name('pdf');
+        Route::post('/json',  [TemplateExportController::class, 'json'])->name('json');
+    });
     
 // ─────────────────────────────────────────────────────────────
 // AUTHENTICATED ROUTES
@@ -156,6 +165,8 @@ Route::middleware(['is.login', 'is.customer'])->group(function () {
     Route::prefix('data')->name('data.')->group(function () {
         Route::get('/',       [DataController::class, 'index'])->name('index');
         Route::get('/create', [DataController::class, 'create'])->name('create');
+        // Ambil produsen_id dari rujukan_id
+        Route::get('/get-produsen-by-rujukan', [DataController::class, 'getProdusenByRujukan'])->name('get_produsen_by_rujukan');
         Route::post('/',      [DataController::class, 'store'])->name('store');
 
         // AJAX (di atas wildcard)
@@ -187,6 +198,44 @@ Route::middleware(['is.login', 'is.customer'])->group(function () {
 
         // Wildcard paling bawah
         Route::get('/{datum}', [DataController::class, 'show'])->name('show');
+    });
+
+    Route::prefix('anomaly')->name('anomaly.')->group(function () {
+    
+        // ── Halaman Control Data Anomali ──────────────────────────
+        Route::prefix('control')->name('control.')->group(function () {
+    
+            // Index: daftar semua anomali
+            Route::get('/',           [AnomalyControlController::class, 'index'])->name('index');
+    
+            // Detail satu anomali + histori review
+            Route::get('/{anomaly}',  [AnomalyControlController::class, 'show'])->name('show');
+    
+            // Review satu anomali (POST dari modal)
+            Route::post('/{anomaly}/review', [AnomalyControlController::class, 'review'])->name('review');
+    
+            // Bulk review (POST dari halaman index)
+            Route::post('/bulk-review', [AnomalyControlController::class, 'bulkReview'])->name('bulk_review');
+    
+            // Submit data ke Under Review (POST)
+            Route::post('/data/{datum}/submit', [AnomalyControlController::class, 'submitForReview'])->name('submit_review');
+    
+            // ── AJAX ─────────────────────────────────────────────
+            // Perbandingan antar sumber data
+            Route::get('/ajax/compare-sources', [AnomalyControlController::class, 'compareSources'])->name('compare_sources');
+    
+            // Histori audit trail satu data
+            Route::get('/ajax/audit/{dataId}',  [AnomalyControlController::class, 'auditHistory'])->name('audit_history');
+    
+            // Stats & trend untuk grafik
+            Route::get('/ajax/trend-stats',     [AnomalyControlController::class, 'trendStats'])->name('trend_stats');
+
+            Route::post('/ajax/scan-all', [AnomalyControlController::class, 'scanAll'])->name('scan_all');
+        });
+    
+        // ── Anomaly Rules (threshold) ─────────────────────────────
+        Route::get('/rules',            [AnomalyControlController::class, 'rules'])->name('control.rules');
+        Route::put('/rules/{rule}',     [AnomalyControlController::class, 'updateRule'])->name('control.rules.update');
     });
 
     // ── Metadata ─────────────────────────────────────────────

@@ -1,0 +1,750 @@
+@extends('layouts.main')
+
+@section('content')
+<div class="py-6 px-4 space-y-5">
+
+    {{-- ── HEADER ──────────────────────────────────────────────── --}}
+    <div class="flex items-center justify-between">
+        <div>
+            <h1 class="text-xl font-bold text-gray-800">Control Data Anomali</h1>
+            <p class="text-xs text-gray-400 mt-0.5">Review dan kelola anomali yang terdeteksi sistem</p>
+        </div>
+        <div class="flex items-center gap-2">
+            <button type="button" onclick="openScanModal()"
+                    class="flex items-center gap-1.5 text-xs px-3 py-2 rounded-lg btn-primary">
+                <i class="fas fa-chart-bar"></i> Scan Data
+            </button>
+            <a href="{{ route('anomaly.control.rules') }}"
+               class="flex items-center gap-1.5 text-xs px-3 py-2 rounded-lg border border-gray-200
+                      text-gray-600 hover:bg-gray-50 transition-colors">
+                <i class="fas fa-sliders-h"></i> Atur Threshold
+            </a>
+            <a href="{{ route('data.approval') }}"
+               class="flex items-center gap-1.5 text-xs px-3 py-2 rounded-lg border border-gray-200
+                      text-gray-600 hover:bg-gray-50 transition-colors">
+                <i class="fas fa-database"></i> Ke Data
+            </a>
+        </div>
+    </div>
+
+    {{-- ── ALERT SUCCESS / WARNING ─────────────────────────────── --}}
+    @if(session('success'))
+        <div class="flex items-start gap-3 px-4 py-3 rounded-lg text-sm bg-green-50
+                    border border-green-200 text-green-800">
+            <i class="fas fa-check-circle mt-0.5 shrink-0 text-green-500"></i>
+            <span>{{ session('success') }}</span>
+        </div>
+    @endif
+    @if(session('warning'))
+        <div class="flex items-start gap-3 px-4 py-3 rounded-lg text-sm bg-amber-50
+                    border border-amber-200 text-amber-800">
+            <i class="fas fa-exclamation-triangle mt-0.5 shrink-0 text-amber-500"></i>
+            <span>{{ session('warning') }}</span>
+        </div>
+    @endif
+
+    {{-- ── STATS CARDS ─────────────────────────────────────────── --}}
+    <div class="grid grid-cols-2 md:grid-cols-5 gap-3">
+        @php
+        $statCards = [
+            ['label'=>'Warning',        'value'=>$stats['total_warning'],      'icon'=>'fas fa-exclamation-triangle', 'style'=>'background:#fef9c3; color:#a16207;', 'border'=>'border-amber-200'],
+            ['label'=>'Resolved',       'value'=>$stats['total_resolved'],     'icon'=>'fas fa-check-circle',         'style'=>'background:#dcfce7; color:#15803d;', 'border'=>'border-green-200'],
+            ['label'=>'Critical Aktif', 'value'=>$stats['critical_pending'],   'icon'=>'fas fa-fire',                 'style'=>'background:#fee2e2; color:#b91c1c;', 'border'=>'border-red-200'],
+            ['label'=>'High Aktif',     'value'=>$stats['high_pending'],       'icon'=>'fas fa-arrow-up',             'style'=>'background:#ffedd5; color:#c2410c;', 'border'=>'border-orange-200'],
+        ];
+        @endphp
+
+        @foreach($statCards as $card)
+        <div class="rounded-xl border {{ $card['border'] }} p-4 flex items-center gap-3"
+             style="{{ $card['style'] }}">
+            <i class="{{ $card['icon'] }} text-lg opacity-70"></i>
+            <div>
+                <p class="text-xl font-bold leading-none">{{ number_format($card['value']) }}</p>
+                <p class="text-xs mt-0.5 opacity-75">{{ $card['label'] }}</p>
+            </div>
+        </div>
+        @endforeach
+    </div>
+
+    {{-- ── TREND CHART ─────────────────────────────────────────── --}}
+    <div class="bg-white rounded-xl border border-gray-200 p-4">
+        <div class="flex items-center justify-between mb-3">
+            <p class="text-sm font-semibold text-gray-700">
+                <i class="fas fa-chart-bar text-sky-500 mr-1.5"></i>Trend Anomali
+            </p>
+            <div class="flex gap-1">
+                @foreach([7,14,30] as $d)
+                <button onclick="loadTrend({{ $d }})"
+                        data-days="{{ $d }}"
+                        class="trend-btn text-xs px-2.5 py-1 rounded-md border transition-colors
+                               {{ $d===7 ? 'bg-sky-600 text-white border-sky-600' : 'border-gray-200 text-gray-500 hover:bg-gray-50' }}">
+                    {{ $d }}h
+                </button>
+                @endforeach
+            </div>
+        </div>
+        <div id="trendChart" style="height:120px; position:relative;">
+            <canvas id="trendCanvas"></canvas>
+        </div>
+    </div>
+
+    {{-- ── FILTER BAR ───────────────────────────────────────────── --}}
+    <form method="GET" action="{{ route('anomaly.control.index') }}"
+          class="bg-white rounded-xl border border-gray-200 p-4">
+        <div class="grid grid-cols-2 md:grid-cols-5 gap-3">
+
+            {{-- Search --}}
+            <div class="col-span-2 md:col-span-2">
+                <label class="block text-xs font-semibold text-gray-500 mb-1">Cari</label>
+                <div class="relative">
+                    <i class="fas fa-search absolute left-2.5 top-1/2 -translate-y-1/2
+                               text-gray-400 text-xs pointer-events-none"></i>
+                    <input type="text" name="search" value="{{ request('search') }}"
+                           placeholder="Metadata, lokasi…"
+                           class="w-full pl-7 pr-3 py-2 text-xs border border-gray-200 rounded-lg
+                                  focus:outline-none focus:ring-2 focus:ring-sky-400">
+                </div>
+            </div>
+
+            {{-- Severity --}}
+            <div>
+                <label class="block text-xs font-semibold text-gray-500 mb-1">Severity</label>
+                <select name="severity"
+                        class="w-full text-xs border border-gray-200 rounded-lg px-2.5 py-2
+                               focus:outline-none focus:ring-2 focus:ring-sky-400">
+                    <option value="">Semua</option>
+                    @foreach($severityOpts as $val => $label)
+                        <option value="{{ $val }}" {{ request('severity')===$val ? 'selected' : '' }}>
+                            {{ $label }}
+                        </option>
+                    @endforeach
+                </select>
+            </div>
+
+            {{-- Status --}}
+            <div>
+                <label class="block text-xs font-semibold text-gray-500 mb-1">Status</label>
+                <select name="status"
+                        class="w-full text-xs border border-gray-200 rounded-lg px-2.5 py-2
+                               focus:outline-none focus:ring-2 focus:ring-sky-400">
+                    <option value="">Semua status</option>
+                    @foreach($statusOpts as $val => $label)
+                        <option value="{{ $val }}" {{ request('status')===$val ? 'selected' : '' }}>
+                            {{ $label }}
+                        </option>
+                    @endforeach
+                </select>
+            </div>
+
+            {{-- Metadata --}}
+            {{-- <div>
+                <label class="block text-xs font-semibold text-gray-500 mb-1">Metadata</label>
+                <select name="metadata_id"
+                        class="w-full text-xs border border-gray-200 rounded-lg px-2.5 py-2
+                               focus:outline-none focus:ring-2 focus:ring-sky-400">
+                    <option value="">Semua</option>
+                    @foreach($metadataList as $m)
+                        <option value="{{ $m->metadata_id }}"
+                            {{ request('metadata_id')==$m->metadata_id ? 'selected' : '' }}>
+                            {{ $m->nama }}
+                        </option>
+                    @endforeach
+                </select>
+            </div> --}}
+
+            {{-- Tipe --}}
+            <div>
+                <label class="block text-xs font-semibold text-gray-500 mb-1">Tipe</label>
+                <select name="anomaly_type"
+                        class="w-full text-xs border border-gray-200 rounded-lg px-2.5 py-2
+                               focus:outline-none focus:ring-2 focus:ring-sky-400">
+                    <option value="">Semua</option>
+                    @foreach($typeOpts as $val => $label)
+                        <option value="{{ $val }}" {{ request('anomaly_type')===$val ? 'selected' : '' }}>
+                            {{ $label }}
+                        </option>
+                    @endforeach
+                </select>
+            </div>
+        </div>
+
+        <div class="flex gap-2 mt-3">
+            <button type="submit"
+                    class="text-xs bg-sky-600 hover:bg-sky-700 text-white px-4 py-2
+                           rounded-lg font-semibold transition-colors">
+                <i class="fas fa-filter mr-1"></i>Filter
+            </button>
+            <a href="{{ route('anomaly.control.index') }}"
+               class="text-xs border border-gray-200 text-gray-500 hover:bg-gray-50
+                      px-4 py-2 rounded-lg transition-colors">
+                Reset
+            </a>
+        </div>
+    </form>
+
+    {{-- ── BULK ACTION BAR ──────────────────────────────────────── --}}
+    <form id="bulkForm" method="POST" action="{{ route('anomaly.control.bulk_review') }}">
+        @csrf
+        <div id="bulkBar"
+             class="hidden items-center gap-3 px-4 py-2.5 bg-sky-50 border border-sky-200
+                    rounded-xl text-sm text-sky-800">
+            <span id="bulkCount" class="font-semibold"></span>
+            <span>anomali dipilih</span>
+            <div class="flex-1"></div>
+            <select name="decision"
+                    class="text-xs border border-sky-300 rounded-lg px-2.5 py-1.5
+                           focus:outline-none focus:ring-2 focus:ring-sky-400 bg-white">
+                <option value="approved">Setujui semua</option>
+                <option value="approved_with_note">Setujui dengan catatan</option>
+                <option value="rejected">Tolak semua</option>
+            </select>
+            <input type="text" name="justification" placeholder="Justification (jika perlu)…"
+                   class="text-xs border border-sky-300 rounded-lg px-2.5 py-1.5 w-56
+                          focus:outline-none focus:ring-2 focus:ring-sky-400 bg-white">
+            <button type="submit"
+                    class="text-xs bg-sky-600 hover:bg-sky-700 text-white
+                           px-4 py-1.5 rounded-lg font-semibold transition-colors">
+                Proses
+            </button>
+        </div>
+
+        {{-- ── TABEL ANOMALI ────────────────────────────────────── --}}
+        <div class="bg-white rounded-xl border border-gray-200 overflow-hidden mt-3">
+            <div class="overflow-x-auto">
+                <table class="w-full text-xs">
+                    <thead>
+                        <tr class="bg-gray-50 border-b border-gray-200">
+                            {{-- <th class="px-3 py-3 w-8">
+                                <input type="checkbox" id="checkAll"
+                                       class="rounded border-gray-300 text-sky-600
+                                              focus:ring-sky-400 cursor-pointer"
+                                       onchange="toggleAll(this)">
+                            </th> --}}
+                            <th class="px-3 py-3 text-center font-semibold text-gray-500 w-12">
+                                #
+                            </th>
+                            <th class="px-3 py-3 text-left font-semibold text-gray-500">Severity</th>
+                            <th class="px-3 py-3 text-left font-semibold text-gray-500">Metadata / Lokasi</th>
+                            <th class="px-3 py-3 text-left font-semibold text-gray-500">Tipe</th>
+                            <th class="px-3 py-3 text-center font-semibold text-gray-500">Perubahan</th>
+                            <th class="px-3 py-3 text-left font-semibold text-gray-500">Status</th>
+                            <th class="px-3 py-3 text-left font-semibold text-gray-500">Terdeteksi</th>
+                            <th class="px-3 py-3 text-center font-semibold text-gray-500">Aksi</th>
+                        </tr>
+                    </thead>
+                    <tbody class="divide-y divide-gray-100">
+                        @forelse($anomalies as $anomaly)
+                        @php $data = $anomaly->data; @endphp
+                        <tr class="hover:bg-gray-50/60 transition-colors
+                                   {{ $anomaly->severity === 'critical' ? 'bg-red-50/30' : '' }}
+                                   {{ $anomaly->severity === 'high'     ? 'bg-orange-50/20' : '' }}">
+
+                            {{-- Checkbox --}}
+                            {{-- <td class="px-3 py-3">
+                                <input type="checkbox" name="anomaly_ids[]"
+                                       value="{{ $anomaly->anomalies_id }}"
+                                       class="row-check rounded border-gray-300 text-sky-600
+                                              focus:ring-sky-400 cursor-pointer"
+                                       onchange="updateBulkBar()">
+                            </td> --}}
+                            {{-- No list --}}
+                            <td class="px-3 py-3 text-center text-gray-500 font-medium">
+                                {{ $anomalies->firstItem() + $loop->index }}
+                            </td>
+
+                            {{-- Severity badge --}}
+                            <td class="px-3 py-3">
+                                <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full
+                                             text-xs font-semibold"
+                                      style="{{ $anomaly->severity_style }}">
+                                    @if($anomaly->severity === 'critical') <i class="fas fa-fire text-[10px]"></i>
+                                    @elseif($anomaly->severity === 'high') <i class="fas fa-arrow-up text-[10px]"></i>
+                                    @elseif($anomaly->severity === 'medium') <i class="fas fa-minus text-[10px]"></i>
+                                    @else <i class="fas fa-info text-[10px]"></i>
+                                    @endif
+                                    {{ $anomaly->severity_label }}
+                                </span>
+                            </td>
+
+                            {{-- Metadata / Lokasi --}}
+                            <td class="px-3 py-3 max-w-[200px]">
+                                <p class="font-semibold text-gray-800 truncate">
+                                    {{ $data?->metadata?->nama ?? '-' }}
+                                </p>
+                                <p class="text-gray-400 truncate mt-0.5">
+                                    {{ $data?->location?->nama_wilayah ?? '-' }}
+                                </p>
+                            </td>
+
+                            {{-- Tipe --}}
+                            <td class="px-3 py-3">
+                                <span class="text-gray-600">{{ $anomaly->anomaly_type_label }}</span>
+                            </td>
+
+                            {{-- Perubahan --}}
+                            <td class="px-3 py-3 text-center">
+                                @if($anomaly->percentage_change !== null)
+                                    <span class="font-mono font-semibold
+                                        {{ $anomaly->percentage_change >= 0 ? 'text-red-600' : 'text-blue-600' }}">
+                                        {{ $anomaly->formatted_percentage_change }}
+                                    </span>
+                                    <div class="text-gray-400 mt-0.5">
+                                        {{ number_format($anomaly->previous_value, 2) }}
+                                        → {{ number_format($anomaly->current_value, 2) }}
+                                    </div>
+                                @else
+                                    <span class="text-gray-400">—</span>
+                                @endif
+                            </td>
+
+                            {{-- Status badge --}}
+                            <td class="px-3 py-3">
+                                <span class="inline-block px-2 py-0.5 rounded-full text-xs font-medium"
+                                      style="{{ $anomaly->status_style }}">
+                                    {{ $anomaly->status_label }}
+                                </span>
+                            </td>
+
+                            {{-- Tanggal --}}
+                            <td class="px-3 py-3 text-gray-500 whitespace-nowrap">
+                                {{ $anomaly->detected_at?->format('d/m/Y') }}<br>
+                                <span class="text-gray-400">{{ $anomaly->detected_at?->format('H:i') }}</span>
+                            </td>
+
+                            {{-- Aksi --}}
+                            <td class="px-3 py-3">
+                                <div class="flex items-center justify-center gap-1.5">
+                                    <a href="{{ route('anomaly.control.show', $anomaly->anomalies_id) }}"
+                                       class="text-xs px-2.5 py-1.5 rounded-lg border border-sky-200
+                                              text-sky-600 hover:bg-sky-50 transition-colors whitespace-nowrap">
+                                        <i class="fas fa-eye mr-1"></i>Detail
+                                    </a>
+                                    {{-- @if($anomaly->isPendingReview())
+                                    <button onclick="openReviewModal({{ $anomaly->anomalies_id }}, '{{ addslashes($data?->metadata?->nama) }}')"
+                                            class="text-xs px-2.5 py-1.5 rounded-lg border border-amber-200
+                                                   text-amber-600 hover:bg-amber-50 transition-colors whitespace-nowrap">
+                                        <i class="fas fa-gavel mr-1"></i>Review
+                                    </button>
+                                    @endif --}}
+                                </div>
+                            </td>
+                        </tr>
+                        @empty
+                        <tr>
+                            <td colspan="8" class="px-4 py-12 text-center text-gray-400">
+                                <i class="fas fa-check-circle text-3xl text-green-300 mb-2 block"></i>
+                                Tidak ada anomali
+                                {{ request()->hasAny(['severity','status','metadata_id','search','anomaly_type'])
+                                    ? 'yang sesuai filter' : 'yang perlu direview' }}.
+                            </td>
+                        </tr>
+                        @endforelse
+                    </tbody>
+                </table>
+            </div>
+
+            {{-- Pagination --}}
+            @if($anomalies->hasPages())
+            <div class="px-4 py-3 border-t border-gray-100">
+                {{ $anomalies->links() }}
+            </div>
+            @endif
+        </div>
+
+    </form>{{-- end bulkForm --}}
+
+</div>{{-- end py-6 --}}
+
+{{-- ══════════════════════════════════════════════════════════
+     MODAL REVIEW
+══════════════════════════════════════════════════════════ --}}
+<div id="reviewModal"
+     class="fixed inset-0 z-50 hidden items-center justify-center"
+     style="background:rgba(0,0,0,0.45);">
+    <div class="bg-white rounded-2xl shadow-xl w-full max-w-md mx-4 overflow-hidden">
+
+        {{-- Modal header --}}
+        <div class="flex items-center justify-between px-5 py-4 border-b border-gray-100">
+            <div>
+                <p class="font-bold text-gray-800 text-sm">Review Anomali</p>
+                <p id="modalSubtitle" class="text-xs text-gray-400 mt-0.5"></p>
+            </div>
+            <button onclick="closeReviewModal()"
+                    class="text-gray-400 hover:text-gray-600 transition-colors">
+                <i class="fas fa-times text-sm"></i>
+            </button>
+        </div>
+
+        {{-- Modal body --}}
+        <form id="reviewForm" method="POST" class="px-5 py-4 space-y-4">
+            @csrf
+            @method('POST')
+
+            {{-- Decision --}}
+            <div>
+                <label class="block text-xs font-semibold text-gray-700 mb-2">Keputusan</label>
+                <div class="grid grid-cols-2 gap-2">
+                    @foreach(\App\Models\AnomalyReview::decisionOptions() as $val => $label)
+                    <label class="decision-option flex items-center gap-2 px-3 py-2.5 rounded-lg
+                                  border border-gray-200 cursor-pointer hover:border-sky-300
+                                  transition-colors text-xs font-medium text-gray-700
+                                  has-[:checked]:border-sky-500 has-[:checked]:bg-sky-50
+                                  has-[:checked]:text-sky-700">
+                        <input type="radio" name="decision" value="{{ $val }}"
+                               class="text-sky-600 focus:ring-sky-400"
+                               onchange="onDecisionChange('{{ $val }}')">
+                        @if($val === 'approved') <i class="fas fa-check-circle text-green-500"></i>
+                        @elseif($val === 'approved_with_note') <i class="fas fa-check-double text-teal-500"></i>
+                        @elseif($val === 'rejected') <i class="fas fa-times-circle text-red-500"></i>
+                        @else <i class="fas fa-redo text-purple-500"></i>
+                        @endif
+                        {{ $label }}
+                    </label>
+                    @endforeach
+                </div>
+            </div>
+
+            {{-- Justification (conditional) --}}
+            <div id="justificationWrap">
+                <label class="block text-xs font-semibold text-gray-700 mb-1.5">
+                    Justification
+                    <span id="justificationRequired"
+                          class="hidden text-red-500 ml-1">* Wajib</span>
+                </label>
+                <textarea name="justification" id="justificationInput" rows="3"
+                          placeholder="Tuliskan alasan keputusan…"
+                          class="w-full text-xs border border-gray-200 rounded-lg px-3 py-2
+                                 focus:outline-none focus:ring-2 focus:ring-sky-400
+                                 resize-none placeholder-gray-400"></textarea>
+            </div>
+
+            {{-- Notes --}}
+            <div>
+                <label class="block text-xs font-semibold text-gray-700 mb-1.5">
+                    Catatan Tambahan
+                    <span class="text-gray-400 font-normal">(opsional)</span>
+                </label>
+                <input type="text" name="notes"
+                       placeholder="Catatan singkat…"
+                       class="w-full text-xs border border-gray-200 rounded-lg px-3 py-2
+                              focus:outline-none focus:ring-2 focus:ring-sky-400">
+            </div>
+
+            {{-- Submit --}}
+            <div class="flex gap-2 pt-1">
+                <button type="button" onclick="closeReviewModal()"
+                        class="flex-1 text-xs border border-gray-200 text-gray-500
+                               hover:bg-gray-50 py-2.5 rounded-lg transition-colors font-semibold">
+                    Batal
+                </button>
+                <button type="submit" id="submitReviewBtn"
+                        class="flex-1 text-xs bg-sky-600 hover:bg-sky-700 text-white
+                               py-2.5 rounded-lg transition-colors font-semibold
+                               disabled:bg-gray-200 disabled:text-gray-400 disabled:cursor-not-allowed">
+                    <i class="fas fa-gavel mr-1"></i>Proses
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+{{-- MODAL SCAN ALL --}}
+<div id="scanModal"
+     class="fixed inset-0 z-50 hidden items-center justify-center"
+     style="background:rgba(0,0,0,0.45);">
+    <div class="bg-white rounded-2xl shadow-xl w-full max-w-sm mx-4">
+
+        <div class="flex items-center justify-between px-5 py-4 border-b border-gray-100">
+            <div>
+                <p class="font-bold text-gray-800 text-sm">
+                    <i class="fas fa-search text-emerald-600 mr-1.5"></i>Scan Anomali
+                </p>
+                <p class="text-xs text-gray-400 mt-0.5">Scan seluruh data historis di database</p>
+            </div>
+            <button onclick="closeScanModal()" class="text-gray-400 hover:text-gray-600">
+                <i class="fas fa-times"></i>
+            </button>
+        </div>
+
+        <div class="px-5 py-4 space-y-4">
+            <div class="bg-amber-50 border border-amber-200 rounded-lg p-3 text-xs text-amber-700">
+                <i class="fas fa-exclamation-triangle mr-1"></i>
+                Scan akan memeriksa <strong>semua data</strong> dan mendeteksi anomali baru.
+                Proses ini mungkin memakan waktu tergantung jumlah data.
+            </div>
+
+            <div>
+                <label class="block text-xs font-semibold text-gray-700 mb-1.5">
+                    Filter Metadata <span class="text-gray-400 font-normal">(opsional)</span>
+                </label>
+
+                <select id="scanMetadataId"
+                        placeholder="Pilih metadata..."
+                        class="w-full text-xs">
+                    <option value="">Semua metadata</option>
+
+                    @foreach($metadataList as $m)
+                        <option value="{{ $m->metadata_id }}">
+                            {{ $m->nama }}
+                        </option>
+                    @endforeach
+                </select>
+            </div>
+
+            {{-- Progress --}}
+            <div id="scanProgress" class="hidden">
+                <div class="flex items-center gap-2 text-xs text-emerald-700 bg-emerald-50
+                            border border-emerald-200 rounded-lg px-3 py-2.5">
+                    <i class="fas fa-spinner fa-spin"></i>
+                    <span id="scanProgressText">Sedang scanning…</span>
+                </div>
+            </div>
+
+            {{-- Result --}}
+            <div id="scanResult" class="hidden text-xs"></div>
+
+            <div class="flex gap-2">
+                <button type="button" onclick="closeScanModal()"
+                        class="flex-1 text-xs border border-gray-200 text-gray-500
+                               hover:bg-gray-50 py-2.5 rounded-lg font-semibold">
+                    Tutup
+                </button>
+                <button type="button" onclick="doScan()" id="scanBtn"
+                        class="flex-1 text-xs bg-emerald-600 hover:bg-emerald-700 text-white
+                               py-2.5 rounded-lg font-semibold transition-colors">
+                    <i class="fas fa-play mr-1"></i>Mulai Scan
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+{{-- Chart.js --}}
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+
+<script>
+    new TomSelect('#scanMetadataId', {
+        create: false,
+        allowEmptyOption: true,
+        placeholder: 'Pilih metadata...',
+        maxOptions: 500,
+        sortField: {
+            field: "text",
+            direction: "asc"
+        }
+    });
+</script>
+
+<script>
+// ── TREND CHART ─────────────────────────────────────────────
+let trendChart = null;
+const TREND_URL = '{{ route("anomaly.control.trend_stats") }}';
+
+async function loadTrend(days) {
+    document.querySelectorAll('.trend-btn').forEach(b => {
+        const active = parseInt(b.dataset.days) === days;
+        b.className = b.className.replace(/(bg-sky-600 text-white border-sky-600|border-gray-200 text-gray-500 hover:bg-gray-50)/g, '');
+        b.classList.add(...(active
+            ? ['bg-sky-600','text-white','border-sky-600']
+            : ['border-gray-200','text-gray-500','hover:bg-gray-50']
+        ));
+    });
+
+    try {
+        const res  = await fetch(`${TREND_URL}?days=${days}`);
+        const json = await res.json();
+        renderTrend(json.trend);
+    } catch(e) { console.error('Trend load error:', e); }
+}
+
+function renderTrend(data) {
+    const labels   = data.map(d => d.date);
+    const critical = data.map(d => d.critical);
+    const high     = data.map(d => d.high);
+    const medium   = data.map(d => d.medium);
+    const low      = data.map(d => d.low);
+    const canvas   = document.getElementById('trendCanvas');
+
+    if (trendChart) trendChart.destroy();
+
+    trendChart = new Chart(canvas, {
+        type: 'bar',
+        data: {
+            labels,
+            datasets: [
+                { label:'Critical', data:critical, backgroundColor:'#fee2e2', borderColor:'#b91c1c', borderWidth:1 },
+                { label:'High',     data:high,     backgroundColor:'#ffedd5', borderColor:'#c2410c', borderWidth:1 },
+                { label:'Medium',   data:medium,   backgroundColor:'#fef9c3', borderColor:'#a16207', borderWidth:1 },
+                { label:'Low',      data:low,       backgroundColor:'#dbeafe', borderColor:'#1d4ed8', borderWidth:1 },
+            ]
+        },
+        options: {
+            responsive: true, maintainAspectRatio: false,
+            plugins: { legend: { display: true, position: 'top', labels: { font: { size: 10 }, boxWidth: 12 } } },
+            scales: {
+                x: { stacked: true, ticks: { font: { size: 10 } } },
+                y: { stacked: true, ticks: { font: { size: 10 }, stepSize: 1 } },
+            },
+        }
+    });
+}
+
+// Init chart on load
+loadTrend(7);
+
+// ── BULK CHECKBOX ───────────────────────────────────────────
+function toggleAll(master) {
+    document.querySelectorAll('.row-check').forEach(cb => cb.checked = master.checked);
+    updateBulkBar();
+}
+
+function updateBulkBar() {
+    const checked = document.querySelectorAll('.row-check:checked');
+    const bar     = document.getElementById('bulkBar');
+    document.getElementById('bulkCount').textContent = checked.length;
+    if (checked.length > 0) {
+        bar.classList.remove('hidden');
+        bar.classList.add('flex');
+    } else {
+        bar.classList.add('hidden');
+        bar.classList.remove('flex');
+    }
+}
+
+// ── REVIEW MODAL ────────────────────────────────────────────
+const REVIEW_BASE = '{{ url("anomaly/control") }}';
+const REQUIRES_JUSTIFICATION = ['approved_with_note', 'rejected', 'revised'];
+
+function openReviewModal(anomalyId, metadataName) {
+    const form = document.getElementById('reviewForm');
+    form.action = `${REVIEW_BASE}/${anomalyId}/review`;
+    form.reset();
+    document.getElementById('modalSubtitle').textContent = metadataName;
+    document.getElementById('justificationRequired').classList.add('hidden');
+    document.getElementById('reviewModal').classList.remove('hidden');
+    document.getElementById('reviewModal').classList.add('flex');
+}
+
+function closeReviewModal() {
+    document.getElementById('reviewModal').classList.add('hidden');
+    document.getElementById('reviewModal').classList.remove('flex');
+}
+
+const SCAN_URL = '{{ route("anomaly.control.scan_all") }}';
+
+function openScanModal() {
+    document.getElementById('scanModal').classList.remove('hidden');
+    document.getElementById('scanModal').classList.add('flex');
+    document.getElementById('scanResult').classList.add('hidden');
+    document.getElementById('scanProgress').classList.add('hidden');
+}
+
+function closeScanModal() {
+    document.getElementById('scanModal').classList.add('hidden');
+    document.getElementById('scanModal').classList.remove('flex');
+}
+
+async function doScan() {
+    const btn      = document.getElementById('scanBtn');
+    const progress = document.getElementById('scanProgress');
+    const result   = document.getElementById('scanResult');
+    const metaId   = document.getElementById('scanMetadataId').value;
+
+    btn.disabled = true;
+    btn.innerHTML = '<i class="fas fa-spinner fa-spin mr-1"></i>Scanning…';
+    progress.classList.remove('hidden');
+    result.classList.add('hidden');
+
+    const form = new FormData();
+    form.append('_token', '{{ csrf_token() }}');
+    if (metaId) form.append('metadata_id', metaId);
+
+    try {
+        const res  = await fetch(SCAN_URL, { method: 'POST', body: form });
+        const json = await res.json();
+
+        progress.classList.add('hidden');
+        result.classList.remove('hidden');
+
+        if (json.success) {
+            const stats = json.stats || {};
+            const scanned = stats.scanned ?? 0;
+            const anomalies = stats.anomaliesFound ?? stats.anomalies_found ?? 0;
+            const skipped = stats.skipped ?? 0;
+
+            result.innerHTML = `
+                <div class="bg-green-50 border border-green-200 rounded-lg p-3 text-green-700">
+                    <p class="font-semibold mb-1"><i class="fas fa-check-circle mr-1"></i>Scan Selesai</p>
+                    <p>Scan selesai. ${scanned} data diperiksa, ${anomalies} anomali ditemukan.${skipped ? ' ' + skipped + ' dilewati.' : ''}</p>
+                </div>`;
+            // Reload setelah 2 detik
+            setTimeout(() => window.location.reload(), 2000);
+        } else {
+            result.innerHTML = `
+                <div class="bg-red-50 border border-red-200 rounded-lg p-3 text-red-700">
+                    <p class="font-semibold mb-1"><i class="fas fa-times-circle mr-1"></i>Gagal</p>
+                    <p>${json.message}</p>
+                </div>`;
+        }
+    } catch(e) {
+        progress.classList.add('hidden');
+        result.classList.remove('hidden');
+        result.innerHTML = `<div class="bg-red-50 border border-red-200 rounded-lg p-3 text-red-700">
+            Terjadi kesalahan jaringan.</div>`;
+    }
+
+    btn.disabled = false;
+    btn.innerHTML = '<i class="fas fa-play mr-1"></i>Mulai Scan';
+}
+
+document.getElementById('scanModal').addEventListener('click', function(e) {
+    if (e.target === this) closeScanModal();
+});
+
+function onDecisionChange(val) {
+    const required = REQUIRES_JUSTIFICATION.includes(val);
+    const reqBadge = document.getElementById('justificationRequired');
+    const input    = document.getElementById('justificationInput');
+    reqBadge.classList.toggle('hidden', !required);
+    input.required = required;
+    if (required) input.focus();
+}
+
+// Close on backdrop click
+document.getElementById('reviewModal').addEventListener('click', function(e) {
+    if (e.target === this) closeReviewModal();
+});
+
+// Handle AJAX review submit
+document.getElementById('reviewForm').addEventListener('submit', async function(e) {
+    e.preventDefault();
+    const btn = document.getElementById('submitReviewBtn');
+    btn.disabled = true;
+    btn.innerHTML = '<i class="fas fa-spinner fa-spin mr-1"></i>Memproses…';
+
+    try {
+        const res  = await fetch(this.action, {
+            method: 'POST',
+            headers: { 'Accept': 'application/json', 'X-Requested-With': 'XMLHttpRequest' },
+            body: new FormData(this),
+        });
+        const json = await res.json();
+
+        if (json.success) {
+            closeReviewModal();
+            // Reload halaman untuk refresh data
+            window.location.reload();
+        } else {
+            const errors = json.errors ? Object.values(json.errors).flat().join('\n') : json.message;
+            alert(errors);
+            btn.disabled = false;
+            btn.innerHTML = '<i class="fas fa-gavel mr-1"></i>Proses';
+        }
+    } catch(err) {
+        alert('Terjadi kesalahan jaringan.');
+        btn.disabled = false;
+        btn.innerHTML = '<i class="fas fa-gavel mr-1"></i>Proses';
+    }
+});
+</script>
+@endsection

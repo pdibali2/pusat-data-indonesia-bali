@@ -2,7 +2,7 @@
 
 @section('content')
 
-    <a href="{{ route('data.index') }}"
+    <a href="{{ url()->previous() }}"
         class="flex items-center gap-1 font-semibold text-sky-600 pt-6 ps-4 mb-4 hover:text-sky-900 text-sm transition-colors">
             <i class="fas fa-angle-left"></i> Kembali
     </a>
