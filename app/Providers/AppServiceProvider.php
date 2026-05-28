@@ -10,7 +10,10 @@ use Illuminate\Support\ServiceProvider;
 use Illuminate\Validation\Rules\Password;
 use Carbon\Carbon;
 use App\Models\Klasifikasi;
-use App\Models\Metadata;
+// use App\Models\Metadata;
+use App\Services\AuditTrailService;
+use App\Services\AnomalyDetectionService;
+use App\Services\WorkflowService;
 use Illuminate\Support\Facades\View;
 
 class AppServiceProvider extends ServiceProvider
@@ -20,7 +23,17 @@ class AppServiceProvider extends ServiceProvider
      */
     public function register(): void
     {
-        //
+        // ── AuditTrailService: singleton ─────────────────────────
+        // Singleton agar IP/UserAgent di-resolve sekali per request,
+        // dan bisa di-inject ke service lain tanpa re-instantiate.
+        $this->app->singleton(AuditTrailService::class);
+ 
+        // ── AnomalyDetectionService: singleton ───────────────────
+        // Bergantung pada AuditTrailService (auto-resolved oleh container).
+        $this->app->singleton(AnomalyDetectionService::class);
+ 
+        // ── WorkflowService: singleton ───────────────────────────
+        $this->app->singleton(WorkflowService::class);
     }
 
     /**

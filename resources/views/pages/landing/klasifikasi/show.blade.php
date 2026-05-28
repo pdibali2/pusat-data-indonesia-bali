@@ -293,14 +293,6 @@
     const modal = document.getElementById('subscribe-modal');
     const panel = document.getElementById('modal-panel');
 
-    function showSubscribeGate() {
-        modal.classList.remove('opacity-0', 'pointer-events-none');
-        modal.classList.add('opacity-100');
-        panel.classList.remove('scale-95');
-        panel.classList.add('scale-100');
-        document.body.style.overflow = 'hidden';
-    }
-
     function hideSubscribeGate() {
         modal.classList.remove('opacity-100');
         modal.classList.add('opacity-0', 'pointer-events-none');
@@ -402,7 +394,9 @@
                 ].join(' ');
                 card.dataset.id   = item.metadata_id;
                 card.dataset.nama = item.nama;
-                card.setAttribute('onclick', 'showSubscribeGate()');
+                card.onclick = () => {
+                    window.location.href = `/statistik/${item.metadata_id}`;
+                };
 
                 card.innerHTML = `
                     <div class="flex items-start sm:items-center gap-4 px-5 py-4">
@@ -416,12 +410,6 @@
                             <div class="flex flex-wrap gap-x-4 gap-y-1 text-[11px] text-gray-400 font-body">
                                 ${satuan}${frekuensi}${tahun}
                             </div>
-                        </div>
-                        <div class="shrink-0 flex items-center gap-2">
-                            <div class="hidden sm:flex items-center gap-1.5 text-[11px] text-stikom-blue bg-stikom-blue/10 border border-stikom-blue/25 px-2.5 py-1.5 font-bold font-body">
-                                ${iconLock}Berlangganan
-                            </div>
-                            ${iconArrow}
                         </div>
                     </div>`;
 

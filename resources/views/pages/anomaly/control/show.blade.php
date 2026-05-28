@@ -1,0 +1,485 @@
+@extends('layouts.main')
+
+@section('content')
+<div class="py-6 px-4 space-y-5">
+
+    {{-- ── BREADCRUMB ──────────────────────────────────────────── --}}
+    <div class="flex items-center gap-2 text-xs text-gray-400">
+        <a href="{{ route('anomaly.control.index') }}"
+           class="hover:text-sky-600 transition-colors font-semibold text-sky-600">
+            <i class="fas fa-angle-left mr-1"></i>Control Anomali
+        </a>
+        <span>/</span>
+        <span class="text-gray-600">Detail #{{ $anomaly->anomalies_id }}</span>
+    </div>
+
+    {{-- ── HEADER ──────────────────────────────────────────────── --}}
+<div class="flex items-start justify-between gap-3 flex-wrap">
+            <div class="flex items-center gap-3 flex-wrap">
+                <span class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full
+                             text-sm font-semibold"
+                      style="{{ $anomaly->severity_style }}">
+                    @if($anomaly->severity === 'critical') <i class="fas fa-fire"></i>
+                    @elseif($anomaly->severity === 'high') <i class="fas fa-arrow-up"></i>
+                    @elseif($anomaly->severity === 'medium') <i class="fas fa-exclamation-triangle"></i>
+                    @else <i class="fas fa-info-circle"></i>
+                    @endif
+                    {{ $anomaly->severity_label }}
+                </span>
+                <span class="inline-block px-3 py-1.5 rounded-full text-xs font-medium"
+                      style="{{ $anomaly->status_style }}">
+                    {{ $anomaly->status_label }}
+                </span>
+            </div>
+
+            <div class="flex items-center gap-2 flex-wrap">
+                @if($anomaly->status === \App\Models\Anomaly::STATUS_WARNING
+                    && $data->workflow_status === \App\Models\Data::WORKFLOW_WARNING)
+                <form method="POST"
+                      action="{{ route('anomaly.control.submit_review', $data->id) }}">
+                    @csrf
+                    <button type="submit"
+                            class="text-xs bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2.5 rounded-lg
+                                   font-semibold transition-colors">
+                        <i class="fas fa-magnifying-glass mr-1"></i> Under Review
+                    </button>
+                </form>
+                @elseif($data->workflow_status === \App\Models\Data::WORKFLOW_UNDER_REVIEW)
+                <span class="inline-flex items-center gap-2 text-xs px-3 py-2 rounded-full bg-indigo-50
+                             text-indigo-700 border border-indigo-200">
+                    <i class="fas fa-spinner fa-pulse"></i> Sedang di-review
+                </span>
+                @endif
+            </div>
+    </div>
+
+    {{-- ── 2-COLUMN GRID ───────────────────────────────────────── --}}
+    <div class="grid md:grid-cols-3 gap-5">
+
+        {{-- ── KOLOM KIRI (2/3) ───────────────────────────────── --}}
+        <div class="md:col-span-2 space-y-5">
+
+            {{-- Pesan anomali --}}
+            <div class="bg-white rounded-xl border border-gray-200 p-5">
+                <p class="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-2">
+                    Pesan Anomali
+                </p>
+                <p class="text-sm text-gray-800 leading-relaxed">
+                    {{ $anomaly->message }}
+                </p>
+                <div class="mt-4 grid grid-cols-3 gap-4">
+                    <div class="text-center p-3 rounded-lg bg-gray-50">
+                        <p class="text-xs text-gray-400 mb-1">Nilai Sebelumnya</p>
+                        <p class="text-lg font-bold text-gray-700 font-mono">
+                            {{ $anomaly->previous_value !== null ? number_format($anomaly->previous_value, 2) : '—' }}
+                        </p>
+                    </div>
+                    <div class="text-center p-3 rounded-lg"
+                         style="{{ $anomaly->severity_style }}">
+                        <p class="text-xs mb-1 opacity-75">Perubahan</p>
+                        <p class="text-lg font-bold font-mono">
+                            {{ $anomaly->formatted_percentage_change }}
+                        </p>
+                    </div>
+                    <div class="text-center p-3 rounded-lg bg-gray-50">
+                        <p class="text-xs text-gray-400 mb-1">Nilai Saat Ini</p>
+                        <p class="text-lg font-bold text-gray-700 font-mono">
+                            {{ $anomaly->current_value !== null ? number_format($anomaly->current_value, 2) : '—' }}
+                        </p>
+                    </div>
+                </div>
+            </div>
+
+            {{-- Detail data --}}
+            <div class="bg-white rounded-xl border border-gray-200 p-5">
+                <p class="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-3">
+                    Detail Data
+                </p>
+                <dl class="grid grid-cols-2 gap-x-8 gap-y-3 text-sm">
+                    @php
+                    $details = [
+                        ['label'=>'Metadata',  'value'=> $data->metadata?->nama ?? '-'],
+                        ['label'=>'Satuan',    'value'=> $data->metadata?->satuan_data ?? '-'],
+                        ['label'=>'Lokasi',    'value'=> $data->location?->nama_wilayah ?? '-'],
+                        ['label'=>'Periode',   'value'=> $data->time
+                            ? ($data->time->year
+                                . ($data->time->month   ? '/Bln-'.$data->time->month   : '')
+                                . ($data->time->quarter ? '/Q'.$data->time->quarter    : '')
+                                . ($data->time->semester? '/S'.$data->time->semester   : ''))
+                            : '-'],
+                        ['label'=>'Sumber/Produsen', 'value'=> $data->produsen?->nama_produsen ?? '-'],
+                        ['label'=>'Rujukan',   'value'=> $data->rujukan?->nama_rujukan ?? '-'],
+                        ['label'=>'Diinput oleh', 'value'=> $data->user?->name ?? '-'],
+                        ['label'=>'Tanggal Input', 'value'=> $data->date_inputed?->format('d/m/Y H:i') ?? '-'],
+                    ];
+                    @endphp
+                    @foreach($details as $d)
+                    <div>
+                        <dt class="text-xs text-gray-400 font-medium">{{ $d['label'] }}</dt>
+                        <dd class="text-gray-800 mt-0.5">{{ $d['value'] }}</dd>
+                    </div>
+                    @endforeach
+                </dl>
+            </div>
+
+            {{-- Perbandingan sumber data --}}
+            <div class="bg-white rounded-xl border border-gray-200 p-5">
+                <div class="flex items-center justify-between mb-3">
+                    <p class="text-xs font-semibold text-gray-500 uppercase tracking-wide">
+                        Perbandingan Antar Sumber Data
+                    </p>
+                    <button onclick="loadSourceComparison()"
+                            class="text-xs text-sky-600 hover:text-sky-800 transition-colors">
+                        <i class="fas fa-sync-alt mr-1"></i>Refresh
+                    </button>
+                </div>
+                <div id="sourceComparisonWrap">
+                    @if($sourceComparison->isNotEmpty())
+                        @include('pages.anomaly.control._source_comparison',
+                                 ['sourceComparison' => $sourceComparison])
+                    @else
+                        <p class="text-xs text-gray-400 text-center py-4">
+                            Tidak ada data pembanding dari sumber lain.
+                        </p>
+                    @endif
+                </div>
+            </div>
+
+            {{-- Audit trail --}}
+            <div class="bg-white rounded-xl border border-gray-200 p-5">
+                <p class="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-3">
+                    Histori Perubahan (Audit Trail)
+                </p>
+                @if($auditHistory->isEmpty())
+                    <p class="text-xs text-gray-400 text-center py-4">Belum ada histori.</p>
+                @else
+                <div class="space-y-0">
+                    @foreach($auditHistory as $audit)
+                    <div class="flex gap-3 pb-4 relative
+                                {{ !$loop->last ? 'border-l border-gray-100 ml-2.5' : '' }}">
+                        {{-- Icon dot --}}
+                        <div class="absolute left-0 -translate-x-1/2 mt-0.5">
+                            <div class="w-5 h-5 rounded-full flex items-center justify-center text-[9px]"
+                                 style="{{ $audit->action_style }}">
+                                <i class="{{ $audit->action_icon }}"></i>
+                            </div>
+                        </div>
+                        {{-- Content --}}
+                        <div class="ml-5 flex-1 min-w-0">
+                            <div class="flex items-baseline gap-2">
+                                <span class="text-xs font-semibold text-gray-700">
+                                    {{ $audit->action_label }}
+                                </span>
+                                <span class="text-xs text-gray-400">
+                                    {{ $audit->created_at?->format('d/m/Y H:i') }}
+                                </span>
+                                <span class="text-xs text-gray-500">
+                                    — {{ $audit->user?->name ?? 'Sistem' }}
+                                </span>
+                            </div>
+                            @if($audit->reason)
+                            <p class="text-xs text-gray-500 mt-0.5 italic">"{{ $audit->reason }}"</p>
+                            @endif
+                            @if($audit->old_value || $audit->new_value)
+                            <div class="mt-1.5 flex gap-3">
+                                @if($audit->old_value)
+                                <div class="text-xs bg-red-50 text-red-700 px-2 py-1 rounded">
+                                    <span class="font-medium">Sebelum:</span>
+                                    @foreach($audit->old_value as $key => $value)
+                                        <div>
+                                            {{ ucfirst(str_replace('_', ' ', $key)) }}
+                                            :
+
+                                            <strong>
+                                                @if(is_array($value))
+                                                    {{ implode(', ', $value) }}
+                                                @else
+                                                    {{ ucfirst($value) }}
+                                                @endif
+                                            </strong>
+                                        </div>
+                                    @endforeach
+                                </div>
+                                @endif
+
+                                @if($audit->new_value)
+                                <div class="text-xs bg-green-50 text-green-700 px-2 py-1 rounded">
+                                    <span class="font-medium">Sesudah:</span>
+                                    @foreach($audit->new_value as $key => $value)
+                                        <div>
+                                            {{ ucfirst(str_replace('_', ' ', $key)) }}
+                                            :
+
+                                            <strong>
+                                                @if(is_array($value))
+                                                    {{ implode(', ', $value) }}
+                                                @else
+                                                    {{ ucfirst($value) }}
+                                                @endif
+                                            </strong>
+                                        </div>
+                                    @endforeach
+                                </div>
+                                @endif
+                            </div>
+                            @endif
+                        </div>
+                    </div>
+                    @endforeach
+                </div>
+                @endif
+            </div>
+
+        </div>{{-- end kolom kiri --}}
+
+        {{-- ── KOLOM KANAN (1/3) ──────────────────────────────── --}}
+        <div class="space-y-5">
+
+            {{-- Info anomali --}}
+            <div class="bg-white rounded-xl border border-gray-200 p-4 space-y-3 text-xs">
+                <p class="font-semibold text-gray-500 uppercase tracking-wide text-[10px]">
+                    Info Anomali
+                </p>
+                <div class="flex justify-between">
+                    <span class="text-gray-400">ID</span>
+                    <span class="font-mono font-semibold text-gray-700">
+                        #{{ $anomaly->anomalies_id }}
+                    </span>
+                </div>
+                <div class="flex justify-between">
+                    <span class="text-gray-400">Tipe</span>
+                    <span class="text-gray-700">{{ $anomaly->anomaly_type_label }}</span>
+                </div>
+                <div class="flex justify-between">
+                    <span class="text-gray-400">Terdeteksi</span>
+                    <span class="text-gray-700">
+                        {{ $anomaly->detected_at?->format('d/m/Y H:i') }}
+                    </span>
+                </div>
+                <div class="flex justify-between">
+                    <span class="text-gray-400">Total Review</span>
+                    <span class="text-gray-700">{{ $anomaly->reviews->count() }}</span>
+                </div>
+            </div>
+
+            {{-- ── TIMELINE HISTORI KEPUTUSAN ────────────────── --}}
+            <div class="bg-white rounded-xl border border-gray-200 p-4">
+                <p class="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-3">
+                    Histori Keputusan Stakeholder
+                </p>
+                @if($decisionHistory->isEmpty())
+                    <p class="text-xs text-gray-400 text-center py-4">Belum ada keputusan.</p>
+                @else
+                <div class="space-y-3">
+                    @foreach($decisionHistory as $review)
+                    <div class="relative pl-6">
+                        {{-- Timeline dot --}}
+                        <div class="absolute left-0 top-1 w-4 h-4 rounded-full
+                                    flex items-center justify-center text-[8px]"
+                             style="{{ $review->decision_style }}">
+                            <i class="{{ $review->decision_icon }}"></i>
+                        </div>
+                        {{-- Line --}}
+                        @if(!$loop->last)
+                        <div class="absolute left-2 top-5 w-px h-full bg-gray-100"></div>
+                        @endif
+                        {{-- Content --}}
+                        <div class="bg-gray-50 rounded-lg p-3 space-y-1">
+                            <div class="flex items-center justify-between">
+                                <span class="inline-block px-2 py-0.5 rounded-full text-[10px] font-semibold"
+                                      style="{{ $review->decision_style }}">
+                                    {{ $review->decision_label }}
+                                </span>
+                                <span class="text-[10px] text-gray-400">
+                                    {{ $review->created_at?->format('d/m/Y H:i') }}
+                                </span>
+                            </div>
+                            <p class="text-xs font-medium text-gray-700">
+                                {{ $review->reviewer?->name ?? '-' }}
+                            </p>
+                            @if($review->justification)
+                            <p class="text-xs text-gray-500 italic border-l-2 border-gray-200 pl-2">
+                                "{{ $review->justification }}"
+                            </p>
+                            @endif
+                            @if($review->notes)
+                            <p class="text-xs text-gray-400">
+                                Catatan: {{ $review->notes }}
+                            </p>
+                            @endif
+                        </div>
+                    </div>
+                    @endforeach
+                </div>
+                @endif
+            </div>
+
+            {{-- ── FORM REVIEW ─────────────────────────────── --}}
+            @if($anomaly->isPendingReview())
+            <div id="reviewSection" class="bg-white rounded-xl border border-amber-200 p-4">
+                <p class="text-xs font-semibold text-amber-700 uppercase tracking-wide mb-3">
+                    <i class="fas fa-gavel mr-1"></i>Beri Keputusan
+                </p>
+                <form method="POST"
+                      action="{{ route('anomaly.control.review', $anomaly->anomalies_id) }}"
+                      id="reviewFormDetail"
+                      class="space-y-3">
+                    @csrf
+
+                    {{-- Decision radio --}}
+                    <div class="space-y-1.5">
+                        @foreach($decisionOptions as $val => $label)
+                        <label class="flex items-center gap-2.5 px-3 py-2 rounded-lg border
+                                      border-gray-200 cursor-pointer hover:border-sky-300
+                                      transition-colors text-xs font-medium text-gray-700
+                                      has-[:checked]:border-sky-500 has-[:checked]:bg-sky-50
+                                      has-[:checked]:text-sky-700">
+                            <input type="radio" name="decision" value="{{ $val }}"
+                                   class="text-sky-600 focus:ring-sky-400"
+                                   onchange="onDetailDecisionChange('{{ $val }}')">
+                            @if($val === 'approved') <i class="fas fa-check-circle text-green-500 w-4"></i>
+                            @elseif($val === 'approved_with_note') <i class="fas fa-check-double text-teal-500 w-4"></i>
+                            @elseif($val === 'rejected') <i class="fas fa-times-circle text-red-500 w-4"></i>
+                            @else <i class="fas fa-redo text-purple-500 w-4"></i>
+                            @endif
+                            {{ $label }}
+                        </label>
+                        @endforeach
+                    </div>
+
+                    {{-- Justification --}}
+                    <div>
+                        <label class="block text-xs font-semibold text-gray-700 mb-1.5">
+                            Justification
+                            <span id="detailJustReq"
+                                  class="hidden text-red-500 ml-1 font-normal">* Wajib</span>
+                        </label>
+                        <textarea name="justification" id="detailJustInput" rows="3"
+                                  placeholder="Tuliskan alasan keputusan…"
+                                  class="w-full text-xs border border-gray-200 rounded-lg px-3 py-2
+                                         focus:outline-none focus:ring-2 focus:ring-sky-400
+                                         resize-none placeholder-gray-400"></textarea>
+                    </div>
+
+                    <div>
+                        <label class="block text-xs font-semibold text-gray-700 mb-1.5">
+                            Catatan <span class="text-gray-400 font-normal">(opsional)</span>
+                        </label>
+                        <input type="text" name="notes" placeholder="Catatan singkat…"
+                               class="w-full text-xs border border-gray-200 rounded-lg px-3 py-2
+                                      focus:outline-none focus:ring-2 focus:ring-sky-400">
+                    </div>
+
+                    @error('decision')
+                        <p class="text-xs text-red-500">{{ $message }}</p>
+                    @enderror
+                    @error('justification')
+                        <p class="text-xs text-red-500">{{ $message }}</p>
+                    @enderror
+
+                    <button type="submit"
+                            class="w-full text-xs bg-sky-600 hover:bg-sky-700 text-white
+                                   py-2.5 rounded-lg font-semibold transition-colors">
+                        <i class="fas fa-gavel mr-1.5"></i>Simpan Keputusan
+                    </button>
+                </form>
+            </div>
+            @else
+            <div class="bg-gray-50 rounded-xl border border-gray-200 p-4 text-center">
+                <i class="fas fa-check-circle text-2xl text-green-400 mb-2 block"></i>
+                <p class="text-xs font-semibold text-gray-600">Anomali sudah diproses</p>
+                <p class="text-xs text-gray-400 mt-0.5">{{ $anomaly->status_label }}</p>
+            </div>
+            @endif
+
+        </div>{{-- end kolom kanan --}}
+    </div>{{-- end grid --}}
+</div>
+
+<script>
+const COMPARE_URL = '{{ route("anomaly.control.compare_sources") }}';
+
+// Perbandingan sumber AJAX
+async function loadSourceComparison() {
+    const wrap = document.getElementById('sourceComparisonWrap');
+    wrap.innerHTML = '<p class="text-xs text-gray-400 text-center py-4"><i class="fas fa-spinner fa-spin mr-1"></i>Memuat…</p>';
+
+    try {
+        const url = new URL(COMPARE_URL);
+        url.searchParams.set('metadata_id', '{{ $data->metadata_id }}');
+        url.searchParams.set('location_id', '{{ $data->location_id }}');
+        url.searchParams.set('time_id',     '{{ $data->time_id }}');
+
+        const res  = await fetch(url);
+        const json = await res.json();
+
+        if (!json.success || !json.data.length) {
+            wrap.innerHTML = '<p class="text-xs text-gray-400 text-center py-4">Tidak ada data pembanding.</p>';
+            return;
+        }
+
+        let html = `
+        <div class="overflow-x-auto">
+          <table class="w-full text-xs">
+            <thead class="bg-gray-50">
+              <tr>
+                <th class="px-2 py-2 text-left text-gray-500 font-medium">Produsen</th>
+                <th class="px-2 py-2 text-right text-gray-500 font-medium">Nilai</th>
+                <th class="px-2 py-2 text-right text-gray-500 font-medium">Selisih</th>
+                <th class="px-2 py-2 text-right text-gray-500 font-medium">% Diff</th>
+                <th class="px-2 py-2 text-center text-gray-500 font-medium">Status</th>
+              </tr>
+            </thead>
+            <tbody class="divide-y divide-gray-100">`;
+
+        json.data.forEach(row => {
+            const conflict = row.conflict;
+            html += `
+            <tr class="${conflict ? 'bg-amber-50/40' : ''}">
+              <td class="px-2 py-2 font-medium text-gray-700">${esc(row.produsen)}</td>
+              <td class="px-2 py-2 text-right font-mono text-gray-800">${fmt(row.value)}</td>
+              <td class="px-2 py-2 text-right font-mono ${row.selisih >= 0 ? 'text-red-600' : 'text-blue-600'}">
+                ${row.selisih >= 0 ? '+' : ''}${fmt(row.selisih)}
+              </td>
+              <td class="px-2 py-2 text-right font-mono ${conflict ? 'text-amber-600 font-semibold' : 'text-gray-500'}">
+                ${row.pct_diff}%
+              </td>
+              <td class="px-2 py-2 text-center">
+                ${conflict
+                  ? '<span style="background:#fef9c3;color:#a16207;" class="px-2 py-0.5 rounded-full text-[10px] font-semibold">Konflik</span>'
+                  : '<span style="background:#dcfce7;color:#15803d;" class="px-2 py-0.5 rounded-full text-[10px] font-semibold">OK</span>'
+                }
+              </td>
+            </tr>`;
+        });
+        html += `</tbody></table></div>`;
+        wrap.innerHTML = html;
+    } catch(e) {
+        wrap.innerHTML = '<p class="text-xs text-red-400 text-center py-4">Gagal memuat data.</p>';
+    }
+}
+
+function esc(str) {
+    return String(str ?? '-')
+        .replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+}
+function fmt(val) {
+    const n = parseFloat(val);
+    return isNaN(n) ? '-' : n.toLocaleString('id-ID', {minimumFractionDigits:2, maximumFractionDigits:2});
+}
+
+// Decision radio handler
+const REQUIRES_JUST = ['approved_with_note', 'rejected', 'revised'];
+
+function onDetailDecisionChange(val) {
+    const req   = REQUIRES_JUST.includes(val);
+    const badge = document.getElementById('detailJustReq');
+    const input = document.getElementById('detailJustInput');
+    badge?.classList.toggle('hidden', !req);
+    if (input) {
+        input.required = req;
+        if (req) input.focus();
+    }
+}
+</script>
+@endsection

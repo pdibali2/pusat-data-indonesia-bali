@@ -1,0 +1,5 @@
+Changes made on May 28, 2026:
+- Updated AnomalyDetectionService::scanExistingData to accept optional metadataId and filter by it.
+- Updated AnomalyControlController::scanAll to pass metadata_id from request to scanExistingData.
+- Updated front-end doScan() in index.blade.php to render structured stats from JSON response (scanned, anomaliesFound, skipped).
+- Added a dedup prevention in createAnomaly earlier to avoid duplicate anomalies.

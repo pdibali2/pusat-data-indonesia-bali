@@ -344,10 +344,17 @@
                             </option>
                         @endforeach
                     </select>
+                    {{-- Hidden: produsen_id otomatis dari rujukan --}}
+                    <input type="hidden" name="produsen_id" id="hiddenProdusenId">
+    
+                    {{-- Info produsen otomatis --}}
+                    <div id="produsenInfo" class="hidden mt-2 px-3 py-2 bg-emerald-50 border border-emerald-100 rounded-md text-xs text-emerald-700 flex items-center gap-2">
+                        <i class="fa-solid fa-industry text-emerald-500"></i>
+                        Produsen: <span id="produsenInfoText" class="font-semibold ml-1"></span>
+                        <span class="text-emerald-400 ml-1">(otomatis dari rujukan)</span>
+                    </div>
                 </div>
 
-
- 
                 <div class="flex justify-end pt-2">
                     <button type="submit"
                         class="bg-sky-600 hover:bg-sky-700 text-white px-6 py-2.5 rounded-md shadow
@@ -596,10 +603,107 @@
                     </div>
                 </div>
 
+                <div id="outlierSection" class="hidden rounded-xl overflow-hidden"
+                    style="border: 1px solid #f97316;">
+                
+                    {{-- Header collapsible --}}
+                    <div class="flex items-center gap-2.5 px-4 py-3 cursor-pointer select-none"
+                        style="background: #fff7ed;"
+                        onclick="toggleSection('out')">
+                
+                        <div class="flex items-center justify-center w-7 h-7 rounded-full shrink-0"
+                            style="background:#ffedd5;">
+                            <i class="fas fa-chart-line text-orange-500 text-xs"></i>
+                        </div>
+                
+                        <div class="flex-1 min-w-0">
+                            <p class="text-sm font-semibold" style="color:#9a3412;">
+                                Data Outlier Terdeteksi (Modified Z-Score)
+                            </p>
+                            <p class="text-xs mt-0.5" style="color:#c2410c;" id="outlierSubtitle"></p>
+                        </div>
+                
+                        <span id="outBadge"
+                            class="text-xs font-semibold px-2.5 py-1 rounded-full shrink-0"
+                            style="background:#ffedd5; color:#9a3412; border:1px solid #f97316;"></span>
+                
+                        <svg id="outChevron"
+                            class="w-4 h-4 shrink-0 transition-transform duration-200"
+                            style="color:#fb923c;"
+                            viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5">
+                            <path d="M4 6l4 4 4-4"/>
+                        </svg>
+                    </div>
+                
+                    {{-- Body --}}
+                    <div id="outBody" class="hidden" style="border-top:1px solid #fed7aa;">
+                
+                        {{-- Info box --}}
+                        <div class="px-4 py-3 text-xs flex items-start gap-2.5"
+                            style="background:#fffbeb; color:#92400e; border-bottom:1px solid #fed7aa;">
+                            <i class="fas fa-info-circle mt-0.5 shrink-0 text-amber-500"></i>
+                            <div class="space-y-1">
+                                <p>
+                                    Sistem mendeteksi nilai yang menyimpang jauh dari pola data dalam baris yang sama
+                                    menggunakan <strong>Modified Z-Score</strong>.
+                                </p>
+                                <p>
+                                    Nilai <strong>|MZ| &gt; 3.5</strong> dianggap outlier.
+                                    Anda bisa memilih untuk <strong>menyertakan</strong> atau
+                                    <strong>mengecualikan</strong> data tersebut dari proses import.
+                                </p>
+                            </div>
+                        </div>
+                
+                        {{-- Tabel outlier --}}
+                        <div class="overflow-x-auto">
+                            <table class="w-full text-xs">
+                                <thead style="background:#fff7ed;">
+                                    <tr>
+                                        <th class="px-3 py-2 text-left font-semibold" style="color:#9a3412;">Metadata</th>
+                                        <th class="px-3 py-2 text-left font-semibold" style="color:#9a3412;">Lokasi</th>
+                                        <th class="px-3 py-2 text-center font-semibold" style="color:#9a3412;">Periode</th>
+                                        <th class="px-3 py-2 text-right font-semibold" style="color:#9a3412;">Nilai</th>
+                                        <th class="px-3 py-2 text-right font-semibold" style="color:#9a3412;">Median Baris</th>
+                                        <th class="px-3 py-2 text-right font-semibold" style="color:#9a3412;">% dari Median</th>
+                                        <th class="px-3 py-2 text-center font-semibold" style="color:#9a3412;">|MZ Score|</th>
+                                        <th class="px-3 py-2 text-center font-semibold" style="color:#9a3412;"><input type="checkbox" id="checkAllOutlier"
+                                                class="rounded border-orange-300 text-orange-500 focus:ring-orange-400"
+                                                onchange="toggleAllOutlier(this)"
+                                                title="Centang = sertakan semua"> <span>Sertakan?</span></th>
+                                    </tr>
+                                </thead>
+                                <tbody id="outTableBody" class="divide-y" style="divide-color:#fed7aa;"></tbody>
+                            </table>
+                        </div>
+                
+                        {{-- Show more --}}
+                        <button id="outShowMore"
+                                class="hidden w-full flex items-center justify-center gap-1.5 py-2 text-xs
+                                    transition-colors"
+                                style="color:#c2410c; border-top:1px solid #fed7aa;"
+                                onclick="showMore('out')">
+                            <svg class="w-3.5 h-3.5" viewBox="0 0 16 16" fill="none"
+                                stroke="currentColor" stroke-width="1.5">
+                                <path d="M4 6l4 4 4-4"/>
+                            </svg>
+                            <span id="outShowMoreTxt"></span>
+                        </button>
+                
+                        {{-- Summary bar --}}
+                        <div class="px-4 py-2.5 flex items-center gap-3 text-xs"
+                            style="background:#fff7ed; border-top:1px solid #fed7aa;">
+                            <i class="fas fa-check-square text-orange-400"></i>
+                            <span id="outlierIncludeCount" style="color:#9a3412; font-weight:600;"></span>
+                            <span style="color:#c2410c;">dari <span id="outlierTotalCount"></span> outlier akan diimport</span>
+                        </div>
+                    </div>
+                </div>
+
                 <div id="validSection" class="hidden">
                     <div class="flex items-center gap-2 mb-2.5">
                         <span class="w-2 h-2 rounded-full bg-green-500 shrink-0"></span>
-                        <p class="text-sm font-semibold text-green-700">Data Valid — Siap Diimport</p>
+                        <p class="text-sm font-semibold text-green-700">Data Valid | Siap Diimport</p>
                     </div>
                     <div class="border border-gray-200 rounded-xl overflow-x-auto">
                         <table class="w-full text-xs" id="validPivotTable">
@@ -698,6 +802,58 @@ function initTomSelect(selector) {
 }
 
 initTomSelect('.tom-select'); 
+
+const PRODUSEN_URL = '{{ route("data.get_produsen_by_rujukan") }}';
+
+// Hook ke Tom Select rujukan — cari instance yang wrapping select[name="rujukan_id"]
+document.addEventListener('DOMContentLoaded', () => {
+    // Tom Select untuk rujukan dibuat via .tom-select class
+    // Kita perlu hook onChange setelah TomSelect init
+    const rujukanEl = document.querySelector('select[name="rujukan_id"]');
+    if (rujukanEl?.tomselect) {
+        rujukanEl.tomselect.on('change', onRujukanChange);
+    } else {
+        // Fallback: observe jika TomSelect belum init saat DOM ready
+        const observer = new MutationObserver(() => {
+            if (rujukanEl?.tomselect) {
+                rujukanEl.tomselect.on('change', onRujukanChange);
+                observer.disconnect();
+            }
+        });
+        observer.observe(document.body, { childList: true, subtree: true });
+    }
+});
+
+async function onRujukanChange(value) {
+    const hidden  = document.getElementById('hiddenProdusenId');
+    const infoEl  = document.getElementById('produsenInfo');
+    const infoTxt = document.getElementById('produsenInfoText');
+
+    if (!value) {
+        hidden.value = '';
+        infoEl.classList.add('hidden');
+        return;
+    }
+
+    try {
+        const resp = await fetch(`${PRODUSEN_URL}?rujukan_id=${value}`, {
+            headers: { 'Accept': 'application/json', 'X-CSRF-TOKEN': CSRF }
+        });
+        const json = await resp.json();
+
+        if (json.success) {
+            hidden.value      = json.produsen_id;
+            infoTxt.textContent = json.nama_produsen;
+            infoEl.classList.remove('hidden');
+        } else {
+            hidden.value = '';
+            infoEl.classList.add('hidden');
+        }
+    } catch (e) {
+        hidden.value = '';
+        infoEl.classList.add('hidden');
+    }
+}
  
 /** Buat instance Tom Select baru */
 function makeTS(id, extraOpts = {}, onChange = null) {
@@ -1323,6 +1479,10 @@ function renderPreview(json) {
             <p class="text-xl font-bold" style="color:#92400e;">${json.duplicate}</p>
             <p class="text-xs mt-0.5" style="color:#92400e;">Duplikat</p>
         </div>
+        <div class="rounded-lg p-3 text-center" style="background:#fff7ed; border:1px solid #fed7aa;">
+            <p class="text-xl font-bold" style="color:#9a3412;">${json.outlier_count || 0}</p>
+            <p class="text-xs mt-0.5" style="color:#c2410c;">Outlier Z-Score</p>
+        </div>
         <div class="rounded-lg p-3 text-center" style="background:#fef2f2; border:1px solid #fecaca;">
             <p class="text-xl font-bold" style="color:#b91c1c;">${json.error}</p>
             <p class="text-xs mt-0.5" style="color:#b91c1c;">Baris Error</p>
@@ -1456,7 +1616,9 @@ function initSections(json) {
     sectionState.err  = { data: json.errors           || [], shown: 0 };
     sectionState.dup  = { data: json.duplicates        || [], shown: 0 };
     sectionState.meta = { data: json.invalid_metadata  || [], shown: 0 };
+    sectionState.out  = { data: json.outliers          || [], shown: 0 };  // ← BARU
 
+    // Error section
     const errSection = document.getElementById('errorSection');
     if (sectionState.err.data.length > 0) {
         document.getElementById('errBadge').textContent = sectionState.err.data.length + ' baris';
@@ -1465,6 +1627,7 @@ function initSections(json) {
         document.getElementById('errChevron').style.transform = '';
     } else errSection.classList.add('hidden');
 
+    // Dup section
     const dupSection = document.getElementById('dupSection');
     if (sectionState.dup.data.length > 0) {
         document.getElementById('dupBadge').textContent = sectionState.dup.data.length + ' entri';
@@ -1473,6 +1636,7 @@ function initSections(json) {
         document.getElementById('dupChevron').style.transform = '';
     } else dupSection.classList.add('hidden');
 
+    // Meta section
     const metaSection = document.getElementById('invalidMetaSection');
     const metaData    = sectionState.meta.data;
     if (metaData.length > 0) {
@@ -1480,14 +1644,31 @@ function initSections(json) {
         const notFound  = metaData.filter(m => m.reason === 'not_found').length;
         const notActive = metaData.filter(m => m.reason === 'not_active').length;
         const parts = [];
-        if (notFound  > 0) parts.push(`${notFound} tidak ditemukan di sistem`);
-        if (notActive > 0) parts.push(`${notActive} belum berstatus Active`);
+        if (notFound  > 0) parts.push(`${notFound} tidak ditemukan`);
+        if (notActive > 0) parts.push(`${notActive} belum aktif`);
         document.getElementById('invalidMetaSubtitle').textContent =
-            parts.join(' · ') + ' — semua data dari metadata ini dilewati';
+            parts.join(' · ') + ' — data dilewati';
         metaSection.classList.remove('hidden');
         document.getElementById('metaBody').classList.add('hidden');
         document.getElementById('metaChevron').style.transform = '';
     } else metaSection.classList.add('hidden');
+
+    // ── Outlier section ────────────────────────────────────────
+    const outSection = document.getElementById('outlierSection');
+    const outData    = sectionState.out.data;
+    if (outData.length > 0) {
+        document.getElementById('outBadge').textContent = outData.length + ' titik data';
+        const metaNames = [...new Set(outData.map(r => r.nama_metadata))].length;
+        document.getElementById('outlierSubtitle').textContent =
+            `${outData.length} nilai menyimpang dari pola baris di ${metaNames} metadata, pilih tindakan untuk setiap data`;
+        outSection.classList.remove('hidden');
+        document.getElementById('outBody').classList.add('hidden');
+        document.getElementById('outChevron').style.transform = '';
+        // Auto-buka section outlier agar user tidak melewatinya
+        toggleSection('out');
+    } else {
+        outSection.classList.add('hidden');
+    }
 }
 
 function toggleSection(type) {
@@ -1495,8 +1676,13 @@ function toggleSection(type) {
         err:  { body: 'errBody',  chevron: 'errChevron'  },
         dup:  { body: 'dupBody',  chevron: 'dupChevron'  },
         meta: { body: 'metaBody', chevron: 'metaChevron' },
+        out:  { body: 'outBody',  chevron: 'outChevron'  },
     };
-    const { body: bodyId, chevron: chevId } = ids[type];
+
+    const entry = ids[type];
+    if (!entry) return;
+
+    const { body: bodyId, chevron: chevId } = entry;
     const body    = document.getElementById(bodyId);
     const chevron = document.getElementById(chevId);
     const isOpen  = !body.classList.contains('hidden');
@@ -1507,6 +1693,34 @@ function toggleSection(type) {
         renderRows(type);
     }
 }
+
+// Severity berdasarkan nilai MZ
+        function getSeverityFromMZ(mz) {
+            if (mz > 10)  return 'critical';
+            if (mz > 6)   return 'high';
+            if (mz > 3.5) return 'medium';
+            return 'low';
+        }
+
+        // Update summary "N dari M outlier akan diimport"
+        function updateOutlierSummary() {
+            const checks  = document.querySelectorAll('.outlier-check');
+            const checked = document.querySelectorAll('.outlier-check:checked');
+            document.getElementById('outlierIncludeCount').textContent = checked.length;
+            document.getElementById('outlierTotalCount').textContent   = checks.length;
+
+            // Update master checkbox
+            const master = document.getElementById('checkAllOutlier');
+            if (master) {
+                master.checked       = checked.length === checks.length;
+                master.indeterminate = checked.length > 0 && checked.length < checks.length;
+            }
+        }
+
+        function toggleAllOutlier(master) {
+            document.querySelectorAll('.outlier-check').forEach(cb => cb.checked = master.checked);
+            updateOutlierSummary();
+        }
 
 function renderRows(type) {
     const s         = sectionState[type];
@@ -1566,7 +1780,67 @@ function renderRows(type) {
             document.getElementById('metaShowMoreTxt').textContent =
                 `Tampilkan ${Math.min(remaining, ROWS_PER_PAGE)} lagi (${remaining} tersisa)`;
         } else btn.classList.add('hidden');
+    } else if (type === 'out') {
+    document.getElementById('outTableBody').innerHTML = rows.map((rec, i) => {
+        const info     = rec.outlier_info;
+        const mz       = info ? Math.abs(info.modified_zscore).toFixed(2) : '-';
+        const median   = info ? formatNum(info.median_row) : '-';
+        const pct      = info ? (info.pct_from_median !== null
+            ? (info.pct_from_median >= 0 ? '+' : '') + info.pct_from_median.toFixed(1) + '%'
+            : '—') : '-';
+        const dir      = info?.direction ?? 'high';
+        const key      = `${rec.metadata_id}_${rec.location_id}_${rec.time_id}_${rec.rujukan_id}`;
+        const rowBg    = i % 2 === 0 ? '#ffffff' : '#fff7ed';
+        const severity = info ? getSeverityFromMZ(Math.abs(info.modified_zscore)) : 'medium';
+        const mzStyle  = {
+            low:      'background:#fef9c3; color:#a16207;',
+            medium:   'background:#ffedd5; color:#c2410c;',
+            high:     'background:#fee2e2; color:#b91c1c;',
+            critical: 'background:#fecaca; color:#991b1b;',
+        }[severity];
+
+        return `
+        <tr style="background:${rowBg};">
+            <td class="px-3 py-2.5">
+                <p class="font-medium text-gray-800">${esc(rec.nama_metadata ?? String(rec.metadata_id))}</p>
+            </td>
+            <td class="px-3 py-2.5 text-gray-500">${esc(rec.nama_wilayah ?? String(rec.location_id))}</td>
+            <td class="px-3 py-2.5 text-center font-mono text-gray-700">${esc(rec.period_label)}</td>
+            <td class="px-3 py-2.5 text-right font-mono font-semibold text-gray-900">
+                ${formatNum(rec.number_value)}
+            </td>
+            <td class="px-3 py-2.5 text-right font-mono text-gray-500">${median}</td>
+            <td class="px-3 py-2.5 text-right font-mono
+                    ${dir === 'high' ? 'text-red-600' : 'text-blue-600'} font-semibold">
+                ${pct}
+            </td>
+            <td class="px-3 py-2.5 text-center">
+                <span class="inline-block px-2 py-0.5 rounded-full text-xs font-bold"
+                    style="${mzStyle}">
+                    ${mz}
+                </span>
+            </td>
+            <td class="px-3 py-2.5 text-center">
+                <input type="checkbox" class="outlier-check rounded border-orange-300
+                    text-orange-500 focus:ring-orange-400 cursor-pointer"
+                    data-key="${esc(key)}"
+                    checked
+                    onchange="updateOutlierSummary()">
+            </td>
+        </tr>`;
+    }).join('');
+
+    const btn = document.getElementById('outShowMore');
+    if (remaining > 0) {
+        btn.classList.remove('hidden');
+        document.getElementById('outShowMoreTxt').textContent =
+            `Tampilkan ${Math.min(remaining, ROWS_PER_PAGE)} lagi (${remaining} tersisa)`;
+    } else {
+        btn.classList.add('hidden');
     }
+
+    updateOutlierSummary();
+}
 }
 
 function showMore(type) {
@@ -1579,40 +1853,83 @@ function showMore(type) {
 
 async function doImport() {
     if (!currentFile || !previewData) return;
+
     const skipDup      = document.getElementById('cbSkipDup')?.checked ?? true;
     const btn          = document.getElementById('btnImport');
     const invalidCount = (previewData.invalid_metadata || []).length;
-    let confirmMsg     = `Import ${previewData.valid} record data?`;
-    if (skipDup && previewData.duplicate > 0) confirmMsg += `\n• ${previewData.duplicate} duplikat akan dilewati.`;
-    if (invalidCount > 0) confirmMsg += `\n• ${invalidCount} metadata tidak valid — datanya tidak akan diimport.`;
+    const outlierCount = (previewData.outliers || []).length;
+
+    // Kumpulkan outlier yang TIDAK dicentang (dikecualikan)
+    const excludedKeys = [];
+    document.querySelectorAll('.outlier-check:not(:checked)').forEach(cb => {
+        excludedKeys.push(cb.dataset.key);
+    });
+
+    // Build confirm message
+    let confirmMsg = `Import ${previewData.valid} record data?`;
+    if (skipDup && previewData.duplicate > 0) {
+        confirmMsg += `\n• ${previewData.duplicate} duplikat akan dilewati.`;
+    }
+    if (invalidCount > 0) {
+        confirmMsg += `\n• ${invalidCount} metadata tidak valid — datanya tidak akan diimport.`;
+    }
+    if (outlierCount > 0) {
+        const included = outlierCount - excludedKeys.length;
+        const excluded = excludedKeys.length;
+        confirmMsg += `\n• ${included} dari ${outlierCount} data outlier akan diimport.`;
+        if (excluded > 0) {
+            confirmMsg += `\n• ${excluded} data outlier dikecualikan sesuai pilihan Anda.`;
+        }
+    }
+
     if (!confirm(confirmMsg)) return;
+
     btn.disabled = true;
     document.getElementById('importingBar').classList.remove('hidden');
     document.getElementById('previewSection').classList.add('hidden');
+
     const form = new FormData();
     form.append('_token',          CSRF);
     form.append('file_excel',      currentFile);
     form.append('skip_duplicates', skipDup ? '1' : '0');
+
+    // Kirim excluded_keys ke server
+    excludedKeys.forEach(key => form.append('excluded_keys[]', key));
+
     try {
         const resp = await fetch(IMPORT_URL, {
             method:  'POST',
-            headers: { 'Accept': 'application/json', 'X-Requested-With': 'XMLHttpRequest' },
-            body:    form,
+            headers: {
+                'Accept':           'application/json',
+                'X-Requested-With': 'XMLHttpRequest',
+            },
+            body: form,
         });
+
         const json = await resp.json();
         document.getElementById('importingBar').classList.add('hidden');
+
         if (json.success) {
-            showImportAlert('success', json.message,
-                json.redirect ? `<a href="${json.redirect}" class="underline font-semibold ml-2">Ke Halaman Data →</a>` : '');
+            showImportAlert(
+                'success',
+                json.message,
+                json.redirect
+                    ? `<a href="${json.redirect}" class="underline font-semibold ml-2">
+                           ${json.anomaly_count > 0 ? 'Ke Halaman Control →' : 'Ke Halaman Data →'}
+                       </a>`
+                    : ''
+            );
             resetUpload();
         } else {
             showImportAlert('error', json.message || 'Import gagal.');
             if (previewData) renderPreview(previewData);
+            btn.disabled = false;
         }
     } catch (err) {
         document.getElementById('importingBar').classList.add('hidden');
         showImportAlert('error', 'Terjadi kesalahan jaringan: ' + err.message);
         if (previewData) renderPreview(previewData);
+        btn.disabled = false;
     }
 }
 

@@ -559,6 +559,29 @@
                 <p class="text-xs text-gray-400 mt-0.5" id="tableSubInfo"></p>
             </div>
             <div class="flex gap-2 flex-wrap">
+                {{-- ── Tombol Export ── --}}
+                <div class="flex gap-2 flex-wrap" id="exportBtnGroup" style="display:none!important">
+                    {{-- Excel --}}
+                    <button type="button" onclick="exportData('excel')"
+                            class="px-3 py-1.5 border border-emerald-300 hover:bg-emerald-50 text-emerald-600
+                                text-xs font-medium rounded-lg flex items-center gap-1.5 transition-colors">
+                        <i class="fas fa-file-excel text-xs"></i> Export Excel
+                    </button>
+                
+                    {{-- PDF --}}
+                    <button type="button" onclick="exportData('pdf')"
+                            class="px-3 py-1.5 border border-red-300 hover:bg-red-50 text-red-500
+                                text-xs font-medium rounded-lg flex items-center gap-1.5 transition-colors">
+                        <i class="fas fa-file-pdf text-xs"></i> Export PDF
+                    </button>
+                
+                    {{-- JSON --}}
+                    <button type="button" onclick="exportData('json')"
+                            class="px-3 py-1.5 border border-gray-300 hover:bg-gray-50 text-gray-500
+                                text-xs font-medium rounded-lg flex items-center gap-1.5 transition-colors">
+                        <i class="fas fa-code text-xs"></i> Export JSON
+                    </button>
+                </div>
                 <button type="button" onclick="resetFilter()"
                         class="px-3 py-1.5 border border-gray-300 hover:bg-gray-50 text-gray-500
                                text-xs font-medium rounded-lg flex items-center gap-1.5 transition-colors">
@@ -659,12 +682,15 @@ const TP_FREK_LABEL = {
 };
 
 const TMPL_URLS = {
-    base       : '{{ route("data.index") }}',
-    tableData  : '{{ route("template.table_data") }}',
-    freqCounts : '{{ route("template.freq_counts") }}',
-    grafik     : '{{ route("template.grafik") }}',
-    csrf       : document.querySelector('meta[name="csrf-token"]')?.content ?? '',
-    metadataDetail : '{{ url("metadata") }}',
+    base            : '{{ route("data.index") }}',
+    tableData       : '{{ route("template.table_data") }}',
+    freqCounts      : '{{ route("template.freq_counts") }}',
+    grafik          : '{{ route("template.grafik") }}',
+    csrf            : document.querySelector('meta[name="csrf-token"]')?.content ?? '',
+    metadataDetail  : '{{ url("metadata") }}',
+    exportExcel     : '{{ route("template.export.excel") }}',
+    exportPdf       : '{{ route("template.export.pdf") }}',
+    exportJson      : '{{ route("template.export.json") }}',
 };
 
 // State filter aktif
@@ -1040,6 +1066,122 @@ function _getLokasiLevel(row) {
     return 3;
 }
 
+function showExportButtons() {
+        const g = document.getElementById('exportBtnGroup');
+        if (g) g.style.removeProperty('display');
+    }
+    function hideExportButtons() {
+        const g = document.getElementById('exportBtnGroup');
+        if (g) g.style.setProperty('display', 'none', 'important');
+    }
+
+    // ─── Export handler ───────────────────────────────────────────
+    function exportData(format) {
+        // Validasi state
+        if (!TS.tampilan_id || !TS.frekuensi) {
+            alert('Pilih template dan frekuensi terlebih dahulu.');
+            return;
+        }
+    
+        // Payload — sama dengan tampilkanData()
+        const payload = {
+            tampilan_id : TS.tampilan_id,
+            frekuensi   : TS.frekuensi,
+            year_from   : TS.year_from,
+            year_to     : TS.year_to,
+            period_from : TS.period_from,
+            period_to   : TS.period_to,
+        };
+    
+        const urlMap = {
+            excel : TMPL_URLS.exportExcel,
+            pdf   : TMPL_URLS.exportPdf,
+            json  : TMPL_URLS.exportJson,
+        };
+    
+        const url = urlMap[format];
+        if (!url) return;
+    
+        if (format === 'pdf') {
+            // PDF → buka di tab baru (render Blade view)
+            _submitFormPost(url, payload);
+            return;
+        }
+    
+        if (format === 'json') {
+            // JSON → download via fetch
+            _fetchAndDownload(url, payload, 'application/json', _makeFilename('json'));
+            return;
+        }
+    
+        // Excel → download via form POST (stream download)
+        _submitFormPost(url, payload);
+    }
+
+    // ─── Buat form POST invisible dan submit ─────────────────────
+    function _submitFormPost(url, payload) {
+        const form = document.createElement('form');
+        form.method = 'POST';
+        form.action = url;
+        form.target = '_blank'; // PDF buka di tab baru; Excel otomatis download
+    
+        // CSRF
+        const csrf = document.createElement('input');
+        csrf.type  = 'hidden';
+        csrf.name  = '_token';
+        csrf.value = TMPL_URLS.csrf;
+        form.appendChild(csrf);
+    
+        // Fields
+        Object.entries(payload).forEach(([k, v]) => {
+            if (v === null || v === undefined) return;
+            const inp = document.createElement('input');
+            inp.type  = 'hidden';
+            inp.name  = k;
+            inp.value = v;
+            form.appendChild(inp);
+        });
+    
+        document.body.appendChild(form);
+        form.submit();
+        document.body.removeChild(form);
+    }
+    
+    // ─── Fetch → download file ─────────────────────────────────
+    async function _fetchAndDownload(url, payload, mimeType, filename) {
+        try {
+            const res = await fetch(url, {
+                method  : 'POST',
+                headers : {
+                    'Content-Type' : 'application/json',
+                    'X-CSRF-TOKEN' : TMPL_URLS.csrf,
+                    'Accept'       : mimeType,
+                },
+                body: JSON.stringify(payload),
+            });
+    
+            if (!res.ok) throw new Error('Server error: ' + res.status);
+    
+            const blob = await res.blob();
+            const link = document.createElement('a');
+            link.href     = URL.createObjectURL(blob);
+            link.download = filename;
+            link.click();
+            URL.revokeObjectURL(link.href);
+        } catch (e) {
+            alert('Gagal mengekspor: ' + e.message);
+            console.error(e);
+        }
+    }
+    
+    // ─── Nama file otomatis ───────────────────────────────────────
+    function _makeFilename(ext) {
+        const name = document.querySelector('[class*="border-sky-500"] p.font-semibold')
+            ?.textContent?.trim()?.replace(/\s+/g, '_') ?? 'export';
+        const range = [TS.year_from, TS.year_to].filter(Boolean).join('-') || 'all';
+        return `Export_${name}_${TS.frekuensi}_${range}.${ext}`;
+    }
+
 // ─────────────────────────────────────────────────────────────
 // RENDER TABEL PIVOT
 // ─────────────────────────────────────────────────────────────
@@ -1226,7 +1368,8 @@ function _renderTable(d) {
 
     body.innerHTML = html;
     wrap.classList.remove('hidden');
-
+    showExportButtons();
+    
     // ── Cek akses langganan ──
     const overlay = document.getElementById('tableAccessOverlay');
     if (overlay) {
@@ -1298,6 +1441,7 @@ function resetFilter() { window.location.href = TMPL_URLS.base; }
 function _resetDataTable() {
     ['dataTableSection','tableLoading','tableEmpty','tableWrap','tablePagination']
         .forEach(id => document.getElementById(id)?.classList.add('hidden'));
+        hideExportButtons();
 }
 
 function _esc(str) {
