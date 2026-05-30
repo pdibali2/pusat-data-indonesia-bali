@@ -409,7 +409,7 @@
             </div>
 
             {{-- UPLOAD AREA --}}
-            <div class="page-layout">
+            <div class="py-5">
                 <div>
                     <label class="block font-medium text-sm mb-2">
                         Upload File Excel <span class="text-red-500">*</span>
@@ -448,7 +448,7 @@
                 </div>
 
                 {{-- OPSI IMPORT --}}
-                <div class="flex flex-wrap gap-4 items-center">
+                <div class="flex flex-wrap gap-4 py-5 items-center">
                     <label class="flex items-center gap-2 text-sm cursor-pointer select-none">
                         <input type="checkbox" id="skipExisting" checked
                                class="rounded border-gray-300 text-sky-600 focus:ring-sky-400">

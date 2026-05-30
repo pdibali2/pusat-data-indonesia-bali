@@ -390,6 +390,8 @@ class DataController extends Controller
             // excluded_keys: array of record keys yang user pilih untuk TIDAK diimport
             'excluded_keys'   => 'nullable|array',
             'excluded_keys.*' => 'string',
+            'anomaly_keys'    => 'nullable|array',
+            'anomaly_keys.*'  => 'string',
         ]);
  
         try {
@@ -400,37 +402,50 @@ class DataController extends Controller
             foreach ($request->input('excluded_keys', []) as $key) {
                 $excludedKeys[$key] = true;
             }
+
+            // Bangun set key outlier yang harus dicatat sebagai anomali
+            $anomalyKeys = [];
+            foreach ($request->input('anomaly_keys', []) as $key) {
+                $anomalyKeys[$key] = true;
+            }
  
             $import = new DataImport(
                 userId:         Auth::user()->user_id,
                 skipDuplicates: $request->boolean('skip_duplicates', true)
             );
  
-            $result = $import->import($path, $excludedKeys);
+            $result = $import->import($path, $excludedKeys, $anomalyKeys);
  
             // Screening anomali untuk data yang baru diimport
             $anomalyStats = ['scanned' => 0, 'anomaliesFound' => 0];
             if ($result['imported'] > 0) {
                 $anomalyStats = $this->detector->scanExistingData(batchSize: 100);
             }
- 
+
+            $manualAnomalyCount = $result['anomalies_created'] ?? 0;
             $message = $result['message'];
+            if ($manualAnomalyCount > 0) {
+                $message .= " {$manualAnomalyCount} outlier dicatat sebagai anomali.";
+            }
             if ($anomalyStats['anomaliesFound'] > 0) {
                 $message .= " {$anomalyStats['anomaliesFound']} anomali terdeteksi — silakan cek halaman Control.";
             }
  
+            $totalAnomalyCount = $manualAnomalyCount + $anomalyStats['anomaliesFound'];
+            $redirectToAnomaly = $totalAnomalyCount > 0;
+
             if ($request->wantsJson()) {
                 return response()->json([
                     'success'       => true,
                     'message'       => $message,
-                    'anomaly_count' => $anomalyStats['anomaliesFound'],
-                    'redirect'      => $anomalyStats['anomaliesFound'] > 0
+                    'anomaly_count' => $totalAnomalyCount,
+                    'redirect'      => $redirectToAnomaly
                         ? route('anomaly.control.index')
                         : route('data.index'),
                 ]);
             }
  
-            return $anomalyStats['anomaliesFound'] > 0
+            return $redirectToAnomaly
                 ? redirect()->route('anomaly.control.index')->with('warning', $message)
                 : redirect()->route('data.index')->with('success', $message);
  

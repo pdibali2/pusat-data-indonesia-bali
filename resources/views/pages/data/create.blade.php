@@ -648,7 +648,7 @@
                                     menggunakan <strong>Modified Z-Score</strong>.
                                 </p>
                                 <p>
-                                    Nilai <strong>|MZ| &gt; 3.5</strong> dianggap outlier.
+                                    Apabila nilai <strong>|MZ| > 3.5 &gt; </strong> dianggap outlier.
                                     Anda bisa memilih untuk <strong>menyertakan</strong> atau
                                     <strong>mengecualikan</strong> data tersebut dari proses import.
                                 </p>
@@ -671,6 +671,7 @@
                                                 class="rounded border-orange-300 text-orange-500 focus:ring-orange-400"
                                                 onchange="toggleAllOutlier(this)"
                                                 title="Centang = sertakan semua"> <span>Sertakan?</span></th>
+                                        <th class="px-3 py-2 text-center font-semibold" style="color:#9a3412;">Catat sebagai Outlier</th>
                                     </tr>
                                 </thead>
                                 <tbody id="outTableBody" class="divide-y" style="divide-color:#fed7aa;"></tbody>
@@ -694,8 +695,8 @@
                         <div class="px-4 py-2.5 flex items-center gap-3 text-xs"
                             style="background:#fff7ed; border-top:1px solid #fed7aa;">
                             <i class="fas fa-check-square text-orange-400"></i>
-                            <span id="outlierIncludeCount" style="color:#9a3412; font-weight:600;"></span>
-                            <span style="color:#c2410c;">dari <span id="outlierTotalCount"></span> outlier akan diimport</span>
+                            <span id="outlierMarkedCount" style="color:#9a3412; font-weight:600;"></span>
+                            <span style="color:#c2410c;">dari <span id="outlierTotalCount"></span> outlier akan dicatat sebagai anomali</span>
                         </div>
                     </div>
                 </div>
@@ -1702,23 +1703,44 @@ function toggleSection(type) {
             return 'low';
         }
 
-        // Update summary "N dari M outlier akan diimport"
-        function updateOutlierSummary() {
-            const checks  = document.querySelectorAll('.outlier-check');
-            const checked = document.querySelectorAll('.outlier-check:checked');
-            document.getElementById('outlierIncludeCount').textContent = checked.length;
-            document.getElementById('outlierTotalCount').textContent   = checks.length;
+        function setOutlierRowState(cb, enabled) {
+            const row  = cb.closest('tr');
+            if (!row) return;
+            const mark = row.querySelector('.outlier-mark');
+            if (!mark) return;
+            mark.disabled = !enabled;
+            mark.checked  = enabled ? mark.checked : false;
+            mark.classList.toggle('opacity-50', !enabled);
+            mark.classList.toggle('cursor-not-allowed', !enabled);
+        }
 
-            // Update master checkbox
+        function syncOutlierRow(cb) {
+            setOutlierRowState(cb, cb.checked);
+            updateOutlierSummary();
+        }
+
+        function updateOutlierSummary() {
+            const total = document.querySelectorAll('.outlier-row').length;
+            const marked = document.querySelectorAll('.outlier-mark:checked').length;
+            document.getElementById('outlierMarkedCount').textContent = marked;
+            document.getElementById('outlierTotalCount').textContent   = total;
+
             const master = document.getElementById('checkAllOutlier');
             if (master) {
-                master.checked       = checked.length === checks.length;
-                master.indeterminate = checked.length > 0 && checked.length < checks.length;
+                const included = document.querySelectorAll('.outlier-include:checked').length;
+                master.checked       = included === total && total > 0;
+                master.indeterminate = included > 0 && included < total;
             }
         }
 
         function toggleAllOutlier(master) {
-            document.querySelectorAll('.outlier-check').forEach(cb => cb.checked = master.checked);
+            document.querySelectorAll('.outlier-include').forEach(cb => {
+                cb.checked = master.checked;
+                setOutlierRowState(cb, master.checked);
+            });
+            if (master.checked) {
+                document.querySelectorAll('.outlier-mark').forEach(cb => cb.checked = true);
+            }
             updateOutlierSummary();
         }
 
@@ -1821,11 +1843,17 @@ function renderRows(type) {
                 </span>
             </td>
             <td class="px-3 py-2.5 text-center">
-                <input type="checkbox" class="outlier-check rounded border-orange-300
+                <input type="checkbox" class="outlier-include outlier-row rounded border-orange-300
                     text-orange-500 focus:ring-orange-400 cursor-pointer"
                     data-key="${esc(key)}"
                     checked
-                    onchange="updateOutlierSummary()">
+                    onchange="syncOutlierRow(this)">
+            </td>
+            <td class="px-3 py-2.5 text-center">
+                <input type="checkbox" class="outlier-mark rounded border-orange-300
+                    text-orange-500 focus:ring-orange-400 cursor-pointer"
+                    data-key="${esc(key)}"
+                    checked>
             </td>
         </tr>`;
     }).join('');
@@ -1861,8 +1889,14 @@ async function doImport() {
 
     // Kumpulkan outlier yang TIDAK dicentang (dikecualikan)
     const excludedKeys = [];
-    document.querySelectorAll('.outlier-check:not(:checked)').forEach(cb => {
+    document.querySelectorAll('.outlier-include:not(:checked)').forEach(cb => {
         excludedKeys.push(cb.dataset.key);
+    });
+
+    // Kumpulkan outlier yang dicentang untuk dicatat sebagai anomali
+    const anomalyKeys = [];
+    document.querySelectorAll('.outlier-mark:checked').forEach(cb => {
+        anomalyKeys.push(cb.dataset.key);
     });
 
     // Build confirm message
@@ -1880,6 +1914,9 @@ async function doImport() {
         if (excluded > 0) {
             confirmMsg += `\n• ${excluded} data outlier dikecualikan sesuai pilihan Anda.`;
         }
+        if (anomalyKeys.length > 0) {
+            confirmMsg += `\n• ${anomalyKeys.length} outlier akan dicatat sebagai anomali.`;
+        }
     }
 
     if (!confirm(confirmMsg)) return;
@@ -1895,6 +1932,7 @@ async function doImport() {
 
     // Kirim excluded_keys ke server
     excludedKeys.forEach(key => form.append('excluded_keys[]', key));
+    anomalyKeys.forEach(key => form.append('anomaly_keys[]', key));
 
     try {
         const resp = await fetch(IMPORT_URL, {

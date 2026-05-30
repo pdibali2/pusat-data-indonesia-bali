@@ -2,6 +2,7 @@
 
 namespace App\Imports;
 
+use App\Models\Anomaly;
 use App\Models\Data;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
@@ -45,6 +46,8 @@ class DataImport
     private array $outliers        = [];   // ← BARU: baris yang terdeteksi outlier
     private int   $imported        = 0;
     private int   $skipped         = 0;
+    private array $pendingAnomalyKeys = [];
+    private int   $anomaliesCreated   = 0;
 
     private array $timeCache    = [];
     private array $existingSet  = [];
@@ -158,7 +161,7 @@ class DataImport
      *         Key format: "{metadata_id}_{location_id}_{time_id}_{rujukan_id}"
      *         Record yang ada di sini TIDAK diimport (dikecualikan user dari UI).
      */
-    public function import(string $filePath, array $excludedKeys = []): array
+    public function import(string $filePath, array $excludedKeys = [], array $anomalyKeys = []): array
     {
         [$periodCols, $dataRows, $rujukanColIndex] = $this->readExcel($filePath);
 
@@ -170,6 +173,8 @@ class DataImport
         $buffer    = [];
         $now       = Carbon::now()->format('Y-m-d H:i:s');
         $insertSet = [];
+        $this->pendingAnomalyKeys = [];
+        $this->anomaliesCreated   = 0;
 
         DB::beginTransaction();
         try {
@@ -197,6 +202,11 @@ class DataImport
                         }
                     }
 
+                    $recordIsAnomaly = isset($anomalyKeys[$key]);
+                    if ($recordIsAnomaly) {
+                        $this->pendingAnomalyKeys[$key] = true;
+                    }
+
                     $insertSet[$key] = true;
                     $buffer[] = [
                         'user_id'      => $this->userId,
@@ -207,7 +217,7 @@ class DataImport
                         'rujukan_id'   => $rec['rujukan_id'],
                         'produsen_id'  => $rec['produsen_id'] ?? null,
                         'status'       => Data::STATUS_PENDING,
-                        'workflow_status' => Data::WORKFLOW_DRAFT,
+                        'workflow_status' => $recordIsAnomaly ? Data::WORKFLOW_WARNING : Data::WORKFLOW_DRAFT,
                         'date_inputed' => $now,
                     ];
 
@@ -231,6 +241,10 @@ class DataImport
                 $this->imported += count($buffer);
             }
 
+            if (!empty($this->pendingAnomalyKeys)) {
+                $this->createAnomaliesForPendingKeys($now);
+            }
+
             DB::commit();
         } catch (\Throwable $e) {
             DB::rollBack();
@@ -243,8 +257,64 @@ class DataImport
             'skipped'      => $this->skipped,
             'errors'       => count($this->errors),
             'skipped_meta' => count(array_unique(array_column($this->invalid_metadata, 'metadata_id'))),
+            'anomalies_created' => $this->anomaliesCreated,
             'message'      => $this->buildSummaryMessage(),
         ];
+    }
+
+    private function createAnomaliesForPendingKeys(string $insertedAt): void
+    {
+        if (empty($this->pendingAnomalyKeys)) {
+            return;
+        }
+
+        $criteria = [];
+        foreach (array_keys($this->pendingAnomalyKeys) as $key) {
+            [$metadataId, $locationId, $timeId, $rujukanId] = explode('_', $key);
+            $criteria[] = [
+                'metadata_id' => (int) $metadataId,
+                'location_id' => (int) $locationId,
+                'time_id'     => (int) $timeId,
+                'rujukan_id'  => $rujukanId === '' ? null : (int) $rujukanId,
+            ];
+        }
+
+        $query = DB::table('data')->where('date_inputed', $insertedAt);
+        $query->where(function ($q) use ($criteria) {
+            foreach ($criteria as $c) {
+                $q->orWhere(function ($qq) use ($c) {
+                    $qq->where('metadata_id', $c['metadata_id'])
+                       ->where('location_id', $c['location_id'])
+                       ->where('time_id', $c['time_id']);
+                    if ($c['rujukan_id'] === null) {
+                        $qq->whereNull('rujukan_id');
+                    } else {
+                        $qq->where('rujukan_id', $c['rujukan_id']);
+                    }
+                });
+            }
+        });
+
+        $rows = $query->get(['id', 'number_value']);
+        foreach ($rows as $row) {
+            $anomaly = Anomaly::firstOrCreate([
+                'id'           => $row->id,
+                'table_name'   => 'data',
+                'anomaly_type' => Anomaly::TYPE_UNREASONABLE,
+            ], [
+                'severity'          => Anomaly::SEVERITY_MEDIUM,
+                'previous_value'    => null,
+                'current_value'     => $row->number_value,
+                'percentage_change' => null,
+                'message'           => 'Data ditandai sebagai outlier oleh pengguna saat import.',
+                'status'            => Anomaly::STATUS_WARNING,
+                'detected_at'       => now(),
+            ]);
+
+            if ($anomaly->wasRecentlyCreated ?? false) {
+                $this->anomaliesCreated++;
+            }
+        }
     }
 
     // ══════════════════════════════════════════════════════════
@@ -261,7 +331,7 @@ class DataImport
      *   yang jauh lebih robust terhadap outlier.
      *
      * Rumus: MZ_i = 0.6745 × (x_i − median) / MAD
-     * Flag sebagai outlier jika |MZ_i| > 3.5 (Iglewicz & Hoaglin, 1993)
+     * Flag sebagai outlier jika |MZ_i| > 3.5 
      *
      * Syarat minimum: baris harus punya ≥ 3 nilai numerik agar deteksi bermakna.
      *
