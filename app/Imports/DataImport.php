@@ -21,6 +21,7 @@ class DataImport
     private const COL_LOC_NM  = 3;
     private const COL_RUJUKAN = 4;
     private const COL_PERIOD  = 5;
+    
 
     /**
      * Threshold Modified Z-Score untuk deteksi outlier.
@@ -29,7 +30,14 @@ class DataImport
      * Semakin kecil → semakin sensitif.
      * Referensi: Iglewicz & Hoaglin (1993), "How to Detect and Handle Outliers"
      */
-    private const OUTLIER_MZSCORE_THRESHOLD = 3.5;
+    private const OUTLIER_MZSCORE_THRESHOLD      = 3.5;   // base threshold (sama)
+    private const OUTLIER_COV_SCALE_FACTOR       = 0.8;   // pengali CoV ke threshold
+    private const OUTLIER_MIN_COV_TO_SCALE       = 0.6;   // CoV minimum sebelum scaling aktif
+
+    private const OUTLIER_MIN_ROWS_FOR_SCALING  = 3;
+    private const OUTLIER_MIN_PCT_FROM_MEDIAN   = 0.50;
+    private const OUTLIER_NEAR_ZERO_THRESHOLD   = 5.0;
+    private const OUTLIER_NEAR_ZERO_MIN_ABS     = 10.0;
 
     private const BULAN_MAP = [
         'jan' => 1, 'feb' => 2, 'mar' => 3, 'apr' => 4, 'mei' => 5, 'jun' => 6,
@@ -320,28 +328,21 @@ class DataImport
     // ══════════════════════════════════════════════════════════
     // OUTLIER DETECTION — Modified Z-Score (Iglewicz & Hoaglin)
     // ══════════════════════════════════════════════════════════
-
-    /**
-     * Deteksi outlier untuk setiap baris Excel menggunakan Modified Z-Score.
-     *
-     * Mengapa Modified Z-Score, bukan Z-Score standar?
-     * - Data statistik di Excel sering hanya 3–10 titik waktu (dataset kecil).
-     * - Z-Score standar menggunakan mean & stddev yang sangat dipengaruhi outlier itu sendiri.
-     * - Modified Z-Score menggunakan MEDIAN dan MAD (Median Absolute Deviation)
-     *   yang jauh lebih robust terhadap outlier.
-     *
-     * Rumus: MZ_i = 0.6745 × (x_i − median) / MAD
-     * Flag sebagai outlier jika |MZ_i| > 3.5 
-     *
-     * Syarat minimum: baris harus punya ≥ 3 nilai numerik agar deteksi bermakna.
-     *
-     * @return array<int, array<string, array>> $outlierMap[rowNum][periodLabel] = info
-     */
     private function detectOutliersInRows(array $dataRows, array $periodCols): array
     {
         $outlierMap = [];
-
+    
+        // Hitung jumlah baris per metadata_id untuk CoV scaling decision
+        $rowsPerMeta = [];
+        foreach ($dataRows as $row) {
+            $metaId = isset($row[self::COL_META_ID]) ? (int) $row[self::COL_META_ID] : null;
+            if ($metaId) {
+                $rowsPerMeta[$metaId] = ($rowsPerMeta[$metaId] ?? 0) + 1;
+            }
+        }
+    
         foreach ($dataRows as $rowNum => $row) {
+    
             // Kumpulkan nilai numerik per kolom periode
             $periodValues = [];
             foreach ($periodCols as $pi => $periodLabel) {
@@ -351,58 +352,93 @@ class DataImport
                     $periodValues[$periodLabel] = (float) $rawValue;
                 }
             }
-
-            // Perlu minimal 3 nilai untuk deteksi bermakna
+    
+            // Minimal 3 nilai numerik agar deteksi bermakna
             if (count($periodValues) < 3) continue;
-
-            $values = array_values($periodValues);
-            $mzScores = $this->calculateModifiedZScores($values);
+    
+            $values   = array_values($periodValues);
             $labels   = array_keys($periodValues);
-
+            $median   = $this->median($values);
+            $mzScores = $this->calculateModifiedZScores($values);
+    
+            $metadataId  = isset($row[self::COL_META_ID]) ? (int) $row[self::COL_META_ID] : null;
+            $rowCountForMeta = $metadataId ? ($rowsPerMeta[$metadataId] ?? 1) : 1;
+    
+            // ── LAYER 1: Adaptive Threshold ────────────────────────
+            // CoV scaling hanya aktif jika metadata ini punya banyak baris (multi-wilayah).
+            // Untuk single-row metadata (misal: data narkoba hanya Provinsi Bali),
+            // threshold tetap base tanpa scaling — tidak ada alasan untuk menaikkan threshold.
+            $adaptiveThreshold = self::OUTLIER_MZSCORE_THRESHOLD;
+    
+            if ($rowCountForMeta >= self::OUTLIER_MIN_ROWS_FOR_SCALING) {
+                $mean   = array_sum($values) / count($values);
+                $stdDev = $this->stdDev($values, $mean);
+                $cov    = ($mean != 0) ? ($stdDev / abs($mean)) : 0;
+    
+                if ($cov > self::OUTLIER_MIN_COV_TO_SCALE) {
+                    $adaptiveThreshold = self::OUTLIER_MZSCORE_THRESHOLD
+                        * (1 + self::OUTLIER_COV_SCALE_FACTOR * ($cov - self::OUTLIER_MIN_COV_TO_SCALE));
+                }
+            }
+    
             foreach ($labels as $idx => $periodLabel) {
                 $mz  = $mzScores[$idx];
                 $val = $periodValues[$periodLabel];
-
-                if (abs($mz) > self::OUTLIER_MZSCORE_THRESHOLD) {
-                    $median  = $this->median($values);
-                    $pctDiff = $median > 0
-                        ? round((($val - $median) / $median) * 100, 2)
-                        : null;
-
-                    $outlierMap[$rowNum][$periodLabel] = [
-                        'period_label'   => $periodLabel,
-                        'value'          => $val,
-                        'modified_zscore'=> round($mz, 4),
-                        'median_row'     => round($median, 4),
-                        'pct_from_median'=> $pctDiff,
-                        'direction'      => $val > $median ? 'high' : 'low',
-                        'threshold'      => self::OUTLIER_MZSCORE_THRESHOLD,
-                    ];
+    
+                // Layer 1: cek adaptive threshold
+                if (abs($mz) <= $adaptiveThreshold) continue;
+    
+                // ── LAYER 2: Minimum Deviation Guard ───────────────
+                // Tujuan: hindari false positive ketika MAD sangat kecil
+                // tapi deviasi absolut sebenarnya tidak signifikan.
+                //
+                // Special case: jika median mendekati nol, persentase tidak bermakna.
+                // Gunakan deviasi absolut sebagai ukuran.
+                $absDeviation = abs($val - $median);
+    
+                if (abs($median) < self::OUTLIER_NEAR_ZERO_THRESHOLD) {
+                    // Near-zero median: cek deviasi absolut minimum
+                    if ($absDeviation < self::OUTLIER_NEAR_ZERO_MIN_ABS) continue;
+                } else {
+                    // Normal median: cek persentase dari median
+                    $pctDeviation = $absDeviation / abs($median);
+                    if ($pctDeviation < self::OUTLIER_MIN_PCT_FROM_MEDIAN) continue;
                 }
+    
+                // Lolos kedua layer → ini outlier
+                $pctDiff = $median != 0
+                    ? round((($val - $median) / abs($median)) * 100, 2)
+                    : null;
+    
+                $outlierMap[$rowNum][$periodLabel] = [
+                    'period_label'       => $periodLabel,
+                    'value'              => $val,
+                    'modified_zscore'    => round($mz, 4),
+                    'adaptive_threshold' => round($adaptiveThreshold, 4),
+                    'median_row'         => round($median, 4),
+                    'pct_from_median'    => $pctDiff,
+                    'direction'          => $val > $median ? 'high' : 'low',
+                    'threshold'          => self::OUTLIER_MZSCORE_THRESHOLD,
+                ];
             }
         }
-
+    
         return $outlierMap;
     }
 
     /**
      * Hitung Modified Z-Score untuk array nilai.
-     *
-     * MZ_i = 0.6745 × (x_i − median(X)) / MAD(X)
-     *
-     * Konstanta 0.6745 adalah invers dari CDF normal standar pada 75% (Q3),
-     * sehingga untuk distribusi normal, Modified Z-Score ≈ Z-Score standar.
+     * MZ_i = 0.6745 × (x_i − median) / MAD
      */
     private function calculateModifiedZScores(array $values): array
     {
         $median = $this->median($values);
         $mad    = $this->medianAbsoluteDeviation($values, $median);
-
-        // Jika MAD = 0, semua nilai identik atau hampir identik — tidak ada outlier
+    
         if ($mad < 1e-10) {
             return array_fill(0, count($values), 0.0);
         }
-
+    
         return array_map(
             fn($v) => 0.6745 * ($v - $median) / $mad,
             $values
@@ -418,20 +454,31 @@ class DataImport
         sort($sorted);
         $count = count($sorted);
         $mid   = (int) floor($count / 2);
-
+    
         return $count % 2 === 0
             ? ($sorted[$mid - 1] + $sorted[$mid]) / 2
             : (float) $sorted[$mid];
     }
 
     /**
-     * Median Absolute Deviation: median(|x_i − median(X)|)
+     * Median Absolute Deviation.
      */
     private function medianAbsoluteDeviation(array $values, float $median): float
     {
         $deviations = array_map(fn($v) => abs($v - $median), $values);
         return $this->median($deviations);
     }
+
+    /**
+     * Standard Deviation (populasi).
+     */
+    private function stdDev(array $values, float $mean): float
+    {
+        if (count($values) < 2) return 0.0;
+        $variance = array_sum(array_map(fn($v) => ($v - $mean) ** 2, $values)) / count($values);
+        return sqrt($variance);
+    }
+
 
     // ══════════════════════════════════════════════════════════
     // EXCEL READER

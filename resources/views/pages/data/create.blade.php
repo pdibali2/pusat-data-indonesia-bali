@@ -654,6 +654,38 @@
                                 </p>
                             </div>
                         </div>
+
+                        {{-- Legenda level outlier --}}
+                        <div class="px-4 py-2.5 flex items-center gap-2 flex-wrap text-xs"
+                            style="background:#fffbeb; border-bottom:1px solid #fed7aa;">
+                            <span class="font-semibold" style="color:#92400e;">Level outlier:</span>
+
+                            <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full"
+                                style="background:#fefce8; color:#854d0e; border:1px solid #fde047;">
+                                <span class="w-1.5 h-1.5 rounded-full shrink-0" style="background:#ca8a04;"></span>
+                                Low &nbsp;<span class="font-mono">|MZ| 3.5–6</span>
+                            </span>
+
+                            <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full"
+                                style="background:#fff7ed; color:#9a3412; border:1px solid #fb923c;">
+                                <span class="w-1.5 h-1.5 rounded-full shrink-0" style="background:#ea580c;"></span>
+                                Medium &nbsp;<span class="font-mono">|MZ| 6–10</span>
+                            </span>
+
+                            <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full"
+                                style="background:#fef2f2; color:#b91c1c; border:1px solid #f87171;">
+                                <span class="w-1.5 h-1.5 rounded-full shrink-0" style="background:#dc2626;"></span>
+                                High &nbsp;<span class="font-mono">|MZ| 10–20</span>
+                            </span>
+
+                            <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full"
+                                style="background:#fdf4ff; color:#86198f; border:1px solid #e879f9;">
+                                <span class="w-1.5 h-1.5 rounded-full shrink-0" style="background:#a21caf;"></span>
+                                Critical &nbsp;<span class="font-mono">|MZ| &gt;20</span>
+                            </span>
+
+                            <span class="ml-auto italic" style="color:#c2410c;">Semakin tinggi |MZ|, semakin ekstrem penyimpangan</span>
+                        </div>
                 
                         {{-- Tabel outlier --}}
                         <div class="overflow-x-auto">
@@ -666,6 +698,7 @@
                                         <th class="px-3 py-2 text-right font-semibold" style="color:#9a3412;">Nilai</th>
                                         <th class="px-3 py-2 text-right font-semibold" style="color:#9a3412;">Median Baris</th>
                                         <th class="px-3 py-2 text-right font-semibold" style="color:#9a3412;">% dari Median</th>
+                                        <th class="px-3 py-2 text-center font-semibold" style="color:#9a3412;">Level</th>
                                         <th class="px-3 py-2 text-center font-semibold" style="color:#9a3412;">|MZ Score|</th>
                                         <th class="px-3 py-2 text-center font-semibold" style="color:#9a3412;"><input type="checkbox" id="checkAllOutlier"
                                                 class="rounded border-orange-300 text-orange-500 focus:ring-orange-400"
@@ -1810,10 +1843,35 @@ function renderRows(type) {
         const pct      = info ? (info.pct_from_median !== null
             ? (info.pct_from_median >= 0 ? '+' : '') + info.pct_from_median.toFixed(1) + '%'
             : '—') : '-';
+        const level    = getLevelBadge(mz);
         const dir      = info?.direction ?? 'high';
         const key      = `${rec.metadata_id}_${rec.location_id}_${rec.time_id}_${rec.rujukan_id}`;
         const rowBg    = i % 2 === 0 ? '#ffffff' : '#fff7ed';
         const severity = info ? getSeverityFromMZ(Math.abs(info.modified_zscore)) : 'medium';
+        
+        function getLevelBadge(mz) {
+        const absMz = Math.abs(mz);
+        if (absMz > 20) return {
+            label: 'Critical',
+            style: 'background:#fdf4ff; color:#86198f; border:1px solid #e879f9;',
+            dot:   'background:#a21caf;'
+        };
+        if (absMz > 10) return {
+            label: 'High',
+            style: 'background:#fef2f2; color:#b91c1c; border:1px solid #f87171;',
+            dot:   'background:#dc2626;'
+        };
+        if (absMz > 6) return {
+            label: 'Medium',
+            style: 'background:#fff7ed; color:#9a3412; border:1px solid #fb923c;',
+            dot:   'background:#ea580c;'
+        };
+        return {
+            label: 'Low',
+            style: 'background:#fefce8; color:#854d0e; border:1px solid #fde047;',
+            dot:   'background:#ca8a04;'
+        };
+    }
         const mzStyle  = {
             low:      'background:#fef9c3; color:#a16207;',
             medium:   'background:#ffedd5; color:#c2410c;',
@@ -1835,6 +1893,13 @@ function renderRows(type) {
             <td class="px-3 py-2.5 text-right font-mono
                     ${dir === 'high' ? 'text-red-600' : 'text-blue-600'} font-semibold">
                 ${pct}
+            </td>
+            <td class="px-3 py-2.5 text-center">
+                <span class="inline-flex items-center gap-1 text-xs px-2 py-0.5 rounded-full"
+                    style="${level.style}">
+                    <span class="w-1.5 h-1.5 rounded-full shrink-0" style="${level.dot}"></span>
+                    ${level.label}
+                </span>
             </td>
             <td class="px-3 py-2.5 text-center">
                 <span class="inline-block px-2 py-0.5 rounded-full text-xs font-bold"
