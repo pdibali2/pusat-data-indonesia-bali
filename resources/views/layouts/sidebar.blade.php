@@ -1,7 +1,9 @@
 @php
     $user       = auth()->user();
     $isCustomer = $user?->group_id === 3;
-    $isAdmin    = in_array($user?->group_id, [1, 2]); // sesuaikan group_id admin
+    $isPengelola = $user?->group_id === 2;
+    $isSuperAdmin = $user?->group_id === 1;
+    $isAdmin    = in_array($user?->group_id, [1, 2]);
 
     $menus = [
         (object)[
@@ -70,13 +72,16 @@
             "onlyCustomer" => true,
             "onlyAdmin"    => false,
             "active"       => request()->segment(1) === 'admin' && in_array(request()->segment(2), ['users','groups','klasifikasi','produsen','rujukan']),
-            "children" => [
-                (object)["title" => "Kelola User",        "path" => "/admin/users",       "icon" => "fas fa-user",     "active" => request()->segment(2) === 'users',        "onlyAdmin" => false],
-                (object)["title" => "Kelola Group",       "path" => "/admin/groups",      "icon" => "fas fa-users",    "active" => request()->segment(2) === 'groups',       "onlyAdmin" => false],
-                (object)["title" => "Kelola Klasifikasi", "path" => "/admin/klasifikasi", "icon" => "fas fa-tags",     "active" => request()->segment(2) === 'klasifikasi',  "onlyAdmin" => false],
-                (object)["title" => "Kelola Produsen",    "path" => "/admin/produsen",    "icon" => "fas fa-industry", "active" => request()->segment(2) === 'produsen',      "onlyAdmin" => false],
-                (object)["title" => "Kelola Rujukan",     "path" => "/admin/rujukan",     "icon" => "fas fa-file-alt", "active" => request()->segment(2) === 'rujukan',       "onlyAdmin" => false],
-            ],
+            "children" => array_filter([
+                // ← Hanya Super Admin (group_id = 1)
+                $isSuperAdmin ? (object)["title" => "Kelola User",  "path" => "/admin/users",  "icon" => "fas fa-user",  "active" => request()->segment(2) === 'users',  "onlyAdmin" => false] : null,
+                $isSuperAdmin ? (object)["title" => "Kelola Group", "path" => "/admin/groups", "icon" => "fas fa-users", "active" => request()->segment(2) === 'groups', "onlyAdmin" => false] : null,
+
+                // ← Semua Admin (termasuk Pengelola)
+                (object)["title" => "Kelola Klasifikasi", "path" => "/admin/klasifikasi", "icon" => "fas fa-tags",     "active" => request()->segment(2) === 'klasifikasi', "onlyAdmin" => false],
+                (object)["title" => "Kelola Produsen",    "path" => "/admin/produsen",    "icon" => "fas fa-industry", "active" => request()->segment(2) === 'produsen',     "onlyAdmin" => false],
+                (object)["title" => "Kelola Rujukan",     "path" => "/admin/rujukan",     "icon" => "fas fa-file-alt", "active" => request()->segment(2) === 'rujukan',      "onlyAdmin" => false],
+            ]),
         ],
         (object)[
             "title"        => "Kelola Layanan",

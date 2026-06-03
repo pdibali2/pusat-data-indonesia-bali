@@ -3,6 +3,8 @@
 use Illuminate\Support\Facades\Route;
 use Illuminate\Foundation\Http\Middleware\VerifyCsrfToken;
 use App\Http\Controllers\AuthController;
+use App\Http\Controllers\RegisterController;
+use App\Http\Controllers\PasswordResetController;
 use App\Http\Controllers\UserController;
 use App\Http\Controllers\GroupController;
 use App\Http\Controllers\ProdusenController;
@@ -25,6 +27,17 @@ use App\Http\Controllers\AnomalyControlController;
     // ── Auth ─────────────────────────────────────────────────────
     Route::get('/login',  [AuthController::class, 'loginView'])->name('login');
     Route::post('/login', [AuthController::class, 'login']);
+
+    Route::get('/register',           [RegisterController::class, 'registerView'])->name('register');
+    Route::post('/register',          [RegisterController::class, 'register']);
+    Route::get('/verify-email/{token}', [RegisterController::class, 'verify'])->name('verify.email');
+
+    // ── Password Reset ────────────────────────────────────────────
+    Route::get('/forgot-password',        [PasswordResetController::class, 'requestView'])->name('password.request');
+    Route::post('/forgot-password',       [PasswordResetController::class, 'sendResetLink'])->name('password.email');
+    Route::get('/reset-password/{token}', [PasswordResetController::class, 'resetView'])->name('password.reset');
+    Route::post('/reset-password',        [PasswordResetController::class, 'reset'])->name('password.update');
+
     Route::post('/logout',[AuthController::class, 'logout']);
 
     Route::get('/statistik/{metadataId}', [LandingController::class, 'dataShow'])
@@ -112,7 +125,7 @@ use App\Http\Controllers\AnomalyControlController;
 // AUTHENTICATED ROUTES
 // ─────────────────────────────────────────────────────────────
 
-Route::middleware(['is.login', 'is.customer'])->group(function () {
+Route::middleware(['is.login', 'is.pengelola', 'is.customer'])->group(function () {
 
     Route::prefix('admin')->name('admin.')->group(function () {
         Route::resource('users',    UserController::class);

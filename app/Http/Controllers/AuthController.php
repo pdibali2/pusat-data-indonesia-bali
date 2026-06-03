@@ -48,7 +48,7 @@ class AuthController extends Controller
         // Password salah
         if (!Hash::check($validated['password'], $user->password)) {
             return back()
-                ->withErrors(['username' => 'Password yang Anda masukkan salah.'])
+                ->withErrors(['password' => 'Password yang Anda masukkan salah.'])
                 ->withInput();
         }
 

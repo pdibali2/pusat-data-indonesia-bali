@@ -25,18 +25,26 @@
             <div class="sm:mx-auto sm:w-full sm:max-w-sm">
                 <form action="/login" method="POST" class="space-y-6" novalidate>
                     @csrf
+
+                    {{-- Badge error di atas form --}}
+                    @if ($errors->any())
+                        <div class="rounded-sm bg-red-50 border border-red-200 px-4 py-3">
+                            @foreach ($errors->all() as $error)
+                                <p class="text-sm text-red-600">{{ $error }}</p>
+                            @endforeach
+                        </div>
+                    @endif
+
                 <div>
                     <label for="username" class="block text-sm/6 font-medium text-gray-900">Username</label>
                     <div class="mt-2">
                     <input id="username" type="username" name="username" required autocomplete="username" class="block w-full rounded-sm bg-black/1 px-3 py-1.5 text-base text-black outline-1 -outline-offset-1 outline-black/30 placeholder:text-stikom-blue focus:outline-2 focus:-outline-offset-2 focus:outline-stikom-blue sm:text-sm/6" />
-                    @error('username')
-                        <p class="mt-1 text-xs text-red-500">{{ $message }}</p>
-                    @enderror
                     </div>
                 </div>
                 <div>
                     <div class="flex items-center justify-between">
                         <label for="password" class="block text-sm/6 font-medium text-gray-900">Password</label>
+                        <a href="/forgot-password" class="text-sm text-blue-600 hover:underline">Lupa password?</a>
                     </div>
 
                     <div class="mt-2 relative">
@@ -48,9 +56,6 @@
                             autocomplete="current-password"
                             class="block w-full rounded-sm bg-black/1 px-3 py-1.5 pr-10 text-base text-black outline-1 -outline-offset-1 outline-black/30 placeholder:text-stikom-blue focus:outline-2 focus:-outline-offset-2 focus:outline-stikom-blue sm:text-sm/6"
                         />
-                        @error('password')
-                            <p class="mt-1 text-xs text-red-500">{{ $message }}</p>
-                        @enderror
                         <button 
                             type="button"
                             id="togglePassword"
@@ -63,48 +68,85 @@
                             </svg>
                         </button>
                     </div>
+                    
                 </div>
 
                 <div class="mt-10">
                     <button type="submit" class="btn flex w-full justify-center rounded-sm bg-linear-to-r from-blue-500 to-blue-400 px-3 py-1.5 text-white text-sm/6 font-semibold hover:from-blue-700 hover:to-blue-600 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-500 shadow-lg shadow-blue-500/30 transition duration-300 ease-in-out hover:scale-104">Login</button>
+                    <p class="text-center text-sm text-gray-500 mt-4">
+                        Belum punya akun?
+                        <a href="/register" class="text-blue-600 hover:underline font-medium">Daftar</a>
+                    </p>
                 </div>
                 </form>
             </div>
         </div>
     </div>
 
+    {{-- SweetAlert2 --}}
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+
+    @if (session('reset_success'))
+        <script>
+            document.addEventListener("DOMContentLoaded", function () {
+                Swal.fire({
+                    icon: 'success',
+                    title: 'Password Berhasil Direset!',
+                    text: 'Silakan login dengan password baru Anda.',
+                    confirmButtonText: 'Login Sekarang',
+                    confirmButtonColor: '#2563eb',
+                    allowOutsideClick: false,
+                });
+            });
+        </script>
+    @endif
+
+    @if (session('reset_error'))
+        <script>
+            document.addEventListener("DOMContentLoaded", function () {
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Reset Password Gagal',
+                    text: '{{ session('reset_error') }}',
+                    confirmButtonText: 'Coba Lagi',
+                    confirmButtonColor: '#2563eb',
+                });
+            });
+        </script>
+    @endif
+
     <script>
-document.addEventListener("DOMContentLoaded", function () {
+    document.addEventListener("DOMContentLoaded", function () {
 
-    const password = document.getElementById("password");
-    const toggle = document.getElementById("togglePassword");
-    const eyeIcon = document.getElementById("eyeIcon");
+        const password = document.getElementById("password");
+        const toggle = document.getElementById("togglePassword");
+        const eyeIcon = document.getElementById("eyeIcon");
 
-    toggle.addEventListener("click", function () {
+        toggle.addEventListener("click", function () {
 
-        if (password.type === "password") {
-            password.type = "text";
+            if (password.type === "password") {
+                password.type = "text";
 
-            eyeIcon.innerHTML = `
-            <path stroke-linecap="round" stroke-linejoin="round" d="M3 3l18 18" />
-            <path stroke-linecap="round" stroke-linejoin="round" d="M10.58 10.58a3 3 0 004.24 4.24" />
-            <path stroke-linecap="round" stroke-linejoin="round" d="M9.88 5.1A9.77 9.77 0 0112 4.5c6 0 9.75 7.5 9.75 7.5a15.3 15.3 0 01-4.24 5.33" />
-            <path stroke-linecap="round" stroke-linejoin="round" d="M6.53 6.53A15.05 15.05 0 002.25 12s3.75 7.5 9.75 7.5c1.24 0 2.39-.22 3.44-.61" />
-            `;
+                eyeIcon.innerHTML = `
+                <path stroke-linecap="round" stroke-linejoin="round" d="M3 3l18 18" />
+                <path stroke-linecap="round" stroke-linejoin="round" d="M10.58 10.58a3 3 0 004.24 4.24" />
+                <path stroke-linecap="round" stroke-linejoin="round" d="M9.88 5.1A9.77 9.77 0 0112 4.5c6 0 9.75 7.5 9.75 7.5a15.3 15.3 0 01-4.24 5.33" />
+                <path stroke-linecap="round" stroke-linejoin="round" d="M6.53 6.53A15.05 15.05 0 002.25 12s3.75 7.5 9.75 7.5c1.24 0 2.39-.22 3.44-.61" />
+                `;
 
-        } else {
-            password.type = "password";
+            } else {
+                password.type = "password";
 
-            eyeIcon.innerHTML = `
-            <path stroke-linecap="round" stroke-linejoin="round" d="M2.25 12s3.75-7.5 9.75-7.5S21.75 12 21.75 12s-3.75 7.5-9.75 7.5S2.25 12 2.25 12z" />
-            <path stroke-linecap="round" stroke-linejoin="round" d="M12 15.75A3.75 3.75 0 1 0 12 8.25a3.75 3.75 0 0 0 0 7.5z" />
-            `;
-        }
+                eyeIcon.innerHTML = `
+                <path stroke-linecap="round" stroke-linejoin="round" d="M2.25 12s3.75-7.5 9.75-7.5S21.75 12 21.75 12s-3.75 7.5-9.75 7.5S2.25 12 2.25 12z" />
+                <path stroke-linecap="round" stroke-linejoin="round" d="M12 15.75A3.75 3.75 0 1 0 12 8.25a3.75 3.75 0 0 0 0 7.5z" />
+                `;
+            }
+
+        });
 
     });
-
-});
-</script>
+    </script>
 
 </body>
 </html>
