@@ -10,7 +10,8 @@ use Illuminate\Support\ServiceProvider;
 use Illuminate\Validation\Rules\Password;
 use Carbon\Carbon;
 use App\Models\Klasifikasi;
-// use App\Models\Metadata;
+use Illuminate\Support\Facades\Mail;
+use App\Mail\Transport\MailtrapTransport;
 use App\Services\AuditTrailService;
 use App\Services\AnomalyDetectionService;
 use App\Services\WorkflowService;
@@ -41,6 +42,13 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
+        Mail::extend('mailtrap', function (array $config) {
+            return new MailtrapTransport(
+                apiKey: config('services.mailtrap.token'),
+                inboxId: (int) config('services.mailtrap.inbox_id'),
+            );
+        });
+        
         Carbon::setLocale('id');
 
         if (app()->isProduction()) {

@@ -17,7 +17,8 @@
         "laravel/tinker": "^2.10.1",
         "laravel/wayfinder": "^0.1.9",
         "maatwebsite/excel": "*",
-        "midtrans/midtrans-php": "*"
+        "midtrans/midtrans-php": "*",
+        "railsware/mailtrap-php": "*"
     },
     "require-dev": {
         "fakerphp/faker": "^1.23",
