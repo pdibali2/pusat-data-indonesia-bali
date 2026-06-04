@@ -65,6 +65,7 @@ use App\Http\Controllers\AnomalyControlController;
         ->name('klasifikasi.index');
     Route::get('/klasifikasi/{klasifikasi}', [LandingController::class, 'klasifikasiShow'])
         ->name('klasifikasi.show');
+    Route::get('/data-series', [LandingController::class, 'dataSeries'])->name('landing.data.series');
         
         
     // ─────────────────────────────────────────────────────────────

@@ -124,7 +124,7 @@ $col2 = $allKlasifikasi->slice($half);
                          x-transition:leave-end="opacity-0 translate-y-1"
                          class="absolute top-full left-0 mt-0 w-52 bg-white shadow-xl border border-gray-100 border-t-2 border-t-stikom-accent py-2 z-50"
                          role="menu">
-                        <a href="{{ route('data.index') }}"
+                        <a href="{{ route('landing.data.series') }}"
                            class="flex items-center gap-3 px-4 py-2.5 text-sm text-gray-700 hover:bg-stikom-accent/10 hover:text-stikom transition-colors border-l-2 border-transparent hover:border-stikom-accent"
                            role="menuitem">
                             <svg class="w-4 h-4 text-stikom-accent" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">

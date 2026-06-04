@@ -83,7 +83,7 @@ $footerKlasifikasi = [
                             </div>
                             <div>
                                 <div class="text-xs text-white/30 mb-0.5">Telepon</div>
-                                <div class="text-sm text-white/70 group-hover:text-white transition-colors">+62 812-3456-7890</div>
+                                <div class="text-sm text-white/70 group-hover:text-white transition-colors">(0361) 244445</div>
                             </div>
                         </a>
                     </li>
@@ -97,7 +97,7 @@ $footerKlasifikasi = [
                             </div>
                             <div>
                                 <div class="text-xs text-white/30 mb-0.5">Alamat</div>
-                                <div class="text-sm text-white/70 leading-relaxed">Provinsi Bali, Indonesia</div>
+                                <div class="text-sm text-white/70 leading-relaxed">Jl. Raya Puputan No.86, Dangin Puri Klod, Kec. Denpasar Tim., Kota Denpasar, Bali 80234</div>
                             </div>
                         </div>
                     </li>

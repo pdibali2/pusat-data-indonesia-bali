@@ -190,6 +190,85 @@ class LandingController extends Controller
         );
     }
 
+    public function dataSeries(Request $request)
+    {
+        $perPage = (int) $request->input('per_page', 12);
+        $perPage = in_array($perPage, [12, 24, 48]) ? $perPage : 12;
+
+        $query = Metadata::with('klasifikasi')->where('status', 2);
+
+        if ($q = trim($request->input('q', ''))) {
+            $query->where(function ($qb) use ($q) {
+                $qb->where('nama', 'like', "%{$q}%")
+                ->orWhere('alias', 'like', "%{$q}%")
+                ->orWhere('tag', 'like', "%{$q}%");
+            });
+        }
+
+        if ($klas = trim($request->input('klasifikasi', ''))) {
+            $query->whereHas('klasifikasi', fn($qb) =>
+                $qb->where('nama_klasifikasi', $klas)
+            );
+        }
+
+        if ($freq = trim($request->input('frekuensi', ''))) {
+            $query->where('frekuensi_penerbitan', $freq);
+        }
+
+        if ($tipe = trim($request->input('tipe', ''))) {
+            $query->where('tipe_data', $tipe);
+        }
+
+        match ($request->input('sort', 'terbaru')) {
+            'az'    => $query->orderBy('nama', 'asc'),
+            'za'    => $query->orderBy('nama', 'desc'),
+            default => $query->latest('date_inputed'),
+        };
+
+        $metadataList = $query->paginate($perPage)->withQueryString();
+
+        // ── Freemium: hitung batas 30% dari TOTAL keseluruhan ──────────────────
+        // Pakai total query yang sama (tanpa paginate) agar konsisten lintas halaman
+        $totalAll = (clone $query)->count(); // total setelah filter diterapkan
+        // Kalau tidak ada filter aktif, pakai total semua metadata aktif
+        $totalForLimit = Metadata::where('status', 2)->count();
+        $freeLimit = (int) ceil($totalForLimit * 0.30); // mis. 300 dari 1000
+
+        // Index global item pertama di halaman ini (1-based)
+        $pageStartIndex = ($metadataList->currentPage() - 1) * $perPage + 1;
+
+        // Berapa item di halaman ini yang masih dalam zona free?
+        // freeCountOnPage = max(0, min(perPage, freeLimit - pageStartIndex + 1))
+        $freeCountOnPage = max(0, min($perPage, $freeLimit - $pageStartIndex + 1));
+
+        $klasifikasiList = Klasifikasi::orderBy('nama_klasifikasi')
+            ->pluck('nama_klasifikasi')->filter()->values();
+
+        $frekuensiList = Metadata::where('status', 2)
+            ->whereNotNull('frekuensi_penerbitan')->distinct()
+            ->orderBy('frekuensi_penerbitan')->pluck('frekuensi_penerbitan')->filter();
+
+        $tipeList = Metadata::where('status', 2)
+            ->whereNotNull('tipe_data')->distinct()
+            ->orderBy('tipe_data')->pluck('tipe_data')->filter();
+
+        $totalMetadata    = Metadata::where('status', 2)->count();
+        $totalKlasifikasi = Klasifikasi::count();
+        $totalProdusen    = ProdusenData::count();
+
+        return view('pages.landing.data_series', compact(
+            'metadataList',
+            'klasifikasiList',
+            'frekuensiList',
+            'tipeList',
+            'totalMetadata',
+            'totalKlasifikasi',
+            'totalProdusen',
+            'freeLimit',         // ← baru
+            'freeCountOnPage',   // ← baru
+        ));
+    }
+
     public function dataShow(int $metadataId)
     {
         // ── 1. Load metadata (hanya yang sudah publish) ──────────────────────
