@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8"/>
     <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-    <title>{{ $metadata->nama }} — Data Statistik</title>
+    <title>Data Statistik</title>
     <meta name="description" content="Data statistik {{ $metadata->nama }} periode {{ $yearStart }}–{{ $yearEnd }}."/>
     <link rel="icon" href="{{ asset('favicon.ico') }}" type="image/x-icon"/>
     <meta name="csrf-token" content="{{ csrf_token() }}"/>
@@ -191,8 +191,12 @@
                             ■ {{ $metadata->klasifikasi?->nama_klasifikasi ?? 'Data Statistik' }}
                         </span>
                     </div>
+                    @php $wilayah = $metadata->data->first()?->location?->nama_wilayah; @endphp
                     <h1 class="text-3xl lg:text-4xl font-extrabold text-white leading-tight mb-4 max-w-2xl fade-up d2">
                         {{ $metadata->nama }}
+                        @if($wilayah)
+                            di {{ $wilayah }}
+                        @endif
                     </h1>
                     <div class="flex flex-wrap gap-2 mb-6 fade-up d3">
                         @if($metadata->satuan_data)

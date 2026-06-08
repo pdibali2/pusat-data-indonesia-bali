@@ -165,10 +165,6 @@
                             <span class="text-gray-700">{{ $transaksi->user->username }}</span>
                         </div>
                         <div class="flex justify-between">
-                            <span class="text-gray-500">Group</span>
-                            <span class="text-gray-700">{{ $transaksi->user->group?->name ?? '—' }}</span>
-                        </div>
-                        <div class="flex justify-between">
                             <span class="text-gray-500">Daftar</span>
                             <span class="text-gray-700">{{ $transaksi->user->registerdate?->format('d M Y') ?? '—' }}</span>
                         </div>

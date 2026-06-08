@@ -58,6 +58,10 @@ class AppServiceProvider extends ServiceProvider
         View::composer('*', function ($view) {
 
             $allKlasifikasi = Klasifikasi::query()
+                ->whereHas('metadata', function ($q) {
+                    $q->where('status', 2)
+                      ->whereHas('data', fn($qd) => $qd->where('status', 1));
+                })
                 ->orderBy('nama_klasifikasi')
                 ->pluck('nama_klasifikasi')
 

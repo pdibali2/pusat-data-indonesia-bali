@@ -21,9 +21,6 @@
         {{-- grid bg --}}
         <div class="absolute inset-0 opacity-10" aria-hidden="true">
             <svg class="w-full h-full" xmlns="http://www.w3.org/2000/svg">
-                <defs><pattern id="ds-grid" width="40" height="40" patternUnits="userSpaceOnUse">
-                    <path d="M 40 0 L 0 0 0 40" fill="none" stroke="white" stroke-width="0.5"/>
-                </pattern></defs>
                 <rect width="100%" height="100%" fill="url(#ds-grid)"/>
             </svg>
         </div>
@@ -146,28 +143,6 @@
                 dataset
                 @if(request('q'))<span> untuk "<span class="font-semibold text-[#001734]">{{ request('q') }}</span>"</span>@endif
             </p>
-
-            {{-- View toggle --}}
-            <div class="flex items-center gap-1 bg-gray-100 rounded-xl p-1" x-data="{ view: localStorage.getItem('ds_view') || 'grid' }"
-                 x-init="$watch('view', v => localStorage.setItem('ds_view', v))">
-                <button @click="view = 'grid'"
-                        :class="view === 'grid' ? 'bg-white shadow-sm text-[#001734]' : 'text-gray-400 hover:text-gray-600'"
-                        class="p-1.5 rounded-lg transition-all duration-150"
-                        aria-label="Tampilan grid">
-                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z"/>
-                    </svg>
-                </button>
-                <button @click="view = 'list'"
-                        :class="view === 'list' ? 'bg-white shadow-sm text-[#001734]' : 'text-gray-400 hover:text-gray-600'"
-                        class="p-1.5 rounded-lg transition-all duration-150"
-                        aria-label="Tampilan list">
-                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"/>
-                    </svg>
-                </button>
-                <input type="hidden" id="ds-view-state" :value="view"/>
-            </div>
         </div>
 
         {{-- ── Cards ──────────────────────────────────────────────────────── --}}
@@ -267,28 +242,24 @@
                                 <div class="group bg-white rounded-2xl border border-gray-100 shadow-sm hover:shadow-xl hover:-translate-y-1 transition-all duration-300 overflow-hidden">
 
                                     {{-- Sparkline header --}}
-                                    <div class="relative px-5 pt-5 pb-2 h-36 overflow-hidden" style="background: linear-gradient(135deg, #001734 0%, #002a52 100%);">
-                                        <span class="absolute top-3 right-4 text-xs font-semibold" style="color: rgba(247,193,0,0.65);">
+                                    <div class="relative px-5 pt-5 pb-2 h-36 overflow-hidden" style="background:#0B2A52;">
+                                        <span class="absolute top-3 right-4 text-xs font-semibold" style="color:rgba(247,0,0,0.7);">
                                             {{ $meta->satuan_data }}
                                         </span>
                                         <svg viewBox="0 0 300 90" class="w-full h-20 mt-1" preserveAspectRatio="none" aria-hidden="true">
-                                            <defs>
-                                                <linearGradient id="gf-{{ $meta->metadata_id }}" x1="0" y1="0" x2="0" y2="1">
-                                                    <stop offset="0%"   stop-color="#F7C100" stop-opacity="0.40"/>
-                                                    <stop offset="100%" stop-color="#F7C100" stop-opacity="0.03"/>
-                                                </linearGradient>
-                                            </defs>
-                                            @foreach([22, 45, 67] as $gy)
-                                                <line x1="0" y1="{{ $gy }}" x2="300" y2="{{ $gy }}" stroke="white" stroke-opacity="0.06" stroke-width="1"/>
+                                            @foreach([25, 50, 75] as $gy)
+                                                <line x1="0" y1="{{ $gy }}" x2="300" y2="{{ $gy }}"
+                                                    stroke="white" stroke-opacity="0.06" stroke-width="1"/>
                                             @endforeach
                                             @if($n >= 2)
-                                                <path d="{{ $areaPath }}" fill="url(#gf-{{ $meta->metadata_id }})"/>
-                                                <polyline points="{{ $polyLine }}" fill="none" stroke="#F7C100" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/>
+                                                <polyline points="{{ $polyLine }}" fill="none" stroke="#E63946"
+                                                        stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/>
                                                 @if($lastPt)
-                                                    <circle cx="{{ $lastPt[0] }}" cy="{{ $lastPt[1] }}" r="3.5" fill="#F7C100"/>
+                                                    <circle cx="{{ $lastPt[0] }}" cy="{{ $lastPt[1] }}" r="3.5" fill="#E63946"/>
                                                 @endif
                                             @else
-                                                <text x="150" y="48" text-anchor="middle" font-size="11" fill="rgba(255,255,255,0.30)">Belum ada data</text>
+                                                <text x="150" y="48" text-anchor="middle"
+                                                    font-size="11" fill="rgba(255,255,255,0.30)">Belum ada data</text>
                                             @endif
                                         </svg>
                                         <div class="flex justify-between px-0.5 mt-1">
@@ -298,12 +269,14 @@
                                         </div>
                                         @if($n >= 2)
                                             <div class="absolute bottom-3 right-4 flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-bold
-                                                        {{ $trend === 'up' ? 'bg-emerald-500/20 text-emerald-300' : 'bg-red-500/20 text-red-300' }}">
+                                                        {{ $trend === 'up' ? 'bg-blue-500/20 text-blue-300' : 'bg-red-500/20 text-red-300' }}">
                                                 <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
                                                     @if($trend === 'up')
-                                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 15l7-7 7 7"/>
+                                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5"
+                                                            d="M13 7l5 5m0 0l-5 5m5-5H6"/>
                                                     @else
-                                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M19 9l-7 7-7-7"/>
+                                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5"
+                                                            d="M13 17l5-5m0 0l-5-5m5 5H6"/>
                                                     @endif
                                                 </svg>
                                                 {{ $trend === 'up' ? '+' : '-' }}{{ $pct }}%
@@ -313,30 +286,39 @@
 
                                     {{-- Card body --}}
                                     <div class="p-5">
-                                        <div class="flex items-start justify-between gap-2 mb-2">
-                                            <h3 class="text-sm font-bold text-[#001734] leading-snug line-clamp-2 group-hover:text-[#F7C100] transition-colors duration-200">
+                                        <div class="flex items-start justify-between gap-2 mb-3">
+                                            <h3 class="text-sm font-bold text-stikom leading-snug line-clamp-2 group-hover:text-stikom-accent transition-colors duration-200">
                                                 {{ $meta->nama }}
                                             </h3>
-                                            <span class="flex-shrink-0 px-2 py-0.5 rounded-full bg-[#001734]/5 text-[#001734] text-xs font-semibold whitespace-nowrap">
+                                            <span class="shrink-0 px-2 py-0.5 rounded-full bg-stikom-red/20 text-stikom-red text-xs font-semibold">
                                                 {{ $meta->frekuensi_penerbitan }}
                                             </span>
                                         </div>
-                                        <div class="flex items-center gap-2 mb-4">
-                                            <span class="px-2 py-0.5 rounded-full bg-[#F7C100]/15 text-[#001734] text-xs font-semibold max-w-[140px] truncate">
+                                        <div class="flex items-center gap-2 mb-3">
+                                            <span class="px-2 py-0.5 rounded-full bg-stikom-red/20 text-stikom-red text-xs font-semibold max-w-[140px] truncate">
                                                 {{ $namaKlasifikasi }}
                                             </span>
                                             <span class="text-gray-400 text-xs whitespace-nowrap">sejak {{ $meta->tahun_mulai_data }}</span>
                                         </div>
-                                        <div class="border-t border-gray-50 pt-4">
-                                            <div class="flex items-center justify-between">
-                                                <a href="{{ route('landing.data.show', $meta->metadata_id) }}"
-                                                   class="flex items-center gap-1 text-xs font-bold text-[#001734] hover:text-[#F7C100] transition-colors">
-                                                    Lihat Detail
-                                                    <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
-                                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/>
-                                                    </svg>
-                                                </a>
+                                        @php $wilayah = $meta->data->first()?->location?->nama_wilayah; @endphp
+                                        @if($wilayah)
+                                            <div class="flex items-center gap-1 mb-3">
+                                                <svg class="w-3 h-3 text-gray-400 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                                        d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"/>
+                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"/>
+                                                </svg>
+                                                <span class="text-xs text-gray-400 truncate">{{ $wilayah }}</span>
                                             </div>
+                                        @endif
+                                        <div class="border-t border-gray-50 pt-4">
+                                            <a href="{{ route('landing.data.show', $meta->metadata_id) }}"
+                                            class="flex items-center gap-1 text-xs font-bold text-stikom hover:text-stikom-accent transition-colors">
+                                                Lihat Detail
+                                                <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/>
+                                                </svg>
+                                            </a>
                                         </div>
                                     </div>
                                 </div>
@@ -419,24 +401,19 @@
                                                 Akses Penuh ke Semua Dataset
                                             </h3>
                                             <p class="text-gray-500 text-sm mb-7 max-w-sm mx-auto leading-relaxed">
-                                                Anda sedang melihat <strong class="text-[#001734]">30% data gratis</strong>.
-                                                Berlangganan untuk menjelajahi seluruh
-                                                <strong class="text-[#001734]">{{ number_format($metadataList->total()) }} dataset</strong>.
+                                                Anda sedang melihat beberapa data secara gratis</strong>.
+                                                Berlangganan untuk menjelajahi seluruh data.
                                             </p>
 
                                             {{-- CTA buttons --}}
                                             <div class="flex flex-col sm:flex-row items-center justify-center gap-3">
                                                 <a href="{{ route('langganan') }}"
-                                                   class="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-8 py-3.5 rounded-2xl bg-[#001734] text-white font-black text-sm hover:bg-[#002a52] transition-colors shadow-lg">
+                                                   class="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-8 py-3.5 rounded-2xl bg-stikom-accent text-stikom hover:text-white font-black text-sm hover:bg-yellow-60 transition-colors shadow-lg">
                                                     <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
                                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                                                               d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z"/>
                                                     </svg>
                                                     Berlangganan Sekarang
-                                                </a>
-                                                <a href="{{ route('login') }}"
-                                                   class="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-6 py-3.5 rounded-2xl border border-gray-200 text-gray-600 font-bold text-sm hover:border-[#001734] hover:text-[#001734] transition-colors">
-                                                    Sudah punya akun? Masuk
                                                 </a>
                                             </div>
                                         </div>
@@ -528,69 +505,6 @@
                         @endif
 
                     @endforeach
-
-                    {{-- ── PAYWALL OVERLAY untuk list view ── --}}
-                    @guest
-                        @if($freeCountOnPage < $metadataList->count())
-                            <div class="absolute bottom-0 left-0 right-0 z-10"
-                                 style="height: 72%;">
-                                <div class="absolute inset-0 pointer-events-none"
-                                     style="background: linear-gradient(to bottom, transparent 0%, #f8fafc 32%, #f8fafc 100%);"></div>
-                                <div class="absolute bottom-0 left-0 right-0 px-4 pb-2">
-                                    <div class="max-w-xl mx-auto bg-white rounded-3xl border border-gray-100 shadow-2xl overflow-hidden">
-                                        <div class="h-1.5 bg-gradient-to-r from-[#001734] via-[#F7C100] to-[#001734]"></div>
-                                        <div class="p-7 sm:p-9 text-center">
-                                            <div class="w-16 h-16 rounded-2xl bg-[#001734] flex items-center justify-center mx-auto mb-5 shadow-lg">
-                                                <svg class="w-8 h-8 text-[#F7C100]" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
-                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                                          d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/>
-                                                </svg>
-                                            </div>
-                                            <h3 class="text-xl sm:text-2xl font-black text-[#001734] mb-2 leading-tight">
-                                                Akses Penuh ke Semua Dataset
-                                            </h3>
-                                            <p class="text-gray-500 text-sm mb-7 max-w-sm mx-auto leading-relaxed">
-                                                Anda sedang melihat <strong class="text-[#001734]">30% data gratis</strong>.
-                                                Berlangganan untuk menjelajahi seluruh
-                                                <strong class="text-[#001734]">{{ number_format($metadataList->total()) }} dataset</strong>
-                                                dan mengunduh dalam format Excel, PDF, dan JSON.
-                                            </p>
-                                            <div class="flex items-center justify-center gap-4 sm:gap-8 mb-7">
-                                                <div class="text-center">
-                                                    <div class="text-2xl font-black text-[#001734]">{{ number_format($freeLimit) }}</div>
-                                                    <div class="text-xs text-gray-400 mt-0.5">Dataset gratis</div>
-                                                </div>
-                                                <div class="w-px h-10 bg-gray-100"></div>
-                                                <div class="text-center">
-                                                    <div class="text-2xl font-black text-[#F7C100]">{{ number_format(max(0, $metadataList->total() - $freeLimit)) }}</div>
-                                                    <div class="text-xs text-gray-400 mt-0.5">Dataset premium</div>
-                                                </div>
-                                                <div class="w-px h-10 bg-gray-100"></div>
-                                                <div class="text-center">
-                                                    <div class="text-2xl font-black text-[#001734]">3</div>
-                                                    <div class="text-xs text-gray-400 mt-0.5">Format ekspor</div>
-                                                </div>
-                                            </div>
-                                            <div class="flex flex-col sm:flex-row items-center justify-center gap-3">
-                                                <a href="{{ route('langganan') }}"
-                                                   class="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-8 py-3.5 rounded-2xl bg-[#001734] text-white font-black text-sm hover:bg-[#002a52] transition-colors shadow-lg">
-                                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
-                                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                                              d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z"/>
-                                                    </svg>
-                                                    Berlangganan Sekarang
-                                                </a>
-                                                <a href="{{ route('login') }}"
-                                                   class="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-6 py-3.5 rounded-2xl border border-gray-200 text-gray-600 font-bold text-sm hover:border-[#001734] hover:text-[#001734] transition-colors">
-                                                    Sudah punya akun? Masuk
-                                                </a>
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                        @endif
-                    @endguest
 
                 </div>{{-- /list --}}
 

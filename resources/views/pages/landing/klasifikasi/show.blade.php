@@ -115,12 +115,67 @@
                     </span>
                 </div>
 
-                {{-- Container kartu — id dipakai oleh AJAX --}}
+                {{-- Container kartu --}}
                 <div id="metadata-container" class="space-y-2">
-                    @foreach($metadataList as $meta)
-                        @include('pages.landing.klasifikasi._card', ['meta' => $meta])
+                    @foreach($metadataList as $i => $meta)
+                        @php
+                            $isLocked = auth()->guest() && ($i + 1) > $freeCountOnPage;
+                        @endphp
+
+                        @if(!$isLocked)
+                            @include('pages.landing.klasifikasi._card', ['meta' => $meta])
+                        @else
+                            {{-- LOCKED card --}}
+                            <div class="relative bg-white border border-gray-100 border-l-4 border-l-transparent shadow-sm overflow-hidden select-none">
+                                <div class="flex items-start sm:items-center gap-4 px-5 py-4 blur-sm pointer-events-none">
+                                    <div class="w-10 h-10 bg-gray-200 shrink-0"></div>
+                                    <div class="flex-1 min-w-0 space-y-2">
+                                        <div class="h-4 bg-gray-200 rounded w-2/3"></div>
+                                        <div class="flex gap-3">
+                                            <div class="h-3 bg-gray-100 rounded w-20"></div>
+                                            <div class="h-3 bg-gray-100 rounded w-16"></div>
+                                        </div>
+                                    </div>
+                                    <div class="w-4 h-4 bg-gray-200 rounded shrink-0"></div>
+                                </div>
+                                <div class="absolute inset-0 flex items-center justify-center bg-white/50 backdrop-blur-[1px]">
+                                    <div class="flex items-center gap-2 px-3 py-1.5 bg-stikom shadow-md">
+                                        <svg class="w-3.5 h-3.5 text-stikom-accent" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                                d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/>
+                                        </svg>
+                                        <span class="text-xs font-bold text-white">Premium</span>
+                                    </div>
+                                </div>
+                            </div>
+                        @endif
                     @endforeach
                 </div>
+
+                {{-- Paywall CTA (guest + ada yang terkunci) --}}
+                @guest
+                    @if($freeCountOnPage < $metadataList->count())
+                        <div class="mt-6 bg-white border border-gray-100 border-l-4 border-l-stikom-blue shadow-lg p-8 text-center">
+                            <div class="w-12 h-12 bg-stikom flex items-center justify-center mx-auto mb-4">
+                                <svg class="w-6 h-6 text-stikom-accent" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                        d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/>
+                                </svg>
+                            </div>
+                            <h3 class="text-lg font-black text-stikom mb-2 font-display">Akses Semua Dataset</h3>
+                            <p class="text-gray-500 text-sm mb-6 max-w-sm mx-auto font-body">
+                                Anda hanya dapat mengakses beberapa metadata secara gratis.
+                                Berlangganan untuk akses penuh.
+                            </p>
+                            <div class="flex flex-col sm:flex-row gap-3 justify-center">
+                                <a href="{{ route('langganan') }}"
+                                class="px-6 py-3 bg-stikom-accent text-black font-black text-sm hover:bg-yellow-500 transition-colors">
+                                    Berlangganan Sekarang
+                                </a>
+                            </div>
+                        </div>
+                    @endif
+                @endguest
 
                 {{-- Pesan tidak ditemukan (di luar loop) --}}
                 <div id="search-empty" class="hidden text-center py-10">

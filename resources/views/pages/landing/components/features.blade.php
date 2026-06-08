@@ -4,7 +4,7 @@
         {{-- Section header --}}
         <div class="text-center max-w-2xl mx-auto mb-16 fade-up">
             <h2 id="fitur-heading" class="text-3xl sm:text-4xl font-black font-poppins text-stikom leading-tight mb-4">
-                Kenapa Memilih <br><span class="text-stikom-blue">Pusat Data Indonesia?</span>
+                Kenapa Memilih <br><span class="text-stikom-blue">Pusat Data Indonesia Bali?</span>
             </h2>
         </div>
 
@@ -31,13 +31,13 @@
             [
                 'icon'  => 'M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z',
                 'title' => 'Ekspor Mudah',
-                'desc'  => 'Unduh data dalam berbagai format dengan satu klik. Cocok untuk analisis lebih lanjut.',
+                'desc'  => 'Unduh data dalam berbagai format dengan satu klik untuk analisis.',
                 'tag'   => 'Ekspor',
             ],
             [
                 'icon'  => 'M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z',
                 'title' => 'Visualisasi Data',
-                'desc'  => 'Tampilkan data dalam bentuk grafik da tabel interaktif di platform tanpa perlu tools tambahan.',
+                'desc'  => 'Tampilkan data dalam bentuk grafik dan tabel interaktif di platform tanpa perlu tools tambahan.',
                 'tag'   => 'Visualisasi',
             ],
         ];
@@ -62,7 +62,7 @@
                         </svg>
                     </div>
 
-                    <div class="text-[10px] font-bold uppercase tracking-widest text-stikom-blue mb-2 group-hover:text-stikom-blue">
+                    <div class="text-[10px] font-bold uppercase tracking-widest text-stikom-red mb-2 group-hover:text-stikom-red">
                         {{ $f['tag'] }}
                     </div>
                     <h3 class="text-base font-black text-stikom group-hover:text-white mb-3 transition-colors duration-300 font-poppins">

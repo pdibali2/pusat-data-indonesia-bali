@@ -10,9 +10,6 @@
             <h1 class="text-xl font-bold text-gray-800">Riwayat Transaksi</h1>
             <p class="text-sm text-gray-500 mt-0.5">Semua transaksi dan langganan kamu</p>
         </div>
-        <a href="{{ route('langganan') }}" class="btn-primary">
-            <i class="fas fa-plus text-xs"></i> Berlangganan
-        </a>
     </div>
 
     @if(session('error'))

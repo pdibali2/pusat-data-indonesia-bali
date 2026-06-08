@@ -20,6 +20,8 @@
                     $lastYear = now()->year - 1; // Ambil data hingga tahun lalu untuk memastikan data sudah tersedia
                     $startYear   = $lastYear - 4;
 
+                    
+
                     $dataPoints = $meta->data()
                         ->where('data.status', \App\Models\Data::STATUS_AVAILABLE)
                         ->join('time', 'data.time_id', '=', 'time.time_id')
@@ -62,28 +64,21 @@
                     {{-- Sparkline area --}}
                     <div class="relative px-5 pt-5 pb-2 h-36 overflow-hidden" style="background:#0B2A52;">
 
-                        <span class="absolute top-3 right-4 text-xs font-semibold" style="color:rgba(247,193,0,0.7);">
+                        <span class="absolute top-3 right-4 text-xs font-semibold" style="color:rgba(247, 0, 0, 0.7);">
                             {{ $meta->satuan_data }}
                         </span>
 
                         <svg viewBox="0 0 300 90" class="w-full h-20 mt-1" preserveAspectRatio="none" aria-hidden="true">
-                            <defs>
-                                <linearGradient id="gf-{{ $meta->metadata_id }}" x1="0" y1="0" x2="0" y2="1">
-                                    <stop offset="0%"   stop-color="#F7C100" stop-opacity="0.4"/>
-                                    <stop offset="100%" stop-color="#F7C100" stop-opacity="0.03"/>
-                                </linearGradient>
-                            </defs>
                             @foreach([25, 50, 75] as $gy)
                                 <line x1="0" y1="{{ $gy }}" x2="300" y2="{{ $gy }}"
                                       stroke="white" stroke-opacity="0.06" stroke-width="1"/>
                             @endforeach
 
                             @if($n >= 2)
-                                <path d="{{ $areaPath }}" fill="url(#gf-{{ $meta->metadata_id }})"/>
-                                <polyline points="{{ $polyLine }}" fill="none" stroke="#F7C100"
+                                <polyline points="{{ $polyLine }}" fill="none" stroke="#E63946"
                                           stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/>
                                 @if($lastPt)
-                                    <circle cx="{{ $lastPt[0] }}" cy="{{ $lastPt[1] }}" r="3.5" fill="#F7C100"/>
+                                    <circle cx="{{ $lastPt[0] }}" cy="{{ $lastPt[1] }}" r="3.5" fill="#E63946"/>
                                 @endif
                             @else
                                 <text x="150" y="48" text-anchor="middle"
@@ -119,20 +114,34 @@
                     {{-- Card body --}}
                     <div class="p-5">
                         <div class="flex items-start justify-between gap-2 mb-3">
-                            <h3 class="text-sm font-bold text-stikom leading-snug line-clamp-2 group-hover:text-stikom-blue transition-colors duration-200">
+                            <h3 class="text-sm font-bold text-stikom leading-snug line-clamp-2 group-hover:text-stikom-accent transition-colors duration-200">
                                 {{ $meta->nama }}
                             </h3>
-                            <span class="shrink-0 px-2 py-0.5 rounded-full bg-stikom/5 text-stikom text-xs font-semibold">
+                            <span class="shrink-0 px-2 py-0.5 rounded-full bg-stikom-red/20 text-stikom-red text-xs font-semibold">
                                 {{ $meta->frekuensi_penerbitan }}
                             </span>
                         </div>
 
                         <div class="flex items-center gap-2 mb-4">
-                            <span class="px-2 py-0.5 rounded-full bg-stikom-blue/15 text-stikom text-xs font-semibold">
+                            <span class="px-2 py-0.5 rounded-full bg-stikom-red/20 text-stikom-red text-xs font-semibold">
                                 {{ $meta->klasifikasi->nama_klasifikasi }}
                             </span>
                             <span class="text-gray-400 text-xs">sejak {{ $meta->tahun_mulai_data }}</span>
                         </div>
+
+                        @php
+                            $wilayah = $meta->data->first()?->location?->nama_wilayah;
+                        @endphp
+                        @if($wilayah)
+                            <div class="flex items-center gap-1 mb-4">
+                                <svg class="w-3 h-3 text-gray-400 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                        d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"/>
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"/>
+                                </svg>
+                                <span class="text-xs text-gray-400 truncate">{{ $wilayah }}</span>
+                            </div>
+                        @endif
 
                         <div class="border-t border-gray-50 pt-4">
                             <a href="{{ route('landing.data.show', $meta->metadata_id) }}"

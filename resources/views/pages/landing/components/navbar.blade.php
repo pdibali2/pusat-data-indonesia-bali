@@ -139,7 +139,7 @@ $col2 = $allKlasifikasi->slice($half);
                             <svg class="w-4 h-4 text-stikom-accent" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 10h16M4 14h16M4 18h16"/>
                             </svg>
-                            Multiple Data
+                            Template Tampilan Data
                         </a>
                     </div>
                 </div>
@@ -227,7 +227,7 @@ $col2 = $allKlasifikasi->slice($half);
                     <a href="{{ route('data.index') }}" @click="mobileOpen = false"
                        class="block px-4 py-2 text-sm text-gray-600 hover:text-stikom border-l-2 border-transparent hover:border-stikom-accent hover:bg-stikom-accent/10 transition-colors">Data Series</a>
                     <a href="{{ route('data.index') }}" @click="mobileOpen = false"
-                       class="block px-4 py-2 text-sm text-gray-600 hover:text-stikom border-l-2 border-transparent hover:border-stikom-accent hover:bg-stikom-accent/10 transition-colors">Multiple Data</a>
+                       class="block px-4 py-2 text-sm text-gray-600 hover:text-stikom border-l-2 border-transparent hover:border-stikom-accent hover:bg-stikom-accent/10 transition-colors">Template Tampilan Data</a>
                 </div>
             </div>
 

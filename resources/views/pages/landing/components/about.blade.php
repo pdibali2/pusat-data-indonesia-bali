@@ -137,10 +137,10 @@
                                     <div class="text-gray-400 mt-0.5">Kependudukan</div>
                                     <div class="text-gray-400 mt-0.5">Provinsi Bali</div>
                                 </td>
-                                <td class="text-center px-2 py-2 border border-gray-100 font-semibold text-stikom">101</td>
+                                <td class="text-center px-2 py-2 border border-gray-100 font-semibold text-stikom">105</td>
                                 <td class="text-center px-2 py-2 border border-gray-100 font-semibold text-stikom">120</td>
                                 <td class="text-center px-2 py-2 border border-gray-100 font-semibold text-stikom">165</td>
-                                <td class="text-center px-2 py-2 border border-gray-100 font-semibold text-stikom">202</td>
+                                <td class="text-center px-2 py-2 border border-gray-100 font-semibold text-stikom">200</td>
                                 <td class="text-center px-2 py-2 border border-gray-100 font-semibold text-stikom">260</td>
                                 <td class="text-center px-2 py-2 border border-gray-100 text-gray-400">Jiwa/km2</td>
                                 <td class="text-center px-2 py-2 border border-gray-100 text-gray-400">Prov. Bali</td>
@@ -165,18 +165,16 @@
             <div class="fade-up order-1 lg:order-2" style="animation-delay:0.15s">
 
                 <h2 id="tentang-heading" class="text-3xl sm:text-4xl font-black font-poppins text-[#001734] leading-tight mb-6">
-                    Apa itu <br><span class="text-stikom-blue">Pusat Data Indonesia?</span>
+                    Apa itu <br><span class="text-stikom-blue">Pusat Data Indonesia Bali?</span>
                 </h2>
 
-                <p class="text-gray-600 text-lg leading-relaxed mb-5">
-                    Pusat Data Indonesia adalah layanan yang berfungsi untuk menyediakan dan menampilkan
-                    data sesuai dengan kustomisasi penggunanya, sehingga pengguna dapat menemukan data
-                    lebih mudah sesuai dengan kebutuhan.
+                <p class="text-gray-600 text-lg text-justify leading-relaxed mb-5">
+                    Pusat Data Indonesia Bali adalah layanan penyedia data dalam berbagai klasifikasi dan berbasis kewilayahan yang menyediakan dan menyajikan data sesuai dengan preferensi pengguna, sehingga pengguna dapat menemukan data yang diinginkan dengan lebih mudah sesuai dengan kebutuhan.
                 </p>
 
-                <p class="text-gray-500 leading-relaxed mb-8">
+                <p class="text-gray-500 text-justify leading-relaxed mb-8">
                     Platform ini dirancang untuk menjadi jembatan antara produsen data dan pengguna data
-                    dengan menyediakan akses mudah dan cepat.
+                    dengan menyediakan akses yang lebih mudah dan cepat.
                 </p>
 
                 <div class="flex flex-col sm:flex-row gap-3">

@@ -66,27 +66,6 @@
         @endforeach
     </div>
 
-    {{-- ── TREND CHART ─────────────────────────────────────────── --}}
-    <div class="bg-white rounded-xl border border-gray-200 p-4">
-        <div class="flex items-center justify-between mb-3">
-            <p class="text-sm font-semibold text-gray-700">
-                <i class="fas fa-chart-bar text-sky-500 mr-1.5"></i>Trend Anomali
-            </p>
-            <div class="flex gap-1">
-                @foreach([7,14,30] as $d)
-                <button onclick="loadTrend({{ $d }})"
-                        data-days="{{ $d }}"
-                        class="trend-btn text-xs px-2.5 py-1 rounded-md border transition-colors
-                               {{ $d===7 ? 'bg-sky-600 text-white border-sky-600' : 'border-gray-200 text-gray-500 hover:bg-gray-50' }}">
-                    {{ $d }}h
-                </button>
-                @endforeach
-            </div>
-        </div>
-        <div id="trendChart" style="height:120px; position:relative;">
-            <canvas id="trendCanvas"></canvas>
-        </div>
-    </div>
 
     {{-- ── FILTER BAR ───────────────────────────────────────────── --}}
     <form method="GET" action="{{ route('anomaly.control.index') }}"

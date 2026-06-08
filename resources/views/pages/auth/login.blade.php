@@ -44,7 +44,6 @@
                 <div>
                     <div class="flex items-center justify-between">
                         <label for="password" class="block text-sm/6 font-medium text-gray-900">Password</label>
-                        <a href="/forgot-password" class="text-sm text-blue-600 hover:underline">Lupa password?</a>
                     </div>
 
                     <div class="mt-2 relative">
@@ -68,10 +67,12 @@
                             </svg>
                         </button>
                     </div>
-                    
+                    <div class="mt-1 text-right">
+                        <a href="/forgot-password" class="text-sm text-blue-600 hover:underline">Lupa password?</a>
+                    </div>
                 </div>
 
-                <div class="mt-10">
+                <div class="mt-2">
                     <button type="submit" class="btn flex w-full justify-center rounded-sm bg-linear-to-r from-blue-500 to-blue-400 px-3 py-1.5 text-white text-sm/6 font-semibold hover:from-blue-700 hover:to-blue-600 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-500 shadow-lg shadow-blue-500/30 transition duration-300 ease-in-out hover:scale-104">Login</button>
                     <p class="text-center text-sm text-gray-500 mt-4">
                         Belum punya akun?

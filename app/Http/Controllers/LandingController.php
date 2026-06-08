@@ -18,6 +18,10 @@ class LandingController extends Controller
     public function __construct()
     {
         $this->allKlasifikasi = Klasifikasi::query()
+            ->whereHas('metadata', function ($q) {
+                $q->where('status', 2)
+                ->whereHas('data', fn($qd) => $qd->where('status', 1));
+            })
             ->orderBy('nama_klasifikasi')
             ->pluck('nama_klasifikasi')
             ->map(fn ($k) => trim((string) $k))
@@ -37,7 +41,8 @@ class LandingController extends Controller
     {
         // Klasifikasi yang benar-benar ada data-nya (maks 10 untuk badges di hero)
         $klasifikasiAktif = Klasifikasi::whereHas('metadata', function ($q) {
-            $q->where('status', 2);
+            $q->where('status', 2)
+            ->whereHas('data', fn($qd) => $qd->where('status', 1));
         })
         ->orderBy('nama_klasifikasi')
         ->take(10)
@@ -48,11 +53,25 @@ class LandingController extends Controller
         $jumlahMetadata = Metadata::where('status', 2)->count();
         $jumlahProdusen = ProdusenData::count();
 
-        // Produk unggulan: 6 metadata terbaru yang sudah aktif
-        $produkUnggulan = Metadata::where('status', 2)
-            ->latest('date_inputed')
-            ->limit(6)
-            ->with('klasifikasi')
+        // Produk unggulan: hanya metadata yang benar-benar punya data
+        $produkUnggulan = Metadata::query()
+            ->where('status', 2)
+
+            // hanya metadata yang memiliki data aktif
+            ->whereHas('data', function ($q) {
+                $q->where('status', 1);
+            })
+
+            ->with([
+                'klasifikasi',
+                'data' => function ($q) {
+                    $q->where('status', 1)->with('location')->limit(1);
+                }
+            ])
+
+            ->orderBy('date_inputed', 'desc')
+            ->orderBy('metadata_id', 'desc')
+            ->limit(3)
             ->get([
                 'metadata_id',
                 'nama',
@@ -100,22 +119,17 @@ class LandingController extends Controller
 
     public function klasifikasiIndex()
     {
-        // Hitung jumlah metadata per klasifikasi
         $counts = Metadata::with('klasifikasi')
             ->where('status', 2)
+            ->whereHas('data', fn($q) => $q->where('status', 1))
             ->get()
             ->groupBy(fn ($m) => $m->klasifikasi?->nama_klasifikasi)
             ->map(fn ($items) => $items->count());
 
         $klasifikasiList = collect($this->allKlasifikasi)
             ->map(function ($k) use ($counts) {
-
                 $slug = Str::slug($k);
-
-                if (!$slug) {
-                    return null;
-                }
-
+                if (!$slug) return null;
                 return [
                     'nama'  => $k,
                     'slug'  => $slug,
@@ -134,7 +148,6 @@ class LandingController extends Controller
 
     public function klasifikasiShow(string $klasifikasi)
     {
-        // Cocokkan slug ke nama asli
         $nama = collect($this->allKlasifikasi)
             ->first(fn($k) => Str::slug($k) === $klasifikasi);
 
@@ -142,13 +155,18 @@ class LandingController extends Controller
 
         $metadataList = Metadata::with('klasifikasi')
             ->where('status', 2)
+            ->whereHas('data', fn($q) => $q->where('status', 1))  // ← tambahan
             ->whereHas('klasifikasi', function ($q) use ($nama) {
                 $q->where('nama_klasifikasi', $nama);
             })
             ->orderBy('nama')
             ->paginate(20);
 
-        return view('pages.landing.klasifikasi.show', compact('nama', 'metadataList'));
+            $freeLimit       = 3;
+            $pageStartIndex  = ($metadataList->currentPage() - 1) * 20 + 1;
+            $freeCountOnPage = max(0, min(20, $freeLimit - $pageStartIndex + 1));
+
+        return view('pages.landing.klasifikasi.show', compact('nama', 'metadataList', 'freeLimit', 'freeCountOnPage'));
     }
 
     // ─────────────────────────────────────────────────────────────────────────
@@ -195,7 +213,12 @@ class LandingController extends Controller
         $perPage = (int) $request->input('per_page', 12);
         $perPage = in_array($perPage, [12, 24, 48]) ? $perPage : 12;
 
-        $query = Metadata::with('klasifikasi')->where('status', 2);
+        $query = Metadata::with([
+            'klasifikasi',
+            'data' => fn($q) => $q->where('status', 1)->with('location')->limit(1),
+        ])
+        ->where('status', 2)
+        ->whereHas('data', fn($q) => $q->where('status', 1));
 
         if ($q = trim($request->input('q', ''))) {
             $query->where(function ($qb) use ($q) {
@@ -222,7 +245,7 @@ class LandingController extends Controller
         match ($request->input('sort', 'terbaru')) {
             'az'    => $query->orderBy('nama', 'asc'),
             'za'    => $query->orderBy('nama', 'desc'),
-            default => $query->latest('date_inputed'),
+            default => $query->orderBy('date_inputed', 'desc')->orderBy('metadata_id', 'desc'),
         };
 
         $metadataList = $query->paginate($perPage)->withQueryString();
@@ -232,7 +255,7 @@ class LandingController extends Controller
         $totalAll = (clone $query)->count(); // total setelah filter diterapkan
         // Kalau tidak ada filter aktif, pakai total semua metadata aktif
         $totalForLimit = Metadata::where('status', 2)->count();
-        $freeLimit = (int) ceil($totalForLimit * 0.30); // mis. 300 dari 1000
+        $freeLimit = 3;
 
         // Index global item pertama di halaman ini (1-based)
         $pageStartIndex = ($metadataList->currentPage() - 1) * $perPage + 1;
@@ -283,7 +306,7 @@ class LandingController extends Controller
     
         // ── 3. Ambil data dalam rentang ──────────────────────────────────────
         //    Join ke tabel `time` untuk filter tahun
-        $rawData = Data::with('time')
+        $rawData = Data::with(['time', 'location'])
             ->where('metadata_id', $metadataId)
             ->where('status', 1)
             ->whereHas('time', fn($q) =>
@@ -350,42 +373,5 @@ class LandingController extends Controller
             'yearStart',
             'yearEnd',
         ));
-    }
-
-    // ─────────────────────────────────────────────────────────────────────────
-    // PRIVATE: produk unggulan berdasarkan year terakhir yang ada datanya
-    // ─────────────────────────────────────────────────────────────────────────
-
-    private function getProdukUnggulan(): array
-    {
-        $targetYear = now()->year - 1;
-        $minYear    = 2000;
-
-        while ($targetYear >= $minYear) {
-            $metadata = \App\Models\Metadata::query()
-                ->with(['klasifikasi'])
-                ->whereHas('data', function ($q) use ($targetYear) {
-                    $q->available()
-                      ->whereHas('time', function ($qt) use ($targetYear) {
-                          $qt->where('year', $targetYear);
-                      });
-                })
-                ->take(6)
-                ->get();
-
-            if ($metadata->isNotEmpty()) {
-                return [
-                    'produkUnggulan' => $metadata,
-                    'tahunData'      => $targetYear,
-                ];
-            }
-
-            $targetYear--;
-        }
-
-        return [
-            'produkUnggulan' => collect(),
-            'tahunData'      => null,
-        ];
     }
 }

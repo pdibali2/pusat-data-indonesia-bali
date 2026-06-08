@@ -23,17 +23,24 @@
         <div class="w-px h-6 bg-slate-200"></div>
 
         {{-- User pill --}}
-        <div class="flex items-center gap-2.5 pl-1 pr-3 py-1 rounded-xl bg-slate-50
-                    border border-slate-200 hover:border-sky-200 transition-colors cursor-default">
-            <div class="w-7 h-7 rounded-full bg-linear-to-br from-sky-500 to-sky-700
-                         flex items-center justify-center text-white text-[10px] font-bold tracking-wide">
-                {{ strtoupper(substr(Auth::user()->name, 0, 2)) }}
+        @auth
+            @php $user = Auth::user(); @endphp
+            <div class="flex items-center gap-2.5 pl-1 pr-3 py-1 rounded-xl bg-slate-50
+                        border border-slate-200 hover:border-sky-200 transition-colors cursor-default">
+                <div class="w-7 h-7 rounded-full bg-linear-to-br from-sky-500 to-sky-700
+                             flex items-center justify-center text-white text-[10px] font-bold tracking-wide">
+                    {{ strtoupper(substr($user->name ?? '', 0, 2)) }}
+                </div>
+                <div class="leading-tight">
+                    <p class="text-xs font-semibold text-slate-800">{{ $user->name ?? '' }}</p>
+                    <p class="text-[10px] text-slate-400">{{ optional($user->group)->title }}</p>
+                </div>
             </div>
-            <div class="leading-tight">
-                <p class="text-xs font-semibold text-slate-800">{{ Auth::user()->name }}</p>
-                <p class="text-[10px] text-slate-400">{{ Auth::user()->group->title }}</p>
+        @else
+            <div class="flex items-center gap-2">
+                <a href="{{ route('login') }}" class="text-xs text-sky-600 font-semibold">Masuk</a>
             </div>
-        </div>
+        @endauth
 
     </div>
 </header>

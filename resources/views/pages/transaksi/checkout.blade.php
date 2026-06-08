@@ -20,7 +20,7 @@
 
             {{-- Header --}}
             <div class="flex items-center gap-3 mb-8">
-                <div class="w-0.5 h-7 bg-stikom-core shrink-0"></div>
+                <div class="w-0.5 h-7 bg-stikom-blue shrink-0"></div>
                 <div>
                     <h1 class="text-xl font-black text-stikom font-display">Konfirmasi Pesanan</h1>
                     <p class="text-xs text-gray-400 font-body mt-0.5">Periksa detail langganan sebelum membayar</p>
@@ -31,18 +31,18 @@
             <div class="bg-white border border-gray-100 shadow-sm mb-4 overflow-hidden">
 
                 {{-- Top bar --}}
-                <div class="bg-stikom px-5 py-3 flex items-center justify-between">
-                    <span class="text-[10px] font-bold text-stikom-core uppercase tracking-widest font-display">
+                <div class="bg-stikom-blue px-5 py-3 flex items-center justify-between">
+                    <span class="text-[10px] font-bold text-white uppercase tracking-widest font-display">
                         Ringkasan Pesanan
                     </span>
-                    <span class="text-[10px] text-white/40 font-mono">{{ $transaksi->order_id }}</span>
+                    <span class="text-[10px] text-white font-mono">{{ $transaksi->order_id }}</span>
                 </div>
 
                 <div class="p-6">
                     {{-- Layanan --}}
                     <div class="flex items-start gap-4 mb-6">
-                        <div class="w-10 h-10 bg-stikom flex items-center justify-center shrink-0">
-                            <svg class="w-5 h-5 text-stikom-core" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <div class="w-10 h-10 bg-stikom-red flex items-center justify-center shrink-0">
+                            <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                                       d="M4 7v10c0 2.21 3.582 4 8 4s8-1.79 8-4V7M4 7c0 2.21 3.582 4 8 4s8-1.79 8-4M4 7c0-2.21 3.582-4 8-4s8 1.79 8 4"/>
                             </svg>
@@ -60,7 +60,7 @@
                         <li class="flex items-center gap-2.5 text-sm font-body
                                    {{ $fitur->aktif ? 'text-gray-700' : 'text-gray-300' }}">
                             @if($fitur->aktif)
-                                <div class="w-4 h-4 bg-stikom-core flex items-center justify-center shrink-0">
+                                <div class="w-4 h-4 bg-stikom-blue flex items-center justify-center shrink-0">
                                     <svg class="w-2.5 h-2.5" fill="none" stroke="white" viewBox="0 0 24 24">
                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7"/>
                                     </svg>
@@ -88,13 +88,13 @@
 
             {{-- Note --}}
             <p class="text-xs text-gray-400 text-center mb-6 font-body">
-                Pembayaran diproses secara aman melalui Midtrans.<br>
+                Pembayaran diproses secara aman.<br>
                 Data kartu kamu tidak disimpan di sistem kami.
             </p>
 
             {{-- Pay Button --}}
             <button id="pay-button"
-                    class="w-full py-4 bg-stikom-core hover:bg-green-400 text-stikom font-black
+                    class="w-full py-4 bg-stikom-accent hover:bg-yellow-600 text-stikom hover:text-white font-black
                            text-sm tracking-wide transition-colors duration-200 font-display
                            flex items-center justify-center gap-2">
                 <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
