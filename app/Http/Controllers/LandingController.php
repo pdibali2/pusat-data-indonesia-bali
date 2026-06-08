@@ -160,11 +160,11 @@ class LandingController extends Controller
                 $q->where('nama_klasifikasi', $nama);
             })
             ->orderBy('nama')
-            ->paginate(20);
+            ->paginate(10);
 
             $freeLimit       = 3;
-            $pageStartIndex  = ($metadataList->currentPage() - 1) * 20 + 1;
-            $freeCountOnPage = max(0, min(20, $freeLimit - $pageStartIndex + 1));
+            $pageStartIndex  = ($metadataList->currentPage() - 1) * 10 + 1;
+            $freeCountOnPage = max(0, min(10, $freeLimit - $pageStartIndex + 1));
 
         return view('pages.landing.klasifikasi.show', compact('nama', 'metadataList', 'freeLimit', 'freeCountOnPage'));
     }

@@ -68,29 +68,36 @@
 
 
     {{-- ── FILTER BAR ───────────────────────────────────────────── --}}
-    <form method="GET" action="{{ route('anomaly.control.index') }}"
-          class="bg-white rounded-xl border border-gray-200 p-4">
-        <div class="grid grid-cols-2 md:grid-cols-5 gap-3">
+    <form id="anomaly-filter-form" method="GET" action="{{ route('anomaly.control.index') }}"
+        class="bg-white rounded-xl border border-gray-200 p-4">
+        <div class="grid grid-cols-2 md:grid-cols-4 gap-3">
 
             {{-- Search --}}
-            <div class="col-span-2 md:col-span-2">
+            <div class="col-span-2 md:col-span-1">
                 <label class="block text-xs font-semibold text-gray-500 mb-1">Cari</label>
                 <div class="relative">
                     <i class="fas fa-search absolute left-2.5 top-1/2 -translate-y-1/2
-                               text-gray-400 text-xs pointer-events-none"></i>
-                    <input type="text" name="search" value="{{ request('search') }}"
-                           placeholder="Metadata, lokasi…"
-                           class="w-full pl-7 pr-3 py-2 text-xs border border-gray-200 rounded-lg
-                                  focus:outline-none focus:ring-2 focus:ring-sky-400">
+                            text-gray-400 text-xs pointer-events-none"></i>
+                    <input type="text" name="search" id="anomaly-search"
+                        value="{{ request('search') }}"
+                        placeholder="Metadata, lokasi…"
+                        class="w-full pl-7 pr-7 py-2 text-xs border border-gray-200 rounded-lg
+                                focus:outline-none focus:ring-2 focus:ring-sky-400">
+                    @if(request('search'))
+                        <a href="{{ request()->fullUrlWithQuery(['search' => null, 'page' => null]) }}"
+                        class="absolute right-2 top-1/2 -translate-y-1/2 text-gray-300 hover:text-red-400 transition-colors">
+                            <i class="fas fa-times text-xs"></i>
+                        </a>
+                    @endif
                 </div>
             </div>
 
             {{-- Severity --}}
             <div>
                 <label class="block text-xs font-semibold text-gray-500 mb-1">Severity</label>
-                <select name="severity"
+                <select name="severity" onchange="this.form.submit()"
                         class="w-full text-xs border border-gray-200 rounded-lg px-2.5 py-2
-                               focus:outline-none focus:ring-2 focus:ring-sky-400">
+                            focus:outline-none focus:ring-2 focus:ring-sky-400">
                     <option value="">Semua</option>
                     @foreach($severityOpts as $val => $label)
                         <option value="{{ $val }}" {{ request('severity')===$val ? 'selected' : '' }}>
@@ -103,9 +110,9 @@
             {{-- Status --}}
             <div>
                 <label class="block text-xs font-semibold text-gray-500 mb-1">Status</label>
-                <select name="status"
+                <select name="status" onchange="this.form.submit()"
                         class="w-full text-xs border border-gray-200 rounded-lg px-2.5 py-2
-                               focus:outline-none focus:ring-2 focus:ring-sky-400">
+                            focus:outline-none focus:ring-2 focus:ring-sky-400">
                     <option value="">Semua status</option>
                     @foreach($statusOpts as $val => $label)
                         <option value="{{ $val }}" {{ request('status')===$val ? 'selected' : '' }}>
@@ -115,28 +122,12 @@
                 </select>
             </div>
 
-            {{-- Metadata --}}
-            {{-- <div>
-                <label class="block text-xs font-semibold text-gray-500 mb-1">Metadata</label>
-                <select name="metadata_id"
-                        class="w-full text-xs border border-gray-200 rounded-lg px-2.5 py-2
-                               focus:outline-none focus:ring-2 focus:ring-sky-400">
-                    <option value="">Semua</option>
-                    @foreach($metadataList as $m)
-                        <option value="{{ $m->metadata_id }}"
-                            {{ request('metadata_id')==$m->metadata_id ? 'selected' : '' }}>
-                            {{ $m->nama }}
-                        </option>
-                    @endforeach
-                </select>
-            </div> --}}
-
             {{-- Tipe --}}
             <div>
                 <label class="block text-xs font-semibold text-gray-500 mb-1">Tipe</label>
-                <select name="anomaly_type"
+                <select name="anomaly_type" onchange="this.form.submit()"
                         class="w-full text-xs border border-gray-200 rounded-lg px-2.5 py-2
-                               focus:outline-none focus:ring-2 focus:ring-sky-400">
+                            focus:outline-none focus:ring-2 focus:ring-sky-400">
                     <option value="">Semua</option>
                     @foreach($typeOpts as $val => $label)
                         <option value="{{ $val }}" {{ request('anomaly_type')===$val ? 'selected' : '' }}>
@@ -147,18 +138,40 @@
             </div>
         </div>
 
-        <div class="flex gap-2 mt-3">
-            <button type="submit"
-                    class="text-xs bg-sky-600 hover:bg-sky-700 text-white px-4 py-2
-                           rounded-lg font-semibold transition-colors">
-                <i class="fas fa-filter mr-1"></i>Filter
-            </button>
-            <a href="{{ route('anomaly.control.index') }}"
-               class="text-xs border border-gray-200 text-gray-500 hover:bg-gray-50
-                      px-4 py-2 rounded-lg transition-colors">
-                Reset
-            </a>
-        </div>
+        {{-- Active chips --}}
+        @if(request()->hasAny(['search','severity','status','anomaly_type']))
+            <div class="flex flex-wrap items-center gap-2 mt-3 pt-3 border-t border-gray-100">
+                <span class="text-xs text-gray-400">Filter aktif:</span>
+                @if(request('severity'))
+                    <span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-amber-50 border border-amber-200 text-xs font-medium text-amber-700">
+                        {{ $severityOpts[request('severity')] ?? request('severity') }}
+                        <a href="{{ request()->fullUrlWithQuery(['severity' => null, 'page' => null]) }}" class="hover:text-red-500 transition-colors"><i class="fas fa-times text-[10px]"></i></a>
+                    </span>
+                @endif
+                @if(request('status'))
+                    <span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-sky-50 border border-sky-200 text-xs font-medium text-sky-700">
+                        {{ $statusOpts[request('status')] ?? request('status') }}
+                        <a href="{{ request()->fullUrlWithQuery(['status' => null, 'page' => null]) }}" class="hover:text-red-500 transition-colors"><i class="fas fa-times text-[10px]"></i></a>
+                    </span>
+                @endif
+                @if(request('anomaly_type'))
+                    <span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-purple-50 border border-purple-200 text-xs font-medium text-purple-700">
+                        {{ $typeOpts[request('anomaly_type')] ?? request('anomaly_type') }}
+                        <a href="{{ request()->fullUrlWithQuery(['anomaly_type' => null, 'page' => null]) }}" class="hover:text-red-500 transition-colors"><i class="fas fa-times text-[10px]"></i></a>
+                    </span>
+                @endif
+                @if(request('search'))
+                    <span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-gray-100 border border-gray-200 text-xs font-medium text-gray-600">
+                        "{{ request('search') }}"
+                        <a href="{{ request()->fullUrlWithQuery(['search' => null, 'page' => null]) }}" class="hover:text-red-500 transition-colors"><i class="fas fa-times text-[10px]"></i></a>
+                    </span>
+                @endif
+                <a href="{{ route('anomaly.control.index') }}"
+                class="text-xs text-gray-400 hover:text-red-500 transition-colors flex items-center gap-1 ml-1">
+                    <i class="fas fa-times-circle"></i> Reset semua
+                </a>
+            </div>
+        @endif
     </form>
 
     {{-- ── BULK ACTION BAR ──────────────────────────────────────── --}}
@@ -725,5 +738,16 @@ document.getElementById('reviewForm').addEventListener('submit', async function(
         btn.innerHTML = '<i class="fas fa-gavel mr-1"></i>Proses';
     }
 });
+
+// Auto-submit search dengan debounce
+(function () {
+    const input = document.getElementById('anomaly-search');
+    if (!input) return;
+    let timer;
+    input.addEventListener('input', () => {
+        clearTimeout(timer);
+        timer = setTimeout(() => input.form.submit(), 500);
+    });
+})();
 </script>
 @endsection

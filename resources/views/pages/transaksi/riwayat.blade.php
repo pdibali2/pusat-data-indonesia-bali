@@ -7,7 +7,7 @@
 
     <div class="page-header">
         <div>
-            <h1 class="text-xl font-bold text-gray-800">Riwayat Transaksi</h1>
+            <h1 class="text-xl font-bold text-gray-800">Riwayat Berlangganan</h1>
             <p class="text-sm text-gray-500 mt-0.5">Semua transaksi dan langganan kamu</p>
         </div>
     </div>
@@ -18,23 +18,81 @@
     </div>
     @endif
 
-    {{-- Statistik --}}
+    {{-- Cari transaksi aktif milik user --}}
+    @php
+        $aktifNow = $transaksis->first(fn($t) => $t->isSuccess() && $t->isAktif());
+        // fallback: cari dari semua transaksi jika halaman bukan 1
+        if (! $aktifNow) {
+            $aktifNow = \App\Models\Transaksi::where('user_id', Auth::id())
+                ->where('status', 'success')
+                ->where(function ($q) {
+                    $q->whereNull('aktif_sampai')
+                    ->orWhere('aktif_sampai', '>=', now());
+                })
+                ->latest('aktif_mulai')
+                ->first();
+        }
+    @endphp
+
     <div class="grid grid-cols-2 lg:grid-cols-4 gap-4">
+        {{-- Paket Aktif --}}
         <div class="card-panel px-5 py-4">
-            <p class="text-xs text-gray-500 mb-1">Total Transaksi</p>
-            <p class="text-2xl font-bold text-gray-800">{{ $stats['total'] }}</p>
+            <p class="text-xs text-gray-500 mb-1">Paket Aktif Saat Ini</p>
+            @if($aktifNow)
+                <p class="text-base font-bold text-green-600">{{ $aktifNow->nama_layanan }}</p>
+            @else
+                <p class="text-base font-bold text-gray-400">Tidak ada</p>
+            @endif
         </div>
+
+        {{-- Masa Berlaku --}}
         <div class="card-panel px-5 py-4">
-            <p class="text-xs text-gray-500 mb-1">Langganan Aktif</p>
-            <p class="text-2xl font-bold text-green-600">{{ $stats['aktif'] }}</p>
+            <p class="text-xs font-semibold text-gray-500 mb-2">Masa Berlaku Paket</p>
+            @if($aktifNow)
+                <p class="text-xs text-gray-500 mb-0.5">Mulai</p>
+                <p class="text-sm font-bold text-green-600 mb-1">
+                    {{ $aktifNow->aktif_mulai?->translatedFormat('l, d F Y') ?? '—' }}
+                </p>
+                <p class="text-xs text-gray-500 mb-0.5">Sampai</p>
+                <p class="text-sm font-bold text-green-600">
+                    {{ $aktifNow->aktif_sampai
+                        ? $aktifNow->aktif_sampai->translatedFormat('l, d F Y')
+                        : 'Selamanya' }}
+                </p>
+            @else
+                <p class="text-sm text-gray-400">—</p>
+            @endif
         </div>
+
+        {{-- Status Paket --}}
         <div class="card-panel px-5 py-4">
-            <p class="text-xs text-gray-500 mb-1">Menunggu Bayar</p>
-            <p class="text-2xl font-bold text-yellow-600">{{ $stats['pending'] }}</p>
+            <p class="text-xs text-gray-500 mb-1">Status Paket</p>
+            @if($aktifNow)
+                <span class="inline-flex items-center gap-1.5 text-sm font-bold text-green-600">
+                    <span class="w-2 h-2 rounded-full bg-green-500 inline-block"></span>
+                    Aktif
+                </span>
+            @else
+                <span class="inline-flex items-center gap-1.5 text-sm font-bold text-gray-400">
+                    <span class="w-2 h-2 rounded-full bg-gray-300 inline-block"></span>
+                    Tidak Aktif
+                </span>
+            @endif
         </div>
+
+        {{-- Sisa Waktu --}}
         <div class="card-panel px-5 py-4">
-            <p class="text-xs text-gray-500 mb-1">Total Dibayar</p>
-            <p class="text-lg font-bold text-blue-600">Rp {{ number_format($stats['total_bayar'], 0, ',', '.') }}</p>
+            <p class="text-xs text-gray-500 mb-1">Sisa Waktu</p>
+            @if($aktifNow && $aktifNow->aktif_sampai)
+                @php $sisaHari = (int) now()->diffInDays($aktifNow->aktif_sampai, false); @endphp
+                <p class="text-base font-bold {{ $sisaHari <= 3 ? 'text-red-500' : 'text-green-600' }}">
+                    {{ $sisaHari > 0 ? $sisaHari . ' hari lagi' : 'Hari ini berakhir' }}
+                </p>
+            @elseif($aktifNow)
+                <p class="text-base font-bold text-green-600">Selamanya</p>
+            @else
+                <p class="text-base font-bold text-gray-400">—</p>
+            @endif
         </div>
     </div>
 
@@ -50,7 +108,6 @@
                         <option value="success"   {{ request('status') === 'success'   ? 'selected' : '' }}>Berhasil</option>
                         <option value="pending"   {{ request('status') === 'pending'   ? 'selected' : '' }}>Menunggu</option>
                         <option value="failed"    {{ request('status') === 'failed'    ? 'selected' : '' }}>Gagal</option>
-                        <option value="cancelled" {{ request('status') === 'cancelled' ? 'selected' : '' }}>Dibatalkan</option>
                     </select>
 
                     @if(request()->filled('status'))
@@ -83,7 +140,7 @@
                         <th class="px-5 py-3 text-left font-medium">Order ID</th>
                         <th class="px-5 py-3 text-left font-medium">Layanan</th>
                         <th class="px-5 py-3 text-left font-medium">Harga</th>
-                        <th class="px-5 py-3 text-left font-medium">Status</th>
+                        <th class="px-5 py-3 text-left font-medium">Menunggu Bayar</th>
                         <th class="px-5 py-3 text-left font-medium">Masa Aktif</th>
                         <th class="px-5 py-3 text-left font-medium">Tanggal</th>
                         <th class="px-5 py-3 text-right font-medium">Aksi</th>
@@ -98,7 +155,19 @@
                             <p class="text-xs text-gray-400">{{ $item->durasi_label }}</p>
                         </td>
                         <td class="px-5 py-3.5 font-medium text-gray-700">{{ $item->harga_format }}</td>
-                        <td class="px-5 py-3.5">{!! $item->status_badge !!}</td>
+                        <td class="px-5 py-3.5">
+                            @if($item->status === 'pending')
+                                <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium bg-yellow-50 text-yellow-700">
+                                    <span class="w-1.5 h-1.5 rounded-full bg-yellow-400 inline-block"></span>
+                                    Ya
+                                </span>
+                            @else
+                                <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium bg-gray-100 text-gray-500">
+                                    <span class="w-1.5 h-1.5 rounded-full bg-gray-400 inline-block"></span>
+                                    Tidak
+                                </span>
+                            @endif
+                        </td>
                         <td class="px-5 py-3.5 text-xs text-gray-500">
                             @if($item->isSuccess())
                                 @if($item->aktif_sampai)
@@ -173,7 +242,7 @@ const transaksiData = {
         harga_format: "{{ $item->harga_format }}",
         durasi_label: "{{ $item->durasi_label }}",
         status:       "{{ $item->status }}",
-        status_label: "{{ match($item->status) { 'success'=>'Berhasil','pending'=>'Menunggu','failed'=>'Gagal','cancelled'=>'Dibatalkan', default=>$item->status } }}",
+        status_label: "{{ match($item->status) { 'success'=>'Berhasil','pending'=>'Menunggu','failed'=>'Gagal', default=>$item->status } }}",
         payment_type: "{{ $item->payment_type ? strtoupper(str_replace('_',' ',$item->payment_type)) : '—' }}",
         midtrans_id:  "{{ $item->midtrans_transaction_id ?? '—' }}",
         aktif_mulai:  "{{ $item->aktif_mulai ? $item->aktif_mulai->format('d M Y') : '—' }}",

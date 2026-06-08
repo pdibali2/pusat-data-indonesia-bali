@@ -177,7 +177,7 @@
                         </svg>
                         <p class="text-xs text-amber-700">
                             Anda melihat <strong>{{ $freeCountOnPage }} dari {{ $metadataList->count() }}</strong> dataset di halaman ini secara gratis.
-                            <a href="{{ route('langganan') }}" class="font-bold underline hover:text-amber-900 transition-colors">Berlangganan</a> untuk akses penuh ke semua <strong>{{ number_format($metadataList->total()) }}</strong> dataset.
+                            <a href="{{ route('langganan') }}" class="font-bold underline hover:text-amber-900 transition-colors">Berlangganan</a> untuk akses penuh ke semua dataset.
                         </p>
                     </div>
                 @endif
@@ -330,104 +330,76 @@
                                 </div>
 
                             @else
-                                {{-- ── LOCKED card ─────────────────────────────────────────── --}}
-                                <div class="relative bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden select-none">
-
-                                    {{-- Blurred sparkline header --}}
-                                    <div class="relative px-5 pt-5 pb-2 h-36 overflow-hidden blur-sm" style="background: linear-gradient(135deg, #001734 0%, #002a52 100%);">
-                                        <svg viewBox="0 0 300 90" class="w-full h-20 mt-1" preserveAspectRatio="none" aria-hidden="true">
-                                            {{-- placeholder random-looking flat line --}}
-                                            <polyline points="0,60 60,45 120,55 180,38 240,50 300,42"
-                                                      fill="none" stroke="#F7C100" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" opacity="0.4"/>
-                                        </svg>
-                                        <div class="flex justify-between px-0.5 mt-1">
-                                            @foreach($years as $y)
-                                                <span class="text-white/35" style="font-size:10px;">{{ $y }}</span>
-                                            @endforeach
+                                {{-- ── LOCKED card (Grid) ─────────────────────────────────────────── --}}
+                                <div class="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
+                                    {{-- Sparkline header (blurred untuk locked) --}}
+                                    <div class="relative px-5 pt-5 pb-2 h-36 overflow-hidden" style="background:#0B2A52;">
+                                        {{-- Konten sparkline yang di-blur --}}
+                                        <div class="absolute inset-0 px-5 pt-5 pb-2" style="filter: blur(4px);">
+                                            <svg viewBox="0 0 300 90" class="w-full h-20 mt-1" preserveAspectRatio="none" aria-hidden="true">
+                                                {{-- Grid lines --}}
+                                                @foreach([25, 50, 75] as $gy)
+                                                    <line x1="0" y1="{{ $gy }}" x2="300" y2="{{ $gy }}"
+                                                        stroke="white" stroke-opacity="0.06" stroke-width="1"/>
+                                                @endforeach
+                                                {{-- Garis merah (bukan kuning) --}}
+                                                <polyline points="0,60 60,45 120,55 180,38 240,50 300,42"
+                                                        fill="none" stroke="#E63946" stroke-width="2.2"
+                                                        stroke-linecap="round" stroke-linejoin="round"/>
+                                                <circle cx="300" cy="42" r="3.5" fill="#E63946"/>
+                                            </svg>
+                                            <div class="flex justify-between px-0.5 mt-1">
+                                                @foreach($years as $y)
+                                                    <span class="text-white/35" style="font-size:10px;">{{ $y }}</span>
+                                                @endforeach
+                                            </div>
+                                        </div>
+                                        {{-- Overlay gelap di atas blur --}}
+                                        <div class="absolute inset-0 bg-[#0B2A52]/70 backdrop-blur-none"></div>
+                                        {{-- Ikon kunci di tengah --}}
+                                        <div class="absolute inset-0 flex items-center justify-center">
+                                            <div class="flex flex-col items-center gap-1.5 opacity-60">
+                                                <svg class="w-7 h-7 text-[#F7C100]" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8"
+                                                        d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/>
+                                                </svg>
+                                                <span class="text-white/50 text-xs font-semibold tracking-wide">Berlangganan</span>
+                                            </div>
                                         </div>
                                     </div>
 
-                                    {{-- Blurred card body --}}
-                                    <div class="p-5 blur-sm">
-                                        <div class="flex items-start justify-between gap-2 mb-2">
-                                            <div class="h-4 bg-gray-200 rounded w-3/4"></div>
-                                            <div class="h-4 bg-gray-100 rounded w-12 flex-shrink-0"></div>
+                                    {{-- Card body (tidak blur, tampil info asli) --}}
+                                    <div class="p-5">
+                                        <div class="flex items-start justify-between gap-2 mb-3">
+                                            <h3 class="text-sm font-bold text-stikom leading-snug line-clamp-2">
+                                                {{ $meta->nama }}
+                                            </h3>
+                                            <span class="shrink-0 px-2 py-0.5 rounded-full bg-stikom-red/20 text-stikom-red text-xs font-semibold">
+                                                {{ $meta->frekuensi_penerbitan }}
+                                            </span>
                                         </div>
                                         <div class="flex items-center gap-2 mb-4">
-                                            <div class="h-3.5 bg-amber-100 rounded-full w-20"></div>
-                                            <div class="h-3.5 bg-gray-100 rounded w-16"></div>
+                                            <span class="px-2 py-0.5 rounded-full bg-stikom-red/20 text-stikom-red text-xs font-semibold max-w-[140px] truncate">
+                                                {{ $namaKlasifikasi }}
+                                            </span>
+                                            <span class="text-gray-400 text-xs whitespace-nowrap">sejak {{ $meta->tahun_mulai_data }}</span>
                                         </div>
                                         <div class="border-t border-gray-50 pt-4">
-                                            <div class="h-3.5 bg-gray-200 rounded w-20"></div>
+                                            <a href="{{ route('langganan') }}"
+                                            class="flex items-center gap-1.5 px-4 py-2 rounded-xl bg-[#001734] text-stikom-accent hover:text-black text-xs font-bold hover:bg-[#F7C100] transition-colors duration-200 w-fit">
+                                                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                                        d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/>
+                                                </svg>
+                                                Langganan untuk Akses
+                                            </a>
                                         </div>
-                                    </div>
-
-                                    {{-- Lock overlay --}}
-                                    <div class="absolute inset-0 flex flex-col items-center justify-center bg-white/60 backdrop-blur-[2px]">
-                                        <div class="w-10 h-10 rounded-xl bg-[#001734] flex items-center justify-center mb-2 shadow-lg">
-                                            <svg class="w-5 h-5 text-[#F7C100]" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
-                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                                      d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/>
-                                            </svg>
-                                        </div>
-                                        <p class="text-xs font-bold text-[#001734]">Dataset Premium</p>
                                     </div>
                                 </div>
                             @endif
 
                         @endforeach
                     </div>
-
-                    {{-- ── PAYWALL OVERLAY — muncul di atas grid jika ada card terkunci ── --}}
-                    @guest
-                        @if($freeCountOnPage < $metadataList->count())
-                            <div class="absolute bottom-0 left-0 right-0 z-10"
-                                 style="height: 72%;">
-                                {{-- fade gradient --}}
-                                <div class="absolute inset-0 pointer-events-none"
-                                     style="background: linear-gradient(to bottom, transparent 0%, #f8fafc 32%, #f8fafc 100%);"></div>
-
-                                {{-- CTA card --}}
-                                <div class="absolute bottom-0 left-0 right-0 px-4 pb-2">
-                                    <div class="max-w-xl mx-auto bg-white rounded-3xl border border-gray-100 shadow-2xl overflow-hidden">
-
-                                        {{-- Top accent bar --}}
-                                        <div class="h-1.5 bg-gradient-to-r from-[#001734] via-[#F7C100] to-[#001734]"></div>
-
-                                        <div class="p-7 sm:p-9 text-center">
-                                            {{-- Icon --}}
-                                            <div class="w-16 h-16 rounded-2xl bg-[#001734] flex items-center justify-center mx-auto mb-5 shadow-lg">
-                                                <svg class="w-8 h-8 text-[#F7C100]" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
-                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                                          d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/>
-                                                </svg>
-                                            </div>
-
-                                            <h3 class="text-xl sm:text-2xl font-black text-[#001734] mb-2 leading-tight">
-                                                Akses Penuh ke Semua Dataset
-                                            </h3>
-                                            <p class="text-gray-500 text-sm mb-7 max-w-sm mx-auto leading-relaxed">
-                                                Anda sedang melihat beberapa data secara gratis</strong>.
-                                                Berlangganan untuk menjelajahi seluruh data.
-                                            </p>
-
-                                            {{-- CTA buttons --}}
-                                            <div class="flex flex-col sm:flex-row items-center justify-center gap-3">
-                                                <a href="{{ route('langganan') }}"
-                                                   class="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-8 py-3.5 rounded-2xl bg-stikom-accent text-stikom hover:text-white font-black text-sm hover:bg-yellow-60 transition-colors shadow-lg">
-                                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
-                                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                                              d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z"/>
-                                                    </svg>
-                                                    Berlangganan Sekarang
-                                                </a>
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                        @endif
-                    @endguest
 
                 </div>{{-- /grid --}}
 
@@ -482,29 +454,48 @@
                             </div>
 
                         @else
-                            {{-- ── LOCKED list row ─────────────────────────────────────── --}}
-                            <div class="relative bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden select-none">
-                                {{-- Blurred row --}}
-                                <div class="flex items-center gap-4 p-4 sm:p-5 blur-sm pointer-events-none">
-                                    <div class="w-12 h-12 rounded-xl bg-gray-200 flex-shrink-0"></div>
-                                    <div class="flex-1 min-w-0 space-y-2">
-                                        <div class="h-4 bg-gray-200 rounded w-2/3"></div>
-                                        <div class="flex gap-2">
-                                            <div class="h-3 bg-amber-100 rounded-full w-20"></div>
-                                            <div class="h-3 bg-gray-100 rounded-full w-16"></div>
-                                            <div class="h-3 bg-gray-100 rounded w-12"></div>
+                            {{-- ── LOCKED list row (tidak blur) ─────────────────────────────────── --}}
+                            <div class="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
+                                <div class="flex items-center gap-4 p-4 sm:p-5">
+
+                                    {{-- Icon --}}
+                                    <div class="w-12 h-12 rounded-xl bg-[#001734] flex items-center justify-center flex-shrink-0">
+                                        <svg class="w-6 h-6 text-[#F7C100]" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                                d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/>
+                                        </svg>
+                                    </div>
+
+                                    {{-- Info metadata (tampil asli) --}}
+                                    <div class="flex-1 min-w-0">
+                                        <div class="flex items-start gap-3 flex-wrap">
+                                            <h3 class="text-sm font-bold text-[#001734] line-clamp-1">
+                                                {{ $meta->nama }}
+                                            </h3>
+                                            <div class="flex items-center gap-2 flex-wrap mt-0.5">
+                                                <span class="px-2 py-0.5 rounded-full bg-[#F7C100]/15 text-[#001734] text-xs font-semibold">
+                                                    {{ $namaKlasifikasi }}
+                                                </span>
+                                                <span class="px-2 py-0.5 rounded-full bg-[#001734]/5 text-[#001734] text-xs font-semibold">
+                                                    {{ $meta->frekuensi_penerbitan }}
+                                                </span>
+                                                <span class="text-gray-400 text-xs">{{ $meta->satuan_data }}</span>
+                                                <span class="text-gray-300 text-xs">·</span>
+                                                <span class="text-gray-400 text-xs">sejak {{ $meta->tahun_mulai_data }}</span>
+                                            </div>
                                         </div>
                                     </div>
-                                    <div class="h-8 w-16 bg-gray-200 rounded-xl flex-shrink-0"></div>
-                                </div>
-                                {{-- Lock badge --}}
-                                <div class="absolute inset-0 flex items-center justify-center bg-white/50 backdrop-blur-[1px]">
-                                    <div class="flex items-center gap-2 px-3 py-1.5 rounded-full bg-[#001734] shadow-md">
-                                        <svg class="w-3.5 h-3.5 text-[#F7C100]" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
-                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                                  d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/>
-                                        </svg>
-                                        <span class="text-xs font-bold text-white">Premium</span>
+
+                                    {{-- Tombol Langganan --}}
+                                    <div class="flex items-center gap-2 shrink-0">
+                                        <a href="{{ route('langganan') }}"
+                                        class="flex items-center gap-1.5 px-4 py-2 rounded-xl bg-[#001734] text-stikom-accent hover:text-black text-xs font-bold hover:bg-[#F7C100] transition-colors duration-200">
+                                            <svg class="w-3.5 h-3.5 text-[#F7C100]" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                                    d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/>
+                                            </svg>
+                                            Langganan
+                                        </a>
                                     </div>
                                 </div>
                             </div>

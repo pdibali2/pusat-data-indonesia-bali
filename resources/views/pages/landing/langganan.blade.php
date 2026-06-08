@@ -159,7 +159,7 @@
                                                 class="w-full py-3 text-[10px] font-black text-stikom bg-stikom-accent
                                                        hover:bg-yellow-600 hover:text-white transition-colors duration-200 font-poppins
                                                        uppercase tracking-wide shrink-0">
-                                            Berlangganan Sekarang →
+                                            Berlangganan Sekarang
                                         </button>
                                     </form>
                                 @else
@@ -167,7 +167,7 @@
                                        class="block w-full py-3 text-[10px] font-black text-center text-stikom
                                               bg-stikom-accent hover:bg-yellow-600 hover:text-white transition-colors duration-200
                                               font-poppins uppercase tracking-wide shrink-0">
-                                        Login untuk Berlangganan →
+                                        <p class="px-2">Login untuk Berlangganan</p>
                                     </a>
                                 @endauth
 
@@ -239,7 +239,7 @@
                                                 class="w-full py-3 text-[10px] font-black text-stikom shrink-0
                                                        bg-stikom-accent hover:bg-yellow-600 hover:text-white
                                                        transition-all duration-200 font-poppins uppercase tracking-wide">
-                                            Pilih {{ $layanan->nama_layanan }} →
+                                            Pilih {{ $layanan->nama_layanan }}
                                         </button>
                                     </form>
                                 @else
@@ -247,7 +247,7 @@
                                        class="block w-full py-3 text-[10px] font-black text-center text-stikom shrink-0
                                               bg-stikom-accent hover:bg-yellow-600 hover:text-white
                                               transition-all duration-200 font-poppins uppercase tracking-wide">
-                                        Login untuk Berlangganan →
+                                        <p class="px-2">Login untuk Berlangganan</p>
                                     </a>
                                 @endauth
 

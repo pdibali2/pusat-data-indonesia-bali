@@ -27,19 +27,30 @@
 
             {{-- Klasifikasi populer --}}
             <div>
-                <h3 class="text-xs font-bold text-stikom-accent uppercase tracking-widest mb-5">Klasifikasi Data</h3>
+                <h3 class="text-xs font-bold text-stikom-accent uppercase tracking-widest mb-5">
+                    Klasifikasi Data
+                </h3>
+
                 <ul class="space-y-2.5">
-                    @foreach($allKlasifikasi as $klasifikasi)
-    <li>
-        <a href="{{ route('klasifikasi.show', [
-                'klasifikasi' => Str::slug($klasifikasi)
-            ]) }}"
-           class="text-white/50 hover:text-stikom-accent text-sm transition-colors duration-150 flex items-center gap-2 group">
-            <span class="w-1 h-1 rounded-full bg-white/20 group-hover:bg-stikom-accent transition-colors shrink-0"></span>
-            {{ $klasifikasi }}
-        </a>
-    </li>
-@endforeach
+                    @foreach($allKlasifikasi->take(10) as $klasifikasi)
+                        <li>
+                            <a href="{{ route('klasifikasi.show', [
+                                    'klasifikasi' => Str::slug($klasifikasi)
+                                ]) }}"
+                            class="text-white/50 hover:text-stikom-accent text-sm transition-colors duration-150 flex items-center gap-2 group">
+
+                                <span class="w-1 h-1 rounded-full bg-white/20 group-hover:bg-stikom-accent transition-colors shrink-0"></span>
+
+                                {{ $klasifikasi }}
+                            </a>
+                        </li>
+                    @endforeach
+                    <li>
+                        <a href="{{ route('klasifikasi.index') }}"
+                           class="text-xs text-white/30 hover:text-stikom-accent transition-colors flex items-center gap-2 group">
+                            Lihat Semua Klasifikasi
+                        </a>
+                    </li>
                 </ul>
             </div>
 

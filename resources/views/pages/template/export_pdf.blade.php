@@ -19,6 +19,33 @@
         }
 
         /* ═══════════════════════════════════════════════
+        WATERMARK
+        ═══════════════════════════════════════════════ */
+        body::before {
+            content: "Pusat Data Indonesia Bali";
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%) rotate(-45deg);
+            font-size: 46px;
+            font-weight: 700;
+            color: rgba(0, 0, 0, 0.06);
+            white-space: nowrap;
+            pointer-events: none;
+            z-index: 9999;
+            letter-spacing: 4px;
+            text-transform: uppercase;
+        }
+
+        @media print {
+            body::before {
+                color: rgba(0, 0, 0, 0.08); /* sedikit lebih gelap saat print agar tetap terlihat */
+                -webkit-print-color-adjust: exact;
+                print-color-adjust: exact;
+            }
+        }
+
+        /* ═══════════════════════════════════════════════
            PRINT HEADER (tampil hanya di layar, hilang saat cetak)
         ═══════════════════════════════════════════════ */
         .screen-bar {

@@ -125,27 +125,64 @@
                         @if(!$isLocked)
                             @include('pages.landing.klasifikasi._card', ['meta' => $meta])
                         @else
-                            {{-- LOCKED card --}}
-                            <div class="relative bg-white border border-gray-100 border-l-4 border-l-transparent shadow-sm overflow-hidden select-none">
-                                <div class="flex items-start sm:items-center gap-4 px-5 py-4 blur-sm pointer-events-none">
-                                    <div class="w-10 h-10 bg-gray-200 shrink-0"></div>
-                                    <div class="flex-1 min-w-0 space-y-2">
-                                        <div class="h-4 bg-gray-200 rounded w-2/3"></div>
-                                        <div class="flex gap-3">
-                                            <div class="h-3 bg-gray-100 rounded w-20"></div>
-                                            <div class="h-3 bg-gray-100 rounded w-16"></div>
+                            {{-- LOCKED card — tampil normal, tidak bisa diklik --}}
+                            <div class="relative bg-white border border-gray-100 border-l-4 border-l-stikom-blue shadow-sm overflow-hidden">
+                                <div class="flex items-start sm:items-center gap-4 px-5 py-4">
+                                    {{-- Icon --}}
+                                    <div class="w-10 h-10 bg-stikom/5 flex items-center justify-center shrink-0">
+                                        <svg class="w-5 h-5 text-stikom" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8"
+                                                d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/>
+                                        </svg>
+                                    </div>
+
+                                    {{-- Info --}}
+                                    <div class="flex-1 min-w-0">
+                                        <h2 class="text-sm font-bold text-gray-800 line-clamp-1 mb-1 font-body">
+                                            {{ $meta->nama }}
+                                        </h2>
+                                        <div class="flex flex-wrap gap-x-4 gap-y-1 text-[11px] text-gray-400 font-body">
+                                            @if($meta->satuan_data)
+                                                <span class="flex items-center gap-1">
+                                                    <svg class="w-3 h-3 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                                            d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z"/>
+                                                    </svg>
+                                                    {{ $meta->satuan_data }}
+                                                </span>
+                                            @endif
+                                            @if($meta->frekuensi_penerbitan)
+                                                <span class="flex items-center gap-1">
+                                                    <svg class="w-3 h-3 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                                            d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                                                    </svg>
+                                                    {{ $meta->frekuensi_penerbitan }}
+                                                </span>
+                                            @endif
+                                            @if($meta->tahun_mulai_data)
+                                                <span class="flex items-center gap-1">
+                                                    <svg class="w-3 h-3 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                                            d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/>
+                                                    </svg>
+                                                    Sejak {{ $meta->tahun_mulai_data }}
+                                                </span>
+                                            @endif
                                         </div>
                                     </div>
-                                    <div class="w-4 h-4 bg-gray-200 rounded shrink-0"></div>
-                                </div>
-                                <div class="absolute inset-0 flex items-center justify-center bg-white/50 backdrop-blur-[1px]">
-                                    <div class="flex items-center gap-2 px-3 py-1.5 bg-stikom shadow-md">
-                                        <svg class="w-3.5 h-3.5 text-stikom-accent" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+
+                                    {{-- Tombol Langganan --}}
+                                    <a href="{{ route('langganan') }}"
+                                    class="shrink-0 flex items-center gap-1.5 px-3 py-1.5
+                                            bg-stikom text-stikom-accent hover:text-black text-xs font-bold
+                                            hover:bg-stikom-accent transition-colors duration-200 font-display">
+                                        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                                                 d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/>
                                         </svg>
-                                        <span class="text-xs font-bold text-white">Premium</span>
-                                    </div>
+                                        Langganan
+                                    </a>
                                 </div>
                             </div>
                         @endif
@@ -182,58 +219,6 @@
                     <p class="text-sm text-gray-400 font-body">Metadata tidak ditemukan.</p>
                 </div>
 
-                {{-- Pagination — disembunyikan saat search aktif --}}
-                <div id="pagination-wrapper">
-                    @if($metadataList->hasPages())
-                        <div class="mt-8 flex justify-center">
-                            <div class="flex items-center gap-1">
-                                {{-- Previous --}}
-                                @if($metadataList->onFirstPage())
-                                    <span class="px-3 py-2 text-sm text-gray-300 cursor-not-allowed">
-                                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/>
-                                        </svg>
-                                    </span>
-                                @else
-                                    <a href="{{ $metadataList->previousPageUrl() }}"
-                                       class="px-3 py-2 text-sm text-gray-600 hover:bg-white hover:shadow-sm transition-all">
-                                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/>
-                                        </svg>
-                                    </a>
-                                @endif
-
-                                {{-- Page numbers --}}
-                                @foreach($metadataList->getUrlRange(max(1,$metadataList->currentPage()-2), min($metadataList->lastPage(),$metadataList->currentPage()+2)) as $page => $url)
-                                    @if($page == $metadataList->currentPage())
-                                        <span class="px-3.5 py-2 text-sm font-black bg-stikom-red text-white font-display">{{ $page }}</span>
-                                    @else
-                                        <a href="{{ $url }}"
-                                           class="px-3.5 py-2 text-sm text-gray-600 hover:bg-white hover:shadow-sm transition-all font-body">
-                                            {{ $page }}
-                                        </a>
-                                    @endif
-                                @endforeach
-
-                                {{-- Next --}}
-                                @if($metadataList->hasMorePages())
-                                    <a href="{{ $metadataList->nextPageUrl() }}"
-                                       class="px-3 py-2 text-sm text-gray-600 hover:bg-white hover:shadow-sm transition-all">
-                                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/>
-                                        </svg>
-                                    </a>
-                                @else
-                                    <span class="px-3 py-2 text-sm text-gray-300 cursor-not-allowed">
-                                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/>
-                                        </svg>
-                                    </span>
-                                @endif
-                            </div>
-                        </div>
-                    @endif
-                </div>
             @endif
 
         </div>
@@ -363,7 +348,6 @@
         const input      = document.getElementById('search-metadata');
         const container  = document.getElementById('metadata-container');
         const noResult   = document.getElementById('search-empty');
-        const pagination = document.getElementById('pagination-wrapper');
         const loading    = document.getElementById('search-loading');
         const hint       = document.getElementById('search-hint');
         const klasifikasi = input.dataset.klasifikasi ?? '';

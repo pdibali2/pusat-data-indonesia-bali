@@ -197,6 +197,7 @@ class TransaksiController extends Controller
 
         $query = Transaksi::where('user_id', $user->user_id)
                           ->with('layanan')
+                          ->whereIn('status', ['pending', 'success', 'failed'])
                           ->orderByDesc('created_at');
 
         if ($request->filled('status')) {

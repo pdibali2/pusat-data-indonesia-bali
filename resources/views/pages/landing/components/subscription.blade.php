@@ -141,7 +141,7 @@
                             <a href="{{ route('langganan') }}"
                                class="block w-full py-3 text-[10px] font-black text-center font-poppins uppercase tracking-wide transition-all duration-200 shrink-0
                                       bg-stikom-accent text-stikom hover:bg-yellow-600 hover:text-white">
-                                Berlangganan Sekarang →
+                                Berlangganan Sekarang
                             </a>
 
                         </div>
