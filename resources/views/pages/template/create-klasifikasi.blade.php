@@ -223,9 +223,10 @@
                     <tr>
                         <th class="px-4 py-3 w-10">
                             <input type="checkbox" id="checkAllPreview" onchange="toggleAll(this)"
-                                   class="rounded border-gray-300 cursor-pointer">
+                                class="rounded border-gray-300 cursor-pointer">
                         </th>
                         <th class="px-4 py-3 font-semibold text-gray-600">Metadata</th>
+                        <th class="px-4 py-3 font-semibold text-gray-600 w-16 text-center">Info</th>
                         <th class="px-4 py-3 font-semibold text-gray-600 w-36 text-center">Detail Wilayah</th>
                     </tr>
                 </thead>
@@ -829,12 +830,10 @@ function buildRow(row) {
     const indent   = depth * 20;
     const isExpanded = !!expandedMap[key];
 
-    // Nama tampilan: "Nama Metadata di Nama Wilayah"
     const locLabel = row.nama_wilayah || 'Semua Wilayah';
     const freqBadge = row.frekuensi_penerbitan
         ? `<span class="text-gray-400 font-normal ml-1">(${escH(row.frekuensi_penerbitan)})</span>` : '';
 
-    // Tombol expand/collapse di kolom Detail Wilayah
     let detailBtn = `<span class="text-gray-300 text-sm">—</span>`;
     if (row.has_children) {
         detailBtn = `<button type="button"
@@ -849,13 +848,11 @@ function buildRow(row) {
         </button>`;
     }
 
-    // Warna baris berdasarkan depth
     const rowBg = depth === 0
         ? 'hover:bg-violet-50/40'
         : depth === 1 ? 'bg-sky-50/30 hover:bg-sky-50/60'
         : 'bg-violet-50/30 hover:bg-violet-50/60';
 
-    // Border kiri untuk baris anak
     const borderStyle = depth > 0
         ? `border-left: 3px solid ${depth===1 ? '#a7f3d0' : '#c4b5fd'};` : '';
 
@@ -872,23 +869,17 @@ function buildRow(row) {
         </td>
         <td class="px-4 py-3 text-xs" style="${depth > 0 ? 'padding-left:' + (12+indent) + 'px' : ''}">
             ${depth > 0 ? '<span class="text-gray-400 mr-1">↳</span>' : ''}
-
             <span class="${depth===0 ? 'font-semibold' : 'font-medium'} text-gray-800">
                 ${escH(row.nama||'')} di ${escH(locLabel)}
             </span>
-
-            <!-- ICON INFO -->
-            <a href="/metadata/${row.metadata_id}">
-                <i class="fas fa-circle-info ml-1 text-blue-400 hover:text-violet-500 cursor-pointer"
-                title="
-            Klasifikasi: ${escH(row.klasifikasi || '-')}
-            Satuan: ${escH(row.satuan_data || '-')}
-            Frekuensi: ${escH(row.frekuensi_penerbitan || '-')}
-                ">
-                </i>
-            </a>
-
             ${freqBadge}
+        </td>
+        <td class="px-4 py-3 text-center">
+            <a href="/metadata/${row.metadata_id}"
+               class="inline-flex items-center justify-center"
+               title="Klasifikasi: ${escH(row.klasifikasi || '-')}&#10;Satuan: ${escH(row.satuan_data || '-')}&#10;Frekuensi: ${escH(row.frekuensi_penerbitan || '-')}">
+                <i class="fas fa-circle-info text-blue-400 hover:text-violet-500 transition-colors cursor-pointer"></i>
+            </a>
         </td>
         <td class="px-4 py-3 text-center">${detailBtn}</td>
     </tr>`;

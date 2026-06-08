@@ -219,9 +219,10 @@
                     <tr>
                         <th class="px-4 py-3 w-10">
                             <input type="checkbox" id="checkAll" onchange="toggleAll(this)"
-                                   class="rounded border-gray-300 cursor-pointer">
+                                class="rounded border-gray-300 cursor-pointer">
                         </th>
                         <th class="px-4 py-3 font-semibold">Metadata – Wilayah</th>
+                        <th class="px-4 py-3 font-semibold w-16 text-center">Info</th>
                         <th class="px-4 py-3 font-semibold w-36 text-center">Detail Wilayah</th>
                     </tr>
                 </thead>
@@ -880,23 +881,17 @@ function buildRow(row) {
         </td>
         <td class="px-3 py-3 text-xs" style="${depth > 0 ? 'padding-left:' + (12 + indent) + 'px' : 'padding-left:16px'}">
             ${depth > 0 ? '<span class="text-gray-400 mr-1.5">↳</span>' : ''}
-
             ${displayName}
-
             ${row.frekuensi_penerbitan ? `
                 <span class="ml-1.5 text-gray-400 font-normal">
                     (${escH(row.frekuensi_penerbitan)})
                 </span>` : ''}
-
-            <!-- ICON INFO (CLICKABLE) -->
-            <a href="/metadata/${row.metadata_id}" 
-            class="ml-2 inline-flex items-center"
-            title="
-                Klasifikasi: ${escH(row.klasifikasi || '-')}
-                Satuan: ${escH(row.satuan_data || '-')}
-                Frekuensi: ${escH(row.frekuensi_penerbitan || '-')}
-                    ">
-                        <i class="fas fa-circle-info text-sky-500 hover:text-sky-600 transition-colors"></i>
+        </td>
+        <td class="px-4 py-3 text-center">
+            <a href="/metadata/${row.metadata_id}"
+               class="inline-flex items-center justify-center"
+               title="Klasifikasi: ${escH(row.klasifikasi || '-')}&#10;Satuan: ${escH(row.satuan_data || '-')}&#10;Frekuensi: ${escH(row.frekuensi_penerbitan || '-')}">
+                <i class="fas fa-circle-info text-sky-500 hover:text-sky-600 transition-colors"></i>
             </a>
         </td>
         <td class="px-4 py-3 text-center">${detailBtn}</td>

@@ -80,6 +80,7 @@
                     <th class="px-4 py-3 font-semibold">Tahun</th>
                     <th class="px-4 py-3 font-semibold">Periode</th>
                     <th class="px-4 py-3 font-semibold">Status</th>
+                    <th class="px-4 py-3 font-semibold">Aksi</th>
                 </tr>
             </thead>
             <tbody class="divide-y divide-gray-100">
@@ -138,7 +139,7 @@
                             @endif
                         </td>
                         <td class="px-4 py-3">
-                            <form action="{{ route('dimensi_waktu.toggle_status', $row->id) }}" method="POST" class="inline">
+                            <form action="{{ route('dimensi_waktu.toggle_status', $row->time_id) }}" method="POST" class="inline">
                                 @csrf
                                 @if ($row->status === 1)
                                     <button type="submit" onclick="return confirm('Nonaktifkan data ini?')" class="text-yellow-500 hover:text-yellow-700 hover:bg-yellow-50 p-2 rounded transition-colors">

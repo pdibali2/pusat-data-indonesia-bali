@@ -58,6 +58,9 @@
                     <th class="p-3 text-left">
                         Status
                     </th>
+                    <th class="p-3 text-left">
+                        Aksi
+                    </th>
                 </tr>
 
             </thead>
@@ -93,7 +96,7 @@
                         @endif
                     </td>
 
-                    <td class="p-3">
+                    <td class="p-3 bg-gray-50">
                         <form action="{{ route('dimensi_lokasi.toggle_status', $row->location_id) }}" method="POST" class="inline">
                             @csrf
                             @if ($row->status === 1)
