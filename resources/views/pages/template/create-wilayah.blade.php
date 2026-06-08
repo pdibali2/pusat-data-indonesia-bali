@@ -1105,10 +1105,10 @@ async function submitTemplate() {
             const r = await fetch('{{ route("template.store") }}', { method: 'POST', body });
             const d = await r.json();
             if (d.success && d.storage === 'local') {
-                const existing = JSON.parse(localStorage.getItem('savedTemplates') || '[]');
-                d.template_data.local_id = 'tmpl_' + Date.now();
+                const existing = JSON.parse(localStorage.getItem('guest_templates') || '[]');
+                d.template_data._local_id = 'local_' + Date.now();  // konsisten pakai _local_id
                 existing.push(d.template_data);
-                localStorage.setItem('savedTemplates', JSON.stringify(existing));
+                localStorage.setItem('guest_templates', JSON.stringify(existing));
                 alert(`Template "${nama}" disimpan di browser.\n(Login untuk menyimpan ke server)`);
                 closeModal();
                 window.location.href = d.redirect;

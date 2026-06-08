@@ -38,22 +38,28 @@
         </div>
     </div>
 
-    {{-- Filter --}}
     <div class="card-panel">
+        {{-- Filter --}}
+        <div class="card-panel">
         <div class="p-4 border-b border-gray-100">
-            <form method="GET" action="{{ route('transaksi.riwayat') }}" class="flex flex-wrap gap-2">
-                <select name="status"
-                        class="px-3 py-2 text-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white">
-                    <option value="">Semua Status</option>
-                    <option value="success"   {{ request('status') === 'success'   ? 'selected' : '' }}>Berhasil</option>
-                    <option value="pending"   {{ request('status') === 'pending'   ? 'selected' : '' }}>Menunggu</option>
-                    <option value="failed"    {{ request('status') === 'failed'    ? 'selected' : '' }}>Gagal</option>
-                    <option value="cancelled" {{ request('status') === 'cancelled' ? 'selected' : '' }}>Dibatalkan</option>
-                </select>
-                <button type="submit" class="px-4 py-2 bg-gray-100 hover:bg-gray-200 text-gray-700 text-sm rounded-lg transition">Filter</button>
-                @if(request()->filled('status'))
-                <a href="{{ route('transaksi.riwayat') }}" class="px-4 py-2 text-sm text-gray-500 hover:text-gray-700 rounded-lg transition">Reset</a>
-                @endif
+            <form id="form-riwayat" method="GET" action="{{ route('transaksi.riwayat') }}">
+                <div class="flex flex-wrap items-center gap-2">
+                    <select name="status" onchange="this.form.submit()"
+                            class="px-3 py-2 text-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white">
+                        <option value="">Semua Status</option>
+                        <option value="success"   {{ request('status') === 'success'   ? 'selected' : '' }}>Berhasil</option>
+                        <option value="pending"   {{ request('status') === 'pending'   ? 'selected' : '' }}>Menunggu</option>
+                        <option value="failed"    {{ request('status') === 'failed'    ? 'selected' : '' }}>Gagal</option>
+                        <option value="cancelled" {{ request('status') === 'cancelled' ? 'selected' : '' }}>Dibatalkan</option>
+                    </select>
+
+                    @if(request()->filled('status'))
+                        <a href="{{ route('transaksi.riwayat') }}"
+                        class="inline-flex items-center gap-1 text-xs text-red-400 hover:text-red-600 transition">
+                            <i class="fas fa-times-circle"></i> Reset
+                        </a>
+                    @endif
+                </div>
             </form>
         </div>
 

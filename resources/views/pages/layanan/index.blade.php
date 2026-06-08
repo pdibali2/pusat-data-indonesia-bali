@@ -29,33 +29,54 @@
     </div>
     @endif
 
-    {{-- Filters --}}
     <div class="card-panel">
+        {{-- Filters --}}
         <div class="p-4 border-b border-gray-100">
-            <form method="GET" action="{{ route('admin.layanan.index') }}" class="flex flex-wrap gap-2">
-                <div class="relative flex-1 min-w-[180px] max-w-xs">
-                    <i class="fas fa-search absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-xs"></i>
-                    <input type="text" name="search" value="{{ request('search') }}"
-                           placeholder="Cari layanan..."
-                           class="w-full pl-9 pr-4 py-2 text-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+            <form id="form-layanan" method="GET" action="{{ route('admin.layanan.index') }}">
+                <div class="flex flex-wrap items-center gap-2">
+
+                    {{-- Search --}}
+                    <div class="relative flex-1 min-w-[180px] max-w-xs">
+                        <i class="fas fa-search absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-xs pointer-events-none"></i>
+                        <input type="text" name="search" value="{{ request('search') }}"
+                            placeholder="Cari layanan..."
+                            oninput="autoSubmitDebounce(this)"
+                            class="w-full pl-9 pr-8 py-2 text-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                        @if(request('search'))
+                            <a href="{{ request()->fullUrlWithQuery(['search' => null]) }}"
+                            class="absolute right-2.5 top-1/2 -translate-y-1/2 text-gray-300 hover:text-red-400 transition">
+                                <i class="fas fa-times text-xs"></i>
+                            </a>
+                        @endif
+                    </div>
+
+                    {{-- Status --}}
+                    <select name="status" onchange="this.form.submit()"
+                            class="px-3 py-2 text-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white">
+                        <option value="">Semua Status</option>
+                        <option value="publish"  {{ request('status') === 'publish'  ? 'selected' : '' }}>Publish</option>
+                        <option value="pending"  {{ request('status') === 'pending'  ? 'selected' : '' }}>Pending</option>
+                        <option value="takedown" {{ request('status') === 'takedown' ? 'selected' : '' }}>Takedown</option>
+                    </select>
+
+                    {{-- Active chips + Reset --}}
+                    @if(request()->hasAny(['search','status']))
+                        <div class="flex items-center gap-1.5 ml-1">
+                            @if(request('status'))
+                                <span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-blue-50 border border-blue-200 text-xs font-medium text-blue-700">
+                                    {{ ucfirst(request('status')) }}
+                                    <a href="{{ request()->fullUrlWithQuery(['status' => null]) }}" class="hover:text-red-500 transition">
+                                        <i class="fas fa-times text-[10px]"></i>
+                                    </a>
+                                </span>
+                            @endif
+                            <a href="{{ route('admin.layanan.index') }}"
+                            class="text-xs text-gray-400 hover:text-red-500 transition flex items-center gap-1">
+                                <i class="fas fa-times-circle"></i> Reset semua
+                            </a>
+                        </div>
+                    @endif
                 </div>
-                <select name="status"
-                        class="px-3 py-2 text-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white">
-                    <option value="">Semua Status</option>
-                    <option value="publish"  {{ request('status') === 'publish'  ? 'selected' : '' }}>Publish</option>
-                    <option value="pending"  {{ request('status') === 'pending'  ? 'selected' : '' }}>Pending</option>
-                    <option value="takedown" {{ request('status') === 'takedown' ? 'selected' : '' }}>Takedown</option>
-                </select>
-                <button type="submit"
-                        class="px-4 py-2 bg-gray-100 hover:bg-gray-200 text-gray-700 text-sm rounded-lg transition">
-                    Filter
-                </button>
-                @if(request()->hasAny(['search','status']))
-                <a href="{{ route('admin.layanan.index') }}"
-                   class="px-4 py-2 text-sm text-gray-500 hover:text-gray-700 rounded-lg transition">
-                    Reset
-                </a>
-                @endif
             </form>
         </div>
 

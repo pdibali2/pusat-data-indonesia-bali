@@ -67,10 +67,15 @@ use App\Http\Controllers\AnomalyControlController;
         ->name('klasifikasi.show');
     Route::get('/data-series', [LandingController::class, 'dataSeries'])->name('landing.data.series');
         
-        
+    
     // ─────────────────────────────────────────────────────────────
-    // TEMPLATE TAMPILAN — Sebagian bisa diakses tanpa login
+    // Halaman Data dan TEMPLATE TAMPILAN — Sebagian bisa diakses tanpa login
     // ─────────────────────────────────────────────────────────────
+    //
+    
+    // Halaman index data (daftar data) bisa diakses tanpa login, tapi untuk akses detail data tetap harus login.
+    Route::get('/data',[DataController::class, 'index'])->name('data.index');
+
     // ── Template Tampilan ─────────────────────────────────────────────────
     Route::prefix('template-tampilan')->name('template.')->group(function () {
     
@@ -80,6 +85,9 @@ use App\Http\Controllers\AnomalyControlController;
         Route::get('/available-periods', [TemplateController::class, 'getAvailablePeriods'])->name('available_periods');
         Route::get('/freq-counts', [TemplateController::class, 'getFreqCounts'])->name('freq_counts');
         Route::post('/table-data',       [TemplateController::class, 'fetchTableData'])->name('table_data');
+        // Guest endpoints (tanpa auth)
+        Route::post('/table-data-guest',  [TemplateController::class, 'fetchTableDataGuest'])->name('table_data_guest');
+        Route::post('/freq-counts-guest', [TemplateController::class, 'getFreqCountsGuest'])->name('freq_counts_guest');
         Route::get('/create',             [TemplateController::class, 'create'])->name('create');
 
     
@@ -177,7 +185,6 @@ Route::middleware(['is.login', 'is.pengelola', 'is.customer'])->group(function (
 
     // ── Data ─────────────────────────────────────────────────
     Route::prefix('data')->name('data.')->group(function () {
-        Route::get('/',       [DataController::class, 'index'])->name('index');
         Route::get('/create', [DataController::class, 'create'])->name('create');
         // Ambil produsen_id dari rujukan_id
         Route::get('/get-produsen-by-rujukan', [DataController::class, 'getProdusenByRujukan'])->name('get_produsen_by_rujukan');

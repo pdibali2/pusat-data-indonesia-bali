@@ -1,12 +1,3 @@
-{{-- resources/views/components/landing/footer.blade.php --}}
-@php
-use Illuminate\Support\Str;
-$footerKlasifikasi = [
-    'Kependudukan','Pendidikan','Kesehatan','Ketenagakerjaan','Ekonomi',
-    'Pertanian','Pariwisata','Infrastruktur','Lingkungan Hidup','Pemerintahan',
-];
-@endphp
-
 <footer class="bg-blue-950 text-white" role="contentinfo">
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
 
@@ -38,15 +29,17 @@ $footerKlasifikasi = [
             <div>
                 <h3 class="text-xs font-bold text-stikom-accent uppercase tracking-widest mb-5">Klasifikasi Data</h3>
                 <ul class="space-y-2.5">
-                    @foreach($footerKlasifikasi as $k)
-                        <li>
-                            <a href="{{ route('klasifikasi.show', ['klasifikasi' => Str::slug($k)]) }}"
-                               class="text-white/50 hover:text-stikom-accent text-sm transition-colors duration-150 flex items-center gap-2 group">
-                                <span class="w-1 h-1 rounded-full bg-white/20 group-hover:bg-stikom-accent transition-colors shrink-0"></span>
-                                {{ $k }}
-                            </a>
-                        </li>
-                    @endforeach
+                    @foreach($allKlasifikasi as $klasifikasi)
+    <li>
+        <a href="{{ route('klasifikasi.show', [
+                'klasifikasi' => Str::slug($klasifikasi)
+            ]) }}"
+           class="text-white/50 hover:text-stikom-accent text-sm transition-colors duration-150 flex items-center gap-2 group">
+            <span class="w-1 h-1 rounded-full bg-white/20 group-hover:bg-stikom-accent transition-colors shrink-0"></span>
+            {{ $klasifikasi }}
+        </a>
+    </li>
+@endforeach
                 </ul>
             </div>
 
@@ -56,7 +49,7 @@ $footerKlasifikasi = [
                 <ul class="space-y-2.5">
                     @foreach([
                         ['label' => 'Data Series',   'route' => 'template.index'],
-                        ['label' => 'Multiple Data', 'route' => 'data.index'],
+                        ['label' => 'Template Tampilan Data', 'route' => 'data.index'],
                         ['label' => 'Langganan',     'route' => 'langganan'],
                     ] as $item)
                         <li>

@@ -39,9 +39,10 @@ class DataController extends Controller
             'metadata_id', 'filter_wilayah_id', 'year', 'search', 'template_id'
         ]);
 
-        if ($request->filled('template_id')) {
+        // ── template_id: hanya proses kalau login ────────────────
+        if ($request->filled('template_id') && Auth::check()) {
             $tampilan = Tampilan::where('tampilan_id', $request->template_id)
-                ->where('user_id', Auth::user()->user_id)
+                ->where('user_id', Auth::id())
                 ->first();
 
             if ($tampilan && $tampilan->filter_params) {
@@ -72,39 +73,48 @@ class DataController extends Controller
                 $s = $request->search;
                 $query->where(fn($q) =>
                     $q->whereHas('metadata', fn($m) => $m->where('nama', 'like', "%$s%"))
-                      ->orWhere('text_value', 'like', "%$s%")
+                    ->orWhere('text_value', 'like', "%$s%")
                 );
             }
 
             $data = $query->orderBy('date_inputed', 'desc')->paginate(15)->withQueryString();
         }
 
-        $activeTemplateId   = (int) $request->input('template_id', 0);
-        $metadataList       = Metadata::where('status', 2)->orderBy('nama')->get(['metadata_id', 'nama']);
-        $wilayahList        = Location::select('nama_wilayah')->distinct()->orderBy('nama_wilayah')->pluck('nama_wilayah');
-        $availableTemplates = Tampilan::where('user_id', Auth::user()->user_id)
-                                ->withCount('isiTampilan')
-                                ->orderBy('created_at', 'desc')
-                                ->get();
+        $activeTemplateId = (int) $request->input('template_id', 0);
+        $metadataList     = Metadata::where('status', 2)->orderBy('nama')->get(['metadata_id', 'nama']);
+        $wilayahList      = Location::select('nama_wilayah')->distinct()->orderBy('nama_wilayah')->pluck('nama_wilayah');
 
-        $hasAccess = true;
+        // ── availableTemplates: kosong kalau guest ────────────────
+        $availableTemplates = Auth::check()
+            ? Tampilan::where('user_id', Auth::id())
+                ->withCount('isiTampilan')
+                ->orderBy('created_at', 'desc')
+                ->get()
+            : collect();
+
+        // ── hasAccess: guest dianggap tidak punya akses penuh ─────\
+        $hasAccess = false; // default: tidak punya akses
+
         if (Auth::check()) {
             $user = Auth::user();
+            
             if ((int) $user->group_id === 3) {
+                // Customer → cek langganan aktif
                 $hasAccess = Transaksi::where('user_id', $user->user_id)
                     ->where('status', 'success')
                     ->where(function ($q) {
                         $q->whereNull('aktif_sampai')
-                          ->orWhere('aktif_sampai', '>=', now());
+                        ->orWhere('aktif_sampai', '>=', now());
                     })
                     ->exists();
+            } else {
+                // Admin / Pengelola → selalu punya akses
+                $hasAccess = true;
             }
         }
 
-        $pendingCount  = Data::where('status', Data::STATUS_PENDING)->count();
-
-        // Jumlah anomali aktif untuk badge di sidebar
-        $anomalyCount  = Data::needsReview()->count();
+        $pendingCount = Data::where('status', Data::STATUS_PENDING)->count();
+        $anomalyCount = Data::needsReview()->count();
 
         return view('pages.data.index', compact(
             'data', 'metadataList', 'wilayahList',

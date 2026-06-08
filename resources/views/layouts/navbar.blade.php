@@ -20,6 +20,9 @@
         </button> --}}
 
         {{-- Divider --}}
+        <div class="flex items-center gap-2">
+            <a href="{{ route('landing') }}" class="text-xs text-sky-600 font-semibold">Beranda</a>
+        </div>
         <div class="w-px h-6 bg-slate-200"></div>
 
         {{-- User pill --}}

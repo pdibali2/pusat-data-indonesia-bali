@@ -200,92 +200,109 @@
             <p class="text-sm font-semibold text-gray-700">Pilih Template</p>
         </div>
 
-        @if($availableTemplates->isEmpty())
-            <div class="flex flex-col w-full border border-gray-300 rounded-lg text-sm text-gray-500">
-                <div class="border-b border-gray-300 px-3 py-2 text-xs font-medium text-gray-600">
-                    Daftar Template
-                </div>
-                <div class="flex flex-col items-center gap-3 py-12 text-gray-400">
-                    <div class="w-12 h-12 rounded-full bg-gray-100 flex items-center justify-center">
-                        <i class="fas fa-layer-group text-gray-300 text-xl"></i>
+        @auth
+            @if($availableTemplates->isEmpty())
+                <div class="flex flex-col w-full border border-gray-300 rounded-lg text-sm text-gray-500">
+                    <div class="border-b border-gray-300 px-3 py-2 text-xs font-medium text-gray-600">
+                        Daftar Template
                     </div>
-                    <p class="font-medium text-gray-500">Belum ada template</p>
-                    <p class="text-xs text-gray-400">Buat template pertama Anda untuk memudahkan akses data</p>
-                    <a href="{{ route('template.create') }}"
-                       class="mt-1 px-4 py-2 bg-stikom-blue hover:bg-blue-700 text-white
-                              text-xs font-semibold rounded-lg transition-colors">
-                        <i class="fas fa-plus mr-1"></i> Buat Template
-                    </a>
+                    <div class="flex flex-col items-center gap-3 py-12 text-gray-400">
+                        <div class="w-12 h-12 rounded-full bg-gray-100 flex items-center justify-center">
+                            <i class="fas fa-layer-group text-gray-300 text-xl"></i>
+                        </div>
+                        <p class="font-medium text-gray-500">Belum ada template</p>
+                        <p class="text-xs text-gray-400">Buat template pertama Anda untuk memudahkan akses data</p>
+                        <a href="{{ route('template.create') }}"
+                        class="mt-1 px-4 py-2 bg-stikom-blue hover:bg-blue-700 text-white
+                                text-xs font-semibold rounded-lg transition-colors">
+                            <i class="fas fa-plus mr-1"></i> Buat Template
+                        </a>
+                    </div>
                 </div>
-            </div>
-        @else
+            @else
+                <div class="flex flex-col w-full border border-gray-300 rounded-lg">
+                    <div class="border-b border-gray-300 px-3 py-2 text-xs font-medium text-gray-600">
+                        Daftar Template
+                        <span class="text-gray-400">({{ $availableTemplates->count() }})</span>
+                    </div>
+                    <div class="flex flex-col gap-2 my-3 mx-3 max-h-52 overflow-y-auto pr-1
+                                scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-transparent">
+                        @foreach($availableTemplates as $tmpl)
+                            @php
+                                $fp         = $tmpl->filter_params ?? [];
+                                $jenis      = $fp['jenis_template'] ?? 'metadata';
+                                $jenisLabel = [
+                                    'metadata'    => 'Metadata',
+                                    'klasifikasi' => 'Klasifikasi',
+                                    'wilayah'     => 'Wilayah',
+                                ][$jenis] ?? $jenis;
+                                $isActive = $activeTemplateId === (int) $tmpl->tampilan_id;
+                            @endphp
+                            <div class="grid grid-cols-13 gap-5 w-full border-2 rounded-lg px-4 py-3
+                                        text-xs font-semibold items-center cursor-pointer transition-all duration-150
+                                        {{ $isActive
+                                            ? 'border-sky-500 bg-sky-500 text-white'
+                                            : 'border-sky-300 text-sky-500 hover:bg-sky-500 hover:text-white' }}"
+                                onclick="selectTemplate({{ $tmpl->tampilan_id }})">
+
+                                <div class="col-span-6">
+                                    <p class="font-semibold">{{ $tmpl->nama_tampilan }}</p>
+                                    <div class="mt-1 flex items-center gap-2 font-normal opacity-80">
+                                        <span>{{ $jenisLabel }}</span>
+                                        <span>•</span>
+                                        <span>{{ $tmpl->isi_tampilan_count ?? 0 }} metadata</span>
+                                    </div>
+                                </div>
+
+                                <div class="col-span-3 font-normal opacity-70">
+                                    <span class="block">Dibuat</span>
+                                    <span>{{ $tmpl->created_at?->format('Y-m-d H:i') }}</span>
+                                </div>
+
+                                <div class="col-span-3 font-normal opacity-70">
+                                    <span class="block">Diubah</span>
+                                    <span>{{ $tmpl->updated_at?->format('Y-m-d H:i') }}</span>
+                                </div>
+
+                                <div class="col-span-1 flex gap-2 justify-end"
+                                    onclick="event.stopPropagation()">
+                                    <a href="{{ route('template.edit', $tmpl->tampilan_id) }}"
+                                    class="{{ $isActive ? 'text-white/80 hover:text-white' : 'text-sky-400 hover:text-white' }} transition-colors"
+                                    title="Edit">
+                                        <i class="fas fa-edit"></i>
+                                    </a>
+                                    <form action="{{ route('template.destroy', $tmpl->tampilan_id) }}"
+                                        method="POST"
+                                        onsubmit="return confirm('Hapus template \'{{ addslashes($tmpl->nama_tampilan) }}\'?')">
+                                        @csrf @method('DELETE')
+                                        <button type="submit"
+                                                class="{{ $isActive ? 'text-white/80 hover:text-white' : 'text-sky-400 hover:text-white' }} transition-colors"
+                                                title="Hapus">
+                                            <i class="fas fa-trash"></i>
+                                        </button>
+                                    </form>
+                                </div>
+                            </div>
+                        @endforeach
+                    </div>
+                </div>
+            @endif
+        @endauth
+
+        @guest
+            {{-- Container yang diisi JS --}}
             <div class="flex flex-col w-full border border-gray-300 rounded-lg">
                 <div class="border-b border-gray-300 px-3 py-2 text-xs font-medium text-gray-600">
                     Daftar Template
-                    <span class="text-gray-400">({{ $availableTemplates->count() }})</span>
+                    <span class="text-gray-400 text-[10px] ml-1">(tersimpan di browser)</span>
                 </div>
-                <div class="flex flex-col gap-2 my-3 mx-3 max-h-52 overflow-y-auto pr-1
+                <div id="guestTemplateList"
+                    class="flex flex-col gap-2 my-3 mx-3 max-h-52 overflow-y-auto pr-1
                             scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-transparent">
-                    @foreach($availableTemplates as $tmpl)
-                        @php
-                            $fp         = $tmpl->filter_params ?? [];
-                            $jenis      = $fp['jenis_template'] ?? 'metadata';
-                            $jenisLabel = [
-                                'metadata'    => 'Metadata',
-                                'klasifikasi' => 'Klasifikasi',
-                                'wilayah'     => 'Wilayah',
-                            ][$jenis] ?? $jenis;
-                            $isActive = $activeTemplateId === (int) $tmpl->tampilan_id;
-                        @endphp
-                        <div class="grid grid-cols-13 gap-5 w-full border-2 rounded-lg px-4 py-3
-                                    text-xs font-semibold items-center cursor-pointer transition-all duration-150
-                                    {{ $isActive
-                                        ? 'border-sky-500 bg-sky-500 text-white'
-                                        : 'border-sky-300 text-sky-500 hover:bg-sky-500 hover:text-white' }}"
-                             onclick="selectTemplate({{ $tmpl->tampilan_id }})">
-
-                            <div class="col-span-6">
-                                <p class="font-semibold">{{ $tmpl->nama_tampilan }}</p>
-                                <div class="mt-1 flex items-center gap-2 font-normal opacity-80">
-                                    <span>{{ $jenisLabel }}</span>
-                                    <span>•</span>
-                                    <span>{{ $tmpl->isi_tampilan_count ?? 0 }} metadata</span>
-                                </div>
-                            </div>
-
-                            <div class="col-span-3 font-normal opacity-70">
-                                <span class="block">Dibuat</span>
-                                <span>{{ $tmpl->created_at?->format('Y-m-d H:i') }}</span>
-                            </div>
-
-                            <div class="col-span-3 font-normal opacity-70">
-                                <span class="block">Diubah</span>
-                                <span>{{ $tmpl->updated_at?->format('Y-m-d H:i') }}</span>
-                            </div>
-
-                            <div class="col-span-1 flex gap-2 justify-end"
-                                 onclick="event.stopPropagation()">
-                                <a href="{{ route('template.edit', $tmpl->tampilan_id) }}"
-                                   class="{{ $isActive ? 'text-white/80 hover:text-white' : 'text-sky-400 hover:text-white' }} transition-colors"
-                                   title="Edit">
-                                    <i class="fas fa-edit"></i>
-                                </a>
-                                <form action="{{ route('template.destroy', $tmpl->tampilan_id) }}"
-                                      method="POST"
-                                      onsubmit="return confirm('Hapus template \'{{ addslashes($tmpl->nama_tampilan) }}\'?')">
-                                    @csrf @method('DELETE')
-                                    <button type="submit"
-                                            class="{{ $isActive ? 'text-white/80 hover:text-white' : 'text-sky-400 hover:text-white' }} transition-colors"
-                                            title="Hapus">
-                                        <i class="fas fa-trash"></i>
-                                    </button>
-                                </form>
-                            </div>
-                        </div>
-                    @endforeach
+                    {{-- Diisi oleh loadGuestTemplates() --}}
                 </div>
             </div>
-        @endif
+        @endguest
     </div>
 
     {{-- ════════════════════════════════════════
@@ -665,6 +682,9 @@
     const TP_HAS_ACCESS = @json($hasAccess ?? true);
 </script>
 <script>
+
+const IS_GUEST = {{ Auth::check() ? 'false' : 'true' }};
+
 // ─── Konstanta ────────────────────────────────────────────────
 const TP_PERIODE_OPTS = {
     semesteran : [[1,'Semester 1'],[2,'Semester 2']],
@@ -685,6 +705,8 @@ const TMPL_URLS = {
     base            : '{{ route("data.index") }}',
     tableData       : '{{ route("template.table_data") }}',
     freqCounts      : '{{ route("template.freq_counts") }}',
+    tableDataGuest : '{{ route("template.table_data_guest") }}',
+    freqCountsGuest: '{{ route("template.freq_counts_guest") }}',
     grafik          : '{{ route("template.grafik") }}',
     csrf            : document.querySelector('meta[name="csrf-token"]')?.content ?? '',
     metadataDetail  : '{{ url("metadata") }}',
@@ -704,6 +726,10 @@ const TS = {
     custom_unit : null,
     page        : 1,
 };
+
+// State guest template (dari localStorage)
+let guestTemplates = [];
+let activeGuestTemplate = null; // object template yang sedang aktif
 
 // ─────────────────────────────────────────────────────────────
 // STEP 1 — Pilih template
@@ -994,6 +1020,199 @@ function showKolomPreview(textId, wrapId, text) {
 }
 
 // ─────────────────────────────────────────────────────────────
+// GUEST TEMPLATE — baca & render dari localStorage
+// ─────────────────────────────────────────────────────────────
+
+const LS_KEY = 'guest_templates';
+
+function loadGuestTemplates() {
+    if (!IS_GUEST) return;
+    try {
+        const raw = localStorage.getItem(LS_KEY);
+        guestTemplates = raw ? JSON.parse(raw) : [];
+    } catch (e) {
+        guestTemplates = [];
+    }
+    renderGuestTemplates();
+}
+
+function saveGuestTemplateFromResponse(templateData) {
+    // Dipanggil dari response store() saat guest
+    try {
+        const existing = JSON.parse(localStorage.getItem(LS_KEY) ?? '[]');
+        // Beri ID unik berbasis timestamp
+        templateData._local_id = 'local_' + Date.now();
+        existing.push(templateData);
+        localStorage.setItem(LS_KEY, JSON.stringify(existing));
+        guestTemplates = existing;
+    } catch (e) {
+        console.error('Gagal simpan template ke localStorage:', e);
+    }
+}
+
+function deleteGuestTemplate(localId) {
+    guestTemplates = guestTemplates.filter(t => t._local_id !== localId);
+    localStorage.setItem(LS_KEY, JSON.stringify(guestTemplates));
+
+    // Reset state kalau yang dihapus sedang aktif
+    if (activeGuestTemplate?._local_id === localId) {
+        activeGuestTemplate = null;
+        TS.tampilan_id = null;
+        document.getElementById('stepFrekuensi')?.classList.add('hidden');
+        _resetDataTable();
+    }
+    renderGuestTemplates();
+}
+
+function renderGuestTemplates() {
+    const container = document.getElementById('guestTemplateList');
+    if (!container) return;
+
+    if (!guestTemplates.length) {
+        container.innerHTML = `
+            <div class="flex flex-col items-center gap-3 py-12 text-gray-400">
+                <div class="w-12 h-12 rounded-full bg-gray-100 flex items-center justify-center">
+                    <i class="fas fa-layer-group text-gray-300 text-xl"></i>
+                </div>
+                <p class="font-medium text-gray-500">Belum ada template</p>
+                <p class="text-xs text-gray-400">Buat template pertama Anda untuk memudahkan akses data</p>
+                <a href="{{ route('template.create') }}"
+                   class="mt-1 px-4 py-2 bg-stikom-blue hover:bg-blue-700 text-white
+                          text-xs font-semibold rounded-lg transition-colors">
+                    <i class="fas fa-plus mr-1"></i> Buat Template
+                </a>
+            </div>`;
+        return;
+    }
+
+    container.innerHTML = guestTemplates.map(tmpl => {
+        const isActive  = activeGuestTemplate?._local_id === tmpl._local_id;
+        const metaCount = (tmpl.metadata_ids ?? []).length;
+        const jenis     = tmpl.jenis_template ?? 'metadata';
+        const jenisLabel = { metadata:'Metadata', klasifikasi:'Klasifikasi', wilayah:'Wilayah' }[jenis] ?? jenis;
+        const createdAt = tmpl.created_at
+            ? new Date(tmpl.created_at).toLocaleString('id-ID', { dateStyle:'short', timeStyle:'short' })
+            : '-';
+
+        return `
+        <div class="grid grid-cols-13 gap-5 w-full border-2 rounded-lg px-4 py-3
+                    text-xs font-semibold items-center cursor-pointer transition-all duration-150
+                    ${isActive
+                        ? 'border-sky-500 bg-sky-500 text-white'
+                        : 'border-sky-300 text-sky-500 hover:bg-sky-500 hover:text-white'}"
+             onclick="selectGuestTemplate('${tmpl._local_id}')">
+
+            <div class="col-span-8">
+                <p class="font-semibold">${_esc(tmpl.nama_tampilan)}</p>
+                <div class="mt-1 flex items-center gap-2 font-normal opacity-80">
+                    <span>${_esc(jenisLabel)}</span>
+                    <span>•</span>
+                    <span>${metaCount} metadata</span>
+                    <span>•</span>
+                    <span class="italic opacity-70">Tersimpan di browser</span>
+                </div>
+            </div>
+
+            <div class="col-span-4 font-normal opacity-70">
+                <span class="block">Dibuat</span>
+                <span>${_esc(createdAt)}</span>
+            </div>
+
+            <div class="col-span-1 flex gap-2 justify-end"
+                 onclick="event.stopPropagation()">
+                <button onclick="deleteGuestTemplate('${tmpl._local_id}')"
+                        class="${isActive ? 'text-white/80 hover:text-white' : 'text-sky-400 hover:text-red-500'} transition-colors"
+                        title="Hapus template ini">
+                    <i class="fas fa-trash"></i>
+                </button>
+            </div>
+        </div>`;
+    }).join('');
+
+    // Banner login
+    const banner = document.getElementById('guestLoginBanner');
+    if (banner) banner.classList.remove('hidden');
+}
+
+function selectGuestTemplate(localId) {
+    const tmpl = guestTemplates.find(t => t._local_id === localId);
+    if (!tmpl) return;
+
+    activeGuestTemplate = tmpl;
+    TS.tampilan_id      = null; // guest tidak punya DB id
+    TS.frekuensi        = null;
+    TS.page             = 1;
+    _resetDataTable();
+
+    renderGuestTemplates(); // re-render untuk highlight aktif
+
+    // Tampilkan step frekuensi
+    document.getElementById('stepFrekuensi')?.classList.remove('hidden');
+
+    // Load freq counts via endpoint guest
+    loadFreqCountsGuest(tmpl);
+}
+
+async function loadFreqCountsGuest(tmpl) {
+    const freqKeys = ['10tahunan', 'tahunan', 'semesteran', 'kuartal', 'bulanan', 'custom'];
+    const hint     = document.getElementById('freqLoadingHint');
+    if (hint) hint.classList.remove('hidden');
+
+    freqKeys.forEach(freq => {
+        const btn   = document.getElementById('freq-btn-' + freq);
+        const badge = document.getElementById('freq-badge-' + freq);
+        if (btn)   btn.disabled = true;
+        if (badge) { badge.textContent = '…'; badge.className = 'freq-count-badge text-[10px] font-bold px-1.5 py-0.5 rounded-full bg-gray-100 text-gray-400'; }
+    });
+
+    try {
+        const body = new URLSearchParams();
+        body.append('_token', TMPL_URLS.csrf);
+        (tmpl.metadata_ids ?? []).forEach(id => body.append('metadata_ids[]', id));
+        if (tmpl.metadata_location_ids) {
+            body.append('metadata_location_ids', JSON.stringify(tmpl.metadata_location_ids));
+        }
+
+        const res  = await fetch(TMPL_URLS.freqCountsGuest, { method:'POST', body });
+        const data = await res.json();
+
+        freqKeys.forEach(freq => {
+            const btn   = document.getElementById('freq-btn-' + freq);
+            const badge = document.getElementById('freq-badge-' + freq);
+            if (!btn) return;
+
+            const count = data[freq] ?? 0;
+            if (count > 0) {
+                btn.disabled = false;
+                btn.classList.remove('opacity-40', 'cursor-not-allowed');
+                btn.classList.add('cursor-pointer');
+                if (badge) {
+                    badge.className  = 'freq-count-badge text-[10px] font-bold px-1.5 py-0.5 rounded-full bg-sky-100 text-sky-700';
+                    badge.textContent = count;
+                }
+            } else {
+                btn.disabled = true;
+                btn.classList.remove('border-sky-500','bg-sky-50','border-amber-400','bg-amber-50');
+                btn.classList.add('border-gray-200');
+                if (badge) {
+                    badge.className  = 'freq-count-badge text-[10px] font-bold px-1.5 py-0.5 rounded-full bg-gray-100 text-gray-400';
+                    badge.textContent = '0';
+                }
+            }
+        });
+
+    } catch (e) {
+        console.warn('Gagal load freq counts guest:', e);
+        freqKeys.forEach(freq => {
+            const btn = document.getElementById('freq-btn-' + freq);
+            if (btn) btn.disabled = false;
+        });
+    } finally {
+        if (hint) hint.classList.add('hidden');
+    }
+}
+
+// ─────────────────────────────────────────────────────────────
 // STEP 4 — Fetch & render tabel pivot
 // ─────────────────────────────────────────────────────────────
 async function tampilkanData(page = 1) {
@@ -1013,25 +1232,47 @@ async function tampilkanData(page = 1) {
     section.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
 
     try {
-        const payload = {
-            tampilan_id : TS.tampilan_id,
-            frekuensi   : TS.frekuensi,
-            year_from   : TS.year_from,
-            year_to     : TS.year_to,
-            period_from : TS.period_from,
-            period_to   : TS.period_to,
-            page        : page,
-        };
+        let res;
 
-        const res = await fetch(TMPL_URLS.tableData, {
-            method  : 'POST',
-            headers : {
-                'Content-Type' : 'application/json',
-                'X-CSRF-TOKEN' : TMPL_URLS.csrf,
-                'Accept'       : 'application/json',
-            },
-            body: JSON.stringify(payload),
-        });
+        if (IS_GUEST && activeGuestTemplate) {
+            // ── Mode Guest: kirim metadata_ids langsung ──────────
+            const tmpl   = activeGuestTemplate;
+            const body   = new URLSearchParams();
+            body.append('_token', TMPL_URLS.csrf);
+            body.append('frekuensi', TS.frekuensi);
+            if (TS.year_from)   body.append('year_from',   TS.year_from);
+            if (TS.year_to)     body.append('year_to',     TS.year_to);
+            if (TS.period_from) body.append('period_from', TS.period_from);
+            if (TS.period_to)   body.append('period_to',   TS.period_to);
+            body.append('page', page);
+            (tmpl.metadata_ids ?? []).forEach(id => body.append('metadata_ids[]', id));
+            if (tmpl.metadata_location_ids) {
+                body.append('metadata_location_ids', JSON.stringify(tmpl.metadata_location_ids));
+            }
+
+            res = await fetch(TMPL_URLS.tableDataGuest, { method:'POST', body });
+
+        } else {
+            // ── Mode Auth: pakai tampilan_id seperti sebelumnya ──
+            const payload = {
+                tampilan_id : TS.tampilan_id,
+                frekuensi   : TS.frekuensi,
+                year_from   : TS.year_from,
+                year_to     : TS.year_to,
+                period_from : TS.period_from,
+                period_to   : TS.period_to,
+                page        : page,
+            };
+            res = await fetch(TMPL_URLS.tableData, {
+                method  : 'POST',
+                headers : {
+                    'Content-Type' : 'application/json',
+                    'X-CSRF-TOKEN' : TMPL_URLS.csrf,
+                    'Accept'       : 'application/json',
+                },
+                body: JSON.stringify(payload),
+            });
+        }
 
         const d = await res.json();
         loading.classList.add('hidden');
@@ -1048,8 +1289,7 @@ async function tampilkanData(page = 1) {
     } catch (e) {
         loading.classList.add('hidden');
         empty.classList.remove('hidden');
-        document.getElementById('tableEmptyMsg').textContent =
-            'Terjadi kesalahan saat memuat data. Silakan coba lagi.';
+        document.getElementById('tableEmptyMsg').textContent = 'Terjadi kesalahan. Silakan coba lagi.';
         console.error(e);
     }
 }
@@ -1067,6 +1307,7 @@ function _getLokasiLevel(row) {
 }
 
 function showExportButtons() {
+        if (!TP_HAS_ACCESS) return;
         const g = document.getElementById('exportBtnGroup');
         if (g) g.style.removeProperty('display');
     }
@@ -1077,6 +1318,11 @@ function showExportButtons() {
 
     // ─── Export handler ───────────────────────────────────────────
     function exportData(format) {
+
+        if (!TP_HAS_ACCESS) {
+            alert('Anda perlu berlangganan untuk mengekspor data.');
+            return;
+        }
         // Validasi state
         if (!TS.tampilan_id || !TS.frekuensi) {
             alert('Pilih template dan frekuensi terlebih dahulu.');
@@ -1452,7 +1698,9 @@ function _esc(str) {
 
 // ─── Init ─────────────────────────────────────────────────────
 document.addEventListener('DOMContentLoaded', () => {
-    if (TS.tampilan_id) {
+    if (IS_GUEST) {
+        loadGuestTemplates();
+    } else if (TS.tampilan_id) {
         loadFreqCounts(TS.tampilan_id);
     }
 });

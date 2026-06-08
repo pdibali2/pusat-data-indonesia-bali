@@ -52,36 +52,42 @@
     <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10">
 
         {{-- ── Filter Bar ────────────────────────────────────────────────── --}}
-        <div class="bg-white rounded-2xl border border-gray-100 shadow-sm p-5 mb-8"
-             x-data="filterBar()"
-             x-init="syncFromUrl()">
-
-            <form method="GET" action="{{ route('landing.data.series') }}" id="filter-form">
-                <div class="flex flex-col lg:flex-row gap-4">
+        <form id="filter-form" method="GET" action="{{ route('landing.data.series') }}">
+            <div class="bg-white rounded-2xl border border-gray-100 shadow-sm p-4 mb-6">
+                <div class="flex flex-col sm:flex-row gap-3">
 
                     {{-- Search --}}
                     <div class="relative flex-1 min-w-0">
-                        <svg class="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-4.35-4.35M17 11A6 6 0 1 1 5 11a6 6 0 0 1 12 0z"/>
+                        <svg class="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none"
+                            fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                d="M21 21l-4.35-4.35M17 11A6 6 0 1 1 5 11a6 6 0 0 1 12 0z"/>
                         </svg>
                         <input
+                            id="search-input"
                             type="search"
                             name="q"
                             value="{{ request('q') }}"
                             placeholder="Cari nama metadata, tag..."
-                            class="w-full pl-11 pr-4 py-2.5 rounded-xl border border-gray-200 text-sm text-gray-800 placeholder-gray-400 outline-none focus:border-[#001734] focus:ring-2 focus:ring-[#001734]/10 transition-colors"
-                            aria-label="Cari metadata"
-                        />
+                            autocomplete="off"
+                            class="w-full pl-10 pr-9 py-2.5 rounded-xl border border-gray-200 text-sm
+                                text-gray-800 placeholder-gray-400 outline-none
+                                focus:border-[#001734] focus:ring-2 focus:ring-[#001734]/10 transition-colors"
+                        >
+                        @if(request('q'))
+                            <button type="button" id="clear-search"
+                                    class="absolute right-3 top-1/2 -translate-y-1/2 text-gray-300 hover:text-red-400 transition-colors">
+                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+                                </svg>
+                            </button>
+                        @endif
                     </div>
 
-                    {{-- Klasifikasi --}}
-                    <div class="lg:w-56">
-                        <select id="select-klasifikasi"
-                                name="klasifikasi"
-                                placeholder="Pilih klasifikasi..."
-                                class="tom-select w-full border
-                                rounded-sm focus:outline-none focus:ring-2 focus:ring-sky-400 text-xs"
-                                aria-label="Filter klasifikasi">
+                    {{-- Klasifikasi (TomSelect) --}}
+                    <div class="sm:w-56 shrink-0">
+                        <select id="select-klasifikasi" name="klasifikasi"
+                                class="w-full text-sm border border-gray-200 rounded-xl">
                             <option value="">Semua Klasifikasi</option>
                             @foreach($klasifikasiList as $kl)
                                 <option value="{{ $kl }}" {{ request('klasifikasi') === $kl ? 'selected' : '' }}>
@@ -90,48 +96,48 @@
                             @endforeach
                         </select>
                     </div>
-
-                    {{-- Search button --}}
-                    <button type="submit"
-                            class="px-6 py-2.5 rounded-xl bg-[#001734] text-white text-sm font-bold hover:bg-[#002a52] transition-colors flex-shrink-0 flex items-center gap-2">
-                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-4.35-4.35M17 11A6 6 0 1 1 5 11a6 6 0 0 1 12 0z"/>
-                        </svg>
-                        Cari
-                    </button>
-
-                    {{-- Reset --}}
-                    @if(request()->hasAny(['q','klasifikasi','frekuensi','tipe','sort']))
-                        <a href="{{ route('landing.data.series') }}"
-                           class="px-4 py-2.5 rounded-xl border border-gray-200 text-sm text-gray-500 hover:border-red-300 hover:text-red-500 transition-colors flex-shrink-0 flex items-center gap-1.5">
-                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
-                            </svg>
-                            Reset
-                        </a>
-                    @endif
                 </div>
 
                 {{-- Active filter chips --}}
-                @if(request()->hasAny(['q','klasifikasi','frekuensi','tipe']))
-                    <div class="flex flex-wrap gap-2 mt-4 pt-4 border-t border-gray-50">
-                        <span class="text-xs text-gray-400 self-center">Filter aktif:</span>
-                        @foreach(['q' => 'Kata kunci', 'klasifikasi' => 'Klasifikasi', 'frekuensi' => 'Frekuensi', 'tipe' => 'Tipe'] as $key => $label)
-                            @if(request($key))
-                                <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-[#001734]/5 border border-[#001734]/10 text-xs font-semibold text-[#001734]">
-                                    {{ $label }}: {{ request($key) }}
-                                    <a href="{{ request()->fullUrlWithQuery([$key => null]) }}" class="hover:text-red-500 transition-colors" aria-label="Hapus filter {{ $label }}">
-                                        <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
-                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M6 18L18 6M6 6l12 12"/>
-                                        </svg>
-                                    </a>
-                                </span>
-                            @endif
-                        @endforeach
+                @if(request('q') || request('klasifikasi'))
+                    <div class="flex flex-wrap items-center gap-2 mt-3 pt-3 border-t border-gray-100">
+                        <span class="text-xs text-gray-400">Filter aktif:</span>
+                        @if(request('q'))
+                            <span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-full
+                                        bg-[#001734]/5 border border-[#001734]/10 text-xs font-semibold text-[#001734]">
+                                "{{ request('q') }}"
+                                <a href="{{ request()->fullUrlWithQuery(['q' => null, 'page' => null]) }}"
+                                class="hover:text-red-500 transition-colors">
+                                    <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M6 18L18 6M6 6l12 12"/>
+                                    </svg>
+                                </a>
+                            </span>
+                        @endif
+                        @if(request('klasifikasi'))
+                            <span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-full
+                                        bg-amber-50 border border-amber-200 text-xs font-semibold text-amber-700">
+                                {{ request('klasifikasi') }}
+                                <a href="{{ request()->fullUrlWithQuery(['klasifikasi' => null, 'page' => null]) }}"
+                                class="hover:text-red-500 transition-colors">
+                                    <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M6 18L18 6M6 6l12 12"/>
+                                    </svg>
+                                </a>
+                            </span>
+                        @endif
+                        <a href="{{ route('landing.data.series') }}"
+                        class="text-xs text-gray-400 hover:text-red-500 transition-colors flex items-center gap-1 ml-1">
+                            <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+                            </svg>
+                            Reset semua
+                        </a>
                     </div>
                 @endif
-            </form>
-        </div>
+            </div>
+        </form>
+        
 
         {{-- ── Result info ──────────────────────────────────────────────── --}}
         <div class="flex items-center justify-between mb-6">
@@ -633,15 +639,34 @@
     </button>
 
     <script>
-        new TomSelect('#select-klasifikasi', {
-            placeholder: 'Semua Klasifikasi',
-            allowEmptyOption: true,
-            onchange: function() {
-                document.getElementById('filter-form').submit();
-            }
+    document.addEventListener('DOMContentLoaded', () => {
+        const form        = document.getElementById('filter-form');
+        const searchInput = document.getElementById('search-input');
+        const clearBtn    = document.getElementById('clear-search');
+
+        // Debounce search
+        let debounceTimer;
+        searchInput?.addEventListener('input', () => {
+            clearTimeout(debounceTimer);
+            debounceTimer = setTimeout(() => form.submit(), 600);
         });
-        </script>
-    <script>
+
+        // Clear search
+        clearBtn?.addEventListener('click', () => {
+            searchInput.value = '';
+            form.submit();
+        });
+
+        // TomSelect klasifikasi — auto-submit on change
+        if (document.getElementById('select-klasifikasi')) {
+            new TomSelect('#select-klasifikasi', {
+                allowEmptyOption: true,
+                placeholder: 'Semua Klasifikasi',
+                onChange() { form.submit(); },
+            });
+        }
+    });
+
     // Back to top
     (function () {
         const btn = document.getElementById('back-to-top');
@@ -654,14 +679,6 @@
             btn.classList.toggle('translate-y-0',        past);
         }, { passive: true });
     })();
-
-    function filterBar() {
-        return {
-            syncFromUrl() {
-                // no-op: values come from server-rendered value= attrs
-            }
-        }
-    }
     </script>
 
 </body>

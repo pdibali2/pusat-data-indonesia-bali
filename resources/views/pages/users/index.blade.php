@@ -13,7 +13,7 @@
             <p class="text-xs text-gray-500 mt-0.5">Manajemen akun pengguna sistem</p>
         </div>
         <a href="{{ route('admin.users.create') }}"
-           class="btn-primary">
+           class="btn-primary text-xs">
             <i class="fas fa-plus"></i> Tambah User
         </a>
     </div>
@@ -21,15 +21,26 @@
     {{-- Flash --}}
     @include('layouts.alert')
 
-    {{-- Filter & Search --}}
-    <form method="GET" action="{{ route('admin.users.index') }}"
-          class="card-panel p-3 flex flex-wrap gap-2">
-        <input type="text" name="search" value="{{ request('search') }}"
-               placeholder="Cari nama, email, username..."
-               class="flex-1 min-w-48 bg-white/5 border text-gray-500 text-gray-300 text-xs rounded-lg px-3 py-2 placeholder-gray-600 focus:outline-none focus:border-green-400/50">
+    <div class="card-panel p-3 flex flex-wrap gap-2 items-center">
+        {{-- Search dengan clear button --}}
+        <div class="relative flex-1 min-w-48">
+            <i class="fas fa-search absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-xs pointer-events-none"></i>
+            <input type="text" name="search" value="{{ request('search') }}"
+                form="filter-users"
+                placeholder="Cari nama, email, username..."
+                oninput="autoSubmitDebounce(this)"
+                class="w-full pl-8 pr-8 text-xs rounded-lg px-3 py-2 border ...">
+            @if(request('search'))
+                <a href="{{ request()->fullUrlWithQuery(['search' => null]) }}"
+                class="absolute right-2 top-1/2 -translate-y-1/2 text-gray-400 hover:text-red-400">
+                    <i class="fas fa-times text-xs"></i>
+                </a>
+            @endif
+        </div>
 
-        <select name="group_id"
-                class="bg-white/5 border text-gray-500 text-gray-300 text-xs rounded-lg px-3 py-2 focus:outline-none focus:border-green-400/50">
+        <select name="group_id" form="filter-users"
+                onchange="this.form.submit()"
+                class="text-xs rounded-lg px-3 py-2 border ...">
             <option value="">Semua Group</option>
             @foreach ($groups as $group)
                 <option value="{{ $group->group_id }}" {{ request('group_id') == $group->group_id ? 'selected' : '' }}>
@@ -38,18 +49,15 @@
             @endforeach
         </select>
 
-        <button type="submit"
-                class="btn-primary">
-            <i class="fas fa-search"></i> Cari
-        </button>
-
+        {{-- Reset hanya muncul kalau ada filter aktif --}}
         @if(request('search') || request('group_id'))
             <a href="{{ route('admin.users.index') }}"
-               class="bg-white/10 hover:bg-white/20 text-gray-400 text-xs px-4 py-2 rounded-lg transition">
-                <i class="fas fa-times"></i> Reset
+            class="text-xs text-gray-400 hover:text-red-500 px-2 py-2 transition flex items-center gap-1">
+                <i class="fas fa-times-circle"></i> Reset
             </a>
         @endif
-    </form>
+    </div>
+    <form id="filter-users" method="GET" action="{{ route('admin.users.index') }}"></form>
 
     {{-- Table --}}
     <div class="card-panel">

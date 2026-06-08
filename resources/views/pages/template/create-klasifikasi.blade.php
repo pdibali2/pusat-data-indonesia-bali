@@ -1155,15 +1155,12 @@ async function submitSaveTemplate() {
             const d = await r.json();
 
             if (d.success && d.storage === 'local') {
-                const existing = JSON.parse(localStorage.getItem('savedTemplates') || '[]');
-
-                d.template_data.local_id = 'tmpl_' + Date.now();
+                const existing = JSON.parse(localStorage.getItem('guest_templates') ?? '[]');
+                d.template_data._local_id = 'local_' + Date.now(); 
                 existing.push(d.template_data);
-
-                localStorage.setItem('savedTemplates', JSON.stringify(existing));
+                localStorage.setItem('guest_templates', JSON.stringify(existing));
 
                 alert(`Template "${nama}" disimpan di browser.\nLogin untuk menyimpan ke server`);
-
                 closeSaveModal();
                 window.location.href = d.redirect;
             }

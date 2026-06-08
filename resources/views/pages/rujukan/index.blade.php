@@ -12,23 +12,31 @@
             <p class="text-xs text-gray-500 mt-0.5">Manajemen data referensi / rujukan</p>
         </div>
         <a href="{{ route('admin.rujukan.create') }}"
-           class="btn-primary">
+           class="btn-primary text-xs">
             <i class="fas fa-plus"></i> Tambah Rujukan
         </a>
     </div>
 
     @include('layouts.alert')
 
-    <form method="GET" action="{{ route('admin.rujukan.index') }}"
-          class="card-panel p-3 flex flex-wrap gap-2">
-        <input type="text" name="search" value="{{ request('search') }}"
-               placeholder="Cari nama rujukan..."
-               class="flex-1 min-w-48 bg-white/5 border border-gray-700 text-gray-700 text-xs rounded-lg px-3 py-2
-                      placeholder-gray-600 focus:outline-none focus:border-green-400/50">
-
-        <select name="produsen_id"
-                class="bg-white/5 border border-gray-700 text-gray-700 text-xs rounded-lg px-3 py-2
-                       focus:outline-none focus:border-green-400/50">
+    <div class="card-panel p-3 flex flex-row gap-2 items-center">
+        <div class="relative flex-1 min-w-48">
+            <i class="fas fa-search absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-xs pointer-events-none"></i>
+            <input type="text" name="search" value="{{ request('search') }}"
+                form="filter-rujukan"
+                placeholder="Cari nama, email, username..."
+                oninput="autoSubmitDebounce(this)"
+                class="w-full pl-8 pr-8 text-xs rounded-lg px-3 py-2 border border-gray-300 focus:outline-none focus:border-green-400/50">
+            @if(request('search'))
+                <a href="{{ request()->fullUrlWithQuery(['search' => null]) }}"
+                class="absolute right-2 top-1/2 -translate-y-1/2 text-gray-400 hover:text-red-400">
+                    <i class="fas fa-times text-xs"></i>
+                </a>
+            @endif
+        </div>
+        <select name="produsen_id" form="filter-rujukan"
+                onchange="this.form.submit()" class="bg-white/5 border border-gray-300 text-gray-700 text-xs rounded-lg px-3 py-2
+                    focus:outline-none focus:border-green-400/50">
             <option value="">Semua Produsen</option>
             @foreach ($produsen as $p)
                 <option value="{{ $p->produsen_id }}" {{ request('produsen_id') == $p->produsen_id ? 'selected' : '' }}>
@@ -36,18 +44,14 @@
                 </option>
             @endforeach
         </select>
-
-        <button type="submit"
-                class="btn-primary">
-            <i class="fas fa-search"></i> Cari
-        </button>
         @if(request('search') || request('produsen_id'))
-            <a href="{{ route('admin.rujukan.index') }}"
-               class="bg-white/10 hover:bg-white/20 text-gray-400 text-xs px-4 py-2 rounded-lg transition">
-                <i class="fas fa-times"></i> Reset
+            <a href="{{ route('admin.rujukan.index') }}" class="text-xs text-gray-400 hover:text-red-500 px-2 py-2 transition flex items-center gap-1">
+                <i class="fas fa-times-circle"></i> Reset
             </a>
         @endif
-    </form>
+    </div>
+    
+    <form id="filter-rujukan" method="GET" action="{{ route('admin.rujukan.index') }}"></form>
 
     <div class="card-panel">
         @if ($rujukans->isEmpty())

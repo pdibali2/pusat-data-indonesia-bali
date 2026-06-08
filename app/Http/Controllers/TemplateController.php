@@ -1151,6 +1151,240 @@ class TemplateController extends Controller
         ]);
     }
 
+    // ═══════════════════════════════════════════════════════════
+    // GUEST — freq counts tanpa tampilan_id
+    // POST /template-tampilan/freq-counts-guest
+    // Body: { metadata_ids: [1,2,3], metadata_location_ids: {"1":[10,11]} }
+    // ═══════════════════════════════════════════════════════════
+
+    public function getFreqCountsGuest(Request $request)
+    {
+        $request->validate([
+            'metadata_ids'   => 'required|array|min:1',
+            'metadata_ids.*' => 'integer|exists:metadata,metadata_id',
+            'metadata_location_ids' => 'nullable|string',
+        ]);
+
+        $metadataIds = $request->metadata_ids;
+
+        $metaLocMap = [];
+        if ($request->filled('metadata_location_ids')) {
+            $decoded = json_decode($request->input('metadata_location_ids'), true);
+            if (is_array($decoded)) {
+                $metaLocMap = $decoded;
+            }
+        }
+
+        // Kumpulkan semua location_ids yang relevan
+        $allLocationIds = [];
+        foreach ($metadataIds as $mId) {
+            $locs = $metaLocMap[(string)$mId] ?? [];
+            foreach ($locs as $lid) {
+                $allLocationIds[] = (int)$lid;
+            }
+        }
+        $allLocationIds = array_unique(array_filter($allLocationIds));
+
+        $frekuensiDbMap = [
+            '10tahunan'  => ['dekade'],
+            'tahunan'    => ['tahunan'],
+            'semesteran' => ['semester', 'semesteran'],
+            'kuartal'    => ['kuartal'],
+            'bulanan'    => ['bulanan'],
+        ];
+
+        $counts = [];
+
+        foreach ($frekuensiDbMap as $uiFreq => $dbValues) {
+            $relevantIds = Metadata::whereIn('metadata_id', $metadataIds)
+                ->where('status', Metadata::STATUS_ACTIVE)
+                ->where(function ($q) use ($dbValues) {
+                    foreach ($dbValues as $i => $val) {
+                        $method = $i === 0 ? 'whereRaw' : 'orWhereRaw';
+                        $q->$method('LOWER(TRIM(frekuensi_penerbitan)) = ?', [strtolower(trim($val))]);
+                    }
+                })
+                ->pluck('metadata_id')
+                ->toArray();
+
+            if (empty($relevantIds)) {
+                $counts[$uiFreq] = 0;
+                continue;
+            }
+
+            $dataQuery = Data::whereIn('metadata_id', $relevantIds)
+                ->where('status', Data::STATUS_AVAILABLE);
+
+            if (!empty($allLocationIds)) {
+                $dataQuery->whereIn('location_id', $allLocationIds);
+            }
+
+            $counts[$uiFreq] = $dataQuery->exists() ? count($relevantIds) : 0;
+        }
+
+        $counts['custom'] = array_sum($counts) > 0 ? 1 : 0;
+
+        return response()->json($counts);
+    }
+
+    // ═══════════════════════════════════════════════════════════
+    // GUEST — fetch table data tanpa tampilan_id
+    // POST /template-tampilan/table-data-guest
+    // Body: { metadata_ids, metadata_location_ids, frekuensi, year_from, ... }
+    // ═══════════════════════════════════════════════════════════
+
+    public function fetchTableDataGuest(Request $request)
+    {
+        $request->validate([
+            'metadata_ids'          => 'required|array|min:1',
+            'metadata_ids.*'        => 'integer|exists:metadata,metadata_id',
+            'metadata_location_ids' => 'nullable|string',
+            'frekuensi'             => 'required|string|in:10tahunan,5tahunan,tahunan,semesteran,kuartal,bulanan',
+            'year_from'             => 'nullable|integer|min:1900|max:2100',
+            'year_to'               => 'nullable|integer|min:1900|max:2100',
+            'period_from'           => 'nullable|integer',
+            'period_to'             => 'nullable|integer',
+            'page'                  => 'nullable|integer|min:1',
+        ]);
+
+        // Decode metadata_location_ids
+        $metaLocMap = [];
+        if ($request->filled('metadata_location_ids')) {
+            $decoded = json_decode($request->input('metadata_location_ids'), true);
+            if (is_array($decoded)) {
+                $metaLocMap = $decoded;
+            }
+        }
+
+        $metadataIds = $request->metadata_ids;
+
+        $metadataList = Metadata::whereIn('metadata_id', $metadataIds)
+            ->where('status', Metadata::STATUS_ACTIVE)
+            ->orderBy('nama')
+            ->with('klasifikasi')
+            ->get(['metadata_id', 'nama', 'klasifikasi_id', 'satuan_data', 'frekuensi_penerbitan']);
+
+        if ($metadataList->isEmpty()) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Tidak ada metadata aktif.',
+                'rows' => [], 'columns' => [], 'total' => 0,
+            ]);
+        }
+
+        $columns = $this->buildColumns($request->frekuensi, $request);
+
+        if (empty($columns)) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Tidak ada kolom periode pada rentang yang dipilih.',
+                'rows' => [], 'columns' => [], 'total' => 0,
+            ]);
+        }
+
+        $timeIdMap  = $this->resolveTimeIds($columns, $request->frekuensi);
+        $allTimeIds = array_values(array_filter(array_column($timeIdMap, 'time_id')));
+
+        // Kumpulkan semua location_ids unik
+        $allLocationIds = [];
+        foreach ($metadataIds as $mId) {
+            $locs = $metaLocMap[(string)$mId] ?? [];
+            foreach ($locs as $lid) {
+                $allLocationIds[] = (int)$lid;
+            }
+        }
+        $allLocationIds = array_values(array_unique(array_filter($allLocationIds)));
+
+        $locationMap = Location::pluck('nama_wilayah', 'location_id');
+
+        $dataQuery = Data::with(['rujukan:rujukan_id,nama_rujukan'])
+            ->whereIn('metadata_id', $metadataIds)
+            ->where('status', Data::STATUS_AVAILABLE);
+
+        if (!empty($allTimeIds)) {
+            $dataQuery->whereIn('time_id', $allTimeIds);
+        }
+        if (!empty($allLocationIds)) {
+            $dataQuery->whereIn('location_id', $allLocationIds);
+        }
+
+        $allData = $dataQuery->get(['id', 'metadata_id', 'location_id', 'time_id', 'number_value', 'rujukan_id']);
+
+        $dataIndex    = [];
+        $rujukanIndex = [];
+
+        foreach ($allData as $d) {
+            $dataIndex[$d->metadata_id][$d->location_id][$d->time_id] = $d->number_value;
+            if ($d->rujukan) {
+                $rujukanIndex[$d->metadata_id][$d->location_id][$d->time_id] = $d->rujukan->nama_rujukan;
+            }
+        }
+
+        $rows = [];
+
+        foreach ($metadataList as $m) {
+            $mId    = $m->metadata_id;
+            $locIds = array_map('intval', $metaLocMap[(string)$mId] ?? []);
+
+            $locsToShow = empty($locIds) ? [null] : $locIds;
+
+            foreach ($locsToShow as $locId) {
+                $locNama     = $locId ? ($locationMap[$locId] ?? 'Tidak diketahui') : 'Semua Wilayah';
+                $lokasiLevel = $locId ? $this->detectLokasiLevel((string)$locId) : 0;
+
+                $values = [];
+                foreach ($columns as $col) {
+                    $timeId = $timeIdMap[$col['label']]['time_id'] ?? null;
+                    if ($timeId === null) {
+                        $values[$col['label']] = null;
+                    } elseif ($locId !== null) {
+                        $values[$col['label']] = $dataIndex[$mId][$locId][$timeId] ?? null;
+                    } else {
+                        $values[$col['label']] = isset($dataIndex[$mId])
+                            ? collect($dataIndex[$mId])
+                                ->map(fn($times) => $times[$timeId] ?? null)
+                                ->filter(fn($v) => $v !== null)
+                                ->first()
+                            : null;
+                    }
+                }
+
+                $rujukan = '-';
+                if ($locId && isset($rujukanIndex[$mId][$locId])) {
+                    $rujukan = collect($rujukanIndex[$mId][$locId])->filter()->first() ?? '-';
+                }
+
+                $rows[] = [
+                    'metadata_id'  => $mId,
+                    'nama'         => $m->nama,
+                    'lokasi'       => $locNama,
+                    'klasifikasi'  => $m->klasifikasi?->nama_klasifikasi,
+                    'satuan'       => $m->satuan_data,
+                    'location_id'  => $locId,
+                    'lokasi_level' => $lokasiLevel,
+                    'sumber'       => $rujukan,
+                    'values'       => $values,
+                ];
+            }
+        }
+
+        $perPage = 20;
+        $page    = max(1, (int)($request->page ?? 1));
+        $total   = count($rows);
+        $paged   = array_slice($rows, ($page - 1) * $perPage, $perPage);
+
+        return response()->json([
+            'success'      => true,
+            'columns'      => $columns,
+            'rows'         => $paged,
+            'total'        => $total,
+            'per_page'     => $perPage,
+            'current_page' => $page,
+            'last_page'    => (int)ceil($total / max($perPage, 1)),
+            'frekuensi'    => $request->frekuensi,
+        ]);
+    }
+
     private function buildColumns(string $frekuensi, Request $request): array
     {
         $columns = [];

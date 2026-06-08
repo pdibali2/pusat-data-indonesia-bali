@@ -29,13 +29,15 @@
 <div class="flex h-screen overflow-hidden">
 
     {{-- Sidebar --}}
-    <div class="h-screen fixed z-50">
-        @include('layouts.sidebar')
-    </div>
+    @auth
+        <div class="h-screen fixed z-50">
+            @include('layouts.sidebar')
+        </div>
+    @endauth
 
     <!-- MAIN CONTENT -->
-    <div class="flex flex-col flex-1 ml-56">
-
+    <div class="flex flex-col flex-1 {{ Auth::check() ? 'ml-56' : 'ml-0' }}">
+    
         <!-- NAVBAR (FIXED) -->
         <div class="sticky top-0 z-40">
             @include('layouts.navbar')
@@ -64,6 +66,12 @@
 @endif
 
 <script>
+    // Auto-submit dengan debounce untuk input text
+    function autoSubmitDebounce(input, delay = 400) {
+        clearTimeout(input._timer);
+        input._timer = setTimeout(() => input.form.submit(), delay);
+    }
+
     function updateDateTime() {
         const now = new Date();
         const optionsDate = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' };

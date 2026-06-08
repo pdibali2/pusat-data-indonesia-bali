@@ -7,6 +7,7 @@ use App\Models\IsiTampilan;
 use App\Models\Metadata;
 use App\Models\Location;
 use App\Models\Data;
+use App\Models\Transaksi;
 use App\Models\Waktu;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -48,6 +49,7 @@ class TemplateExportController extends Controller
      */
     public function excel(Request $request)
     {
+        $this->checkAccess();
         $payload = $this->buildPayload($request);
 
         if (!$payload['success']) {
@@ -64,12 +66,32 @@ class TemplateExportController extends Controller
             ['Content-Type' => 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet']
         );
     }
+    private function checkAccess(): void
+    {
+        if (!Auth::check()) {
+            abort(403, 'Akses ditolak. Silakan login dan berlangganan.');
+        }
+
+        $user = Auth::user();
+        if ((int) $user->group_id === 3) {
+            $hasAccess = Transaksi::where('user_id', $user->user_id)
+                ->where('status', 'success')
+                ->where(fn($q) => $q->whereNull('aktif_sampai')
+                                    ->orWhere('aktif_sampai', '>=', now()))
+                ->exists();
+
+            if (!$hasAccess) {
+                abort(403, 'Langganan Anda tidak aktif.');
+            }
+        }
+    }
 
     /**
      * Export ke PDF — render Blade view lalu cetak via browser / wkhtmltopdf
      */
     public function pdf(Request $request)
     {
+        $this->checkAccess();
         $payload = $this->buildPayload($request);
 
         if (!$payload['success']) {
@@ -84,6 +106,7 @@ class TemplateExportController extends Controller
      */
     public function json(Request $request)
     {
+        $this->checkAccess();
         $payload = $this->buildPayload($request);
 
         if (!$payload['success']) {

@@ -20,52 +20,86 @@
 
         {{-- Filter --}}
         <div class="p-4 border-b border-gray-100">
-            <form method="GET" action="{{ route('admin.transaksi.index') }}" class="flex flex-wrap gap-2">
+            <form id="form-transaksi" method="GET" action="{{ route('admin.transaksi.index') }}">
+                <div class="flex flex-wrap items-center gap-2">
 
-                <div class="relative flex-1 min-w-[180px] max-w-xs">
-                    <i class="fas fa-search absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-xs"></i>
-                    <input type="text" name="search" value="{{ request('search') }}"
-                           placeholder="Order ID, nama user, layanan..."
-                           class="w-full pl-9 pr-4 py-2 text-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                    {{-- Search --}}
+                    <div class="relative flex-1 min-w-[180px] max-w-xs">
+                        <i class="fas fa-search absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-xs pointer-events-none"></i>
+                        <input type="text" name="search" value="{{ request('search') }}"
+                            placeholder="Order ID, nama user, layanan..."
+                            oninput="autoSubmitDebounce(this)"
+                            class="w-full pl-9 pr-8 py-2 text-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                        @if(request('search'))
+                            <a href="{{ request()->fullUrlWithQuery(['search' => null]) }}"
+                            class="absolute right-2.5 top-1/2 -translate-y-1/2 text-gray-300 hover:text-red-400 transition">
+                                <i class="fas fa-times text-xs"></i>
+                            </a>
+                        @endif
+                    </div>
+
+                    {{-- Status --}}
+                    <select name="status" onchange="this.form.submit()"
+                            class="px-3 py-2 text-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white">
+                        <option value="">Semua Status</option>
+                        <option value="success"   {{ request('status') === 'success'   ? 'selected' : '' }}>Berhasil</option>
+                        <option value="pending"   {{ request('status') === 'pending'   ? 'selected' : '' }}>Menunggu</option>
+                        <option value="failed"    {{ request('status') === 'failed'    ? 'selected' : '' }}>Gagal</option>
+                        <option value="cancelled" {{ request('status') === 'cancelled' ? 'selected' : '' }}>Dibatalkan</option>
+                    </select>
+
+                    {{-- Layanan --}}
+                    <select name="layanan_id" onchange="this.form.submit()"
+                            class="px-3 py-2 text-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white">
+                        <option value="">Semua Layanan</option>
+                        @foreach($layanans as $lay)
+                            <option value="{{ $lay->layanan_id }}" {{ request('layanan_id') == $lay->layanan_id ? 'selected' : '' }}>
+                                {{ $lay->nama_layanan }}
+                            </option>
+                        @endforeach
+                    </select>
+
+                    {{-- Tanggal dari--sampai --}}
+                    <div class="flex items-center gap-1.5">
+                        <input type="date" name="dari" value="{{ request('dari') }}"
+                            onchange="this.form.submit()"
+                            title="Dari tanggal"
+                            class="px-3 py-2 text-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white">
+                        <span class="text-gray-400 text-xs">—</span>
+                        <input type="date" name="sampai" value="{{ request('sampai') }}"
+                            onchange="this.form.submit()"
+                            title="Sampai tanggal"
+                            class="px-3 py-2 text-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white">
+                    </div>
+
+                    {{-- Active chips + Reset --}}
+                    @if(request()->hasAny(['search','status','layanan_id','dari','sampai']))
+                        <div class="flex flex-wrap items-center gap-1.5 ml-1">
+                            @if(request('status'))
+                                <span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-blue-50 border border-blue-200 text-xs font-medium text-blue-700">
+                                    {{ ucfirst(request('status')) }}
+                                    <a href="{{ request()->fullUrlWithQuery(['status' => null]) }}" class="hover:text-red-500 transition"><i class="fas fa-times text-[10px]"></i></a>
+                                </span>
+                            @endif
+                            @if(request('layanan_id'))
+                                <span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-purple-50 border border-purple-200 text-xs font-medium text-purple-700">
+                                    {{ $layanans->firstWhere('layanan_id', request('layanan_id'))?->nama_layanan }}
+                                    <a href="{{ request()->fullUrlWithQuery(['layanan_id' => null]) }}" class="hover:text-red-500 transition"><i class="fas fa-times text-[10px]"></i></a>
+                                </span>
+                            @endif
+                            @if(request('dari') || request('sampai'))
+                                <span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-amber-50 border border-amber-200 text-xs font-medium text-amber-700">
+                                    {{ request('dari') ?? '…' }} — {{ request('sampai') ?? '…' }}
+                                    <a href="{{ request()->fullUrlWithQuery(['dari' => null, 'sampai' => null]) }}" class="hover:text-red-500 transition"><i class="fas fa-times text-[10px]"></i></a>
+                                </span>
+                            @endif
+                            <a href="{{ route('admin.transaksi.index') }}"
+                            class="text-xs text-gray-400 hover:text-red-500 transition flex items-center gap-1">
+                                <i class="fas fa-times-circle"></i> Reset semua
+                            </a>
+                        </div>
+                    @endif
                 </div>
-
-                <select name="status"
-                        class="px-3 py-2 text-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white">
-                    <option value="">Semua Status</option>
-                    <option value="success"   {{ request('status') === 'success'   ? 'selected' : '' }}>Berhasil</option>
-                    <option value="pending"   {{ request('status') === 'pending'   ? 'selected' : '' }}>Menunggu</option>
-                    <option value="failed"    {{ request('status') === 'failed'    ? 'selected' : '' }}>Gagal</option>
-                    <option value="cancelled" {{ request('status') === 'cancelled' ? 'selected' : '' }}>Dibatalkan</option>
-                </select>
-
-                <select name="layanan_id"
-                        class="px-3 py-2 text-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white">
-                    <option value="">Semua Layanan</option>
-                    @foreach($layanans as $lay)
-                    <option value="{{ $lay->layanan_id }}" {{ request('layanan_id') == $lay->layanan_id ? 'selected' : '' }}>
-                        {{ $lay->nama_layanan }}
-                    </option>
-                    @endforeach
-                </select>
-
-                <input type="date" name="dari" value="{{ request('dari') }}"
-                       class="px-3 py-2 text-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white"
-                       title="Dari tanggal">
-
-                <input type="date" name="sampai" value="{{ request('sampai') }}"
-                       class="px-3 py-2 text-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white"
-                       title="Sampai tanggal">
-
-                <button type="submit"
-                        class="px-4 py-2 bg-gray-100 hover:bg-gray-200 text-gray-700 text-sm rounded-lg transition">
-                    Filter
-                </button>
-                @if(request()->hasAny(['search','status','layanan_id','dari','sampai']))
-                <a href="{{ route('admin.transaksi.index') }}"
-                   class="px-4 py-2 text-sm text-gray-500 hover:text-gray-700 rounded-lg transition">
-                    Reset
-                </a>
-                @endif
             </form>
         </div>
 
