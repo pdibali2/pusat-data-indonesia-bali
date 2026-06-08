@@ -15,7 +15,8 @@ class Rujukan extends Model
         'nama_rujukan',
         'gambar_rujukan',
         'link_rujukan',
-        'produsen_id'
+        'produsen_id',
+        'status'
     ];
 
     public function produsen()

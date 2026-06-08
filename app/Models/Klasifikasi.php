@@ -18,6 +18,7 @@ class Klasifikasi extends Model
     protected $fillable = [
         'klasifikasi_id',
         'nama_klasifikasi',
+        'status',
     ];
 
     // ── Relations ──────────────────────────────────────────────

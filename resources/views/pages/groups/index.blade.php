@@ -51,6 +51,7 @@
                         <th class="text-left px-4 py-3 font-semibold">#</th>
                         <th class="text-left px-4 py-3 font-semibold">Nama Group</th>
                         <th class="text-left px-4 py-3 font-semibold">Jumlah User</th>
+                        <th class="text-left px-4 py-3 font-semibold">Status</th>
                         <th class="text-center px-4 py-3 font-semibold">Aksi</th>
                     </tr>
                 </thead>
@@ -65,6 +66,17 @@
                                 </span>
                             </td>
                             <td class="px-4 py-3">
+                                @if ($group->status === 1)
+                                    <span class="px-2 py-0.5 rounded-full text-xs bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
+                                        <i class="fas fa-check-circle text-xs"></i> Aktif
+                                    </span>
+                                @else
+                                    <span class="px-2 py-0.5 rounded-full text-xs bg-red-500/10 text-red-400 border border-red-500/20">
+                                        <i class="fas fa-circle-xmark text-xs"></i> Nonaktif
+                                    </span>
+                                @endif
+                            </td>
+                            <td class="px-4 py-3">
                                 <div class="flex items-center justify-center gap-2">
                                     <a href="{{ route('admin.groups.show', $group) }}"
                                        class="p-1.5 rounded-md bg-blue-500/10 text-blue-400 hover:bg-blue-500/20 transition">
@@ -74,14 +86,22 @@
                                        class="p-1.5 rounded-md bg-green-500/10 text-green-400 hover:bg-green-500/20 transition">
                                         <i class="fas fa-edit text-xs"></i>
                                     </a>
-                                    <form action="{{ route('admin.groups.destroy', $group) }}" method="POST"
-                                          onsubmit="return confirm('Yakin ingin menghapus group {{ addslashes($group->title) }}?')">
+                                    <form action="{{ route('admin.groups.toggle_status', $group) }}" method="POST" style="display: inline;">
                                         @csrf
-                                        @method('DELETE')
-                                        <button type="submit"
-                                                class="p-1.5 rounded-md bg-red-500/10 text-red-400 hover:bg-red-500/20 transition">
-                                            <i class="fas fa-trash text-xs"></i>
-                                        </button>
+                                        @if ($group->status === 1)
+                                            <button type="submit"
+                                                    class="p-1.5 rounded-md bg-yellow-500/10 text-yellow-400 hover:bg-yellow-500/20 transition"
+                                                    title="Nonaktifkan"
+                                                    onclick="return confirm('Yakin ingin menonaktifkan group {{ addslashes($group->title) }}?')">
+                                                <i class="fas fa-ban text-xs"></i>
+                                            </button>
+                                        @else
+                                            <button type="submit"
+                                                    class="p-1.5 rounded-md bg-emerald-500/10 text-emerald-400 hover:bg-emerald-500/20 transition"
+                                                    title="Aktifkan">
+                                                <i class="fas fa-check text-xs"></i>
+                                            </button>
+                                        @endif
                                     </form>
                                 </div>
                             </td>

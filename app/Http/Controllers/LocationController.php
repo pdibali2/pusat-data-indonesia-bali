@@ -9,7 +9,7 @@ class LocationController extends Controller
 {
     public function index(Request $request)
     {
-        $query = Location::query();
+        $query = Location::where('status', 1);
 
         if ($request->search) {
             $query->where(function($q) use ($request){
@@ -111,5 +111,15 @@ class LocationController extends Controller
         return redirect()
             ->route('dimensi_lokasi.index')
             ->with('success', 'Data lokasi berhasil ditambahkan.');
+    }
+
+    public function toggleStatus(Location $location)
+    {
+        $location->update(['status' => $location->status === 1 ? 0 : 1]);
+
+        $status = $location->status === 1 ? 'diaktifkan' : 'dinonaktifkan';
+
+        return redirect()->route('dimensi_lokasi.index')
+            ->with('success', "Lokasi {$location->nama_wilayah} berhasil {$status}.");
     }
 }

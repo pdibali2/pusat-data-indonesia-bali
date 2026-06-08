@@ -1,14 +1,14 @@
 @extends('layouts.main')
 
-@section('title', 'Dashboard Transaksi')
+@section('title', 'Dashboard Berlangganan')
 
 @section('content')
 <div class="page-layout">
 
     <div class="page-header">
         <div>
-            <h1 class="text-xl font-bold text-gray-800">Dashboard Transaksi</h1>
-            <p class="text-sm text-gray-500 mt-0.5">Statistik & ringkasan semua transaksi</p>
+            <h1 class="text-xl font-bold text-gray-800">Dashboard Berlangganan</h1>
+            <p class="text-sm text-gray-500 mt-0.5">Statistik & ringkasan semua data berlangganan</p>
         </div>
         <a href="{{ route('admin.transaksi.index') }}" class="btn-primary">
             <i class="fas fa-list text-xs"></i> Lihat Semua Transaksi
@@ -23,7 +23,7 @@
                 <i class="fas fa-receipt text-blue-500"></i>
             </div>
             <div>
-                <p class="text-xs text-gray-500">Total Transaksi</p>
+                <p class="text-xs text-gray-500">Total Transaksi Berlangganan</p>
                 <p class="text-2xl font-bold text-gray-800">{{ number_format($stats['total_transaksi']) }}</p>
             </div>
         </div>

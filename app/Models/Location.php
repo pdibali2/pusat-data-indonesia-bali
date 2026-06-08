@@ -14,7 +14,8 @@ class Location extends Model
 
     protected $fillable = [
         'location_id',
-        'nama_wilayah'
+        'nama_wilayah',
+        'status'
     ];
 
     public function getProvinsiCodeAttribute()

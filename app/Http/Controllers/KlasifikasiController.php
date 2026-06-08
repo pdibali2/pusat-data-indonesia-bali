@@ -10,7 +10,7 @@ class KlasifikasiController extends Controller
     // ── Index ──────────────────────────────────────────────────
     public function index(Request $request)
     {
-        $query = Klasifikasi::query();
+        $query = Klasifikasi::where('status', 1);
 
         if ($request->filled('search')) {
             $query->where('nama_klasifikasi', 'like', '%' . $request->search . '%');
@@ -79,13 +79,23 @@ class KlasifikasiController extends Controller
             ->with('success', 'Klasifikasi berhasil diperbarui.');
     }
 
-    // ── Destroy ────────────────────────────────────────────────
-    public function destroy(Klasifikasi $klasifikasi)
+    // ── Toggle Status ─────────────────────────────────────────
+    public function toggleStatus(Klasifikasi $klasifikasi)
     {
-        $klasifikasi->delete();
+        $klasifikasi->update(['status' => $klasifikasi->status === 1 ? 0 : 1]);
+
+        $status = $klasifikasi->status === 1 ? 'diaktifkan' : 'dinonaktifkan';
 
         return redirect()
             ->route('admin.klasifikasi.index')
-            ->with('success', 'Klasifikasi berhasil dihapus.');
+            ->with('success', "Klasifikasi {$klasifikasi->nama_klasifikasi} berhasil {$status}.");
+    }
+
+    // ── Destroy ────────────────────────────────────────────────
+    public function destroy(Klasifikasi $klasifikasi)
+    {
+        return redirect()
+            ->route('admin.klasifikasi.index')
+            ->with('error', 'Klasifikasi tidak dapat dihapus. Gunakan tombol nonaktifkan untuk menonaktifkan klasifikasi.');
     }
 }

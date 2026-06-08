@@ -144,6 +144,13 @@ Route::middleware(['is.login', 'is.pengelola', 'is.customer'])->group(function (
         Route::resource('klasifikasi', KlasifikasiController::class);
         Route::resource('layanan', LayananController::class);
     
+        // Toggle Status for Master Data
+        Route::post('users/{user}/toggle-status',        [UserController::class, 'toggleStatus'])->name('users.toggle_status');
+        Route::post('groups/{group}/toggle-status',      [GroupController::class, 'toggleStatus'])->name('groups.toggle_status');
+        Route::post('produsen/{produsen}/toggle-status', [ProdusenController::class, 'toggleStatus'])->name('produsen.toggle_status');
+        Route::post('rujukan/{rujukan}/toggle-status',   [RujukanController::class, 'toggleStatus'])->name('rujukan.toggle_status');
+        Route::post('klasifikasi/{klasifikasi}/toggle-status', [KlasifikasiController::class, 'toggleStatus'])->name('klasifikasi.toggle_status');
+        
         // Status actions
         Route::post('layanan/{layanan}/publish',       [LayananController::class, 'publish'])->name('layanan.publish');
         Route::post('layanan/{layanan}/takedown',      [LayananController::class, 'takedown'])->name('layanan.takedown');
@@ -166,14 +173,14 @@ Route::middleware(['is.login', 'is.pengelola', 'is.customer'])->group(function (
         Route::get('/{transaksi}/detail',       [TransaksiController::class, 'detail'])->name('detail');
         Route::get('/{transaksi}/status',       [TransaksiController::class, 'status'])->name('status');
     });
-    
+
     // ── Dimensi Lokasi ──────────────────────────────────────
     Route::prefix('dimensi_lokasi')->name('dimensi_lokasi.')->group(function () {
         Route::get('/',       [LocationController::class, 'index'])->name('index');
         Route::get('/create', [LocationController::class, 'create'])->name('create');
         Route::post('/auto',   [LocationController::class, 'store'])->name('store');
         Route::post('/manual', [LocationController::class, 'store2'])->name('store2');
-        
+        Route::post('{location}/toggle-status', [LocationController::class, 'toggleStatus'])->name('toggle_status');
     });
 
     // ── Dimensi Waktu ────────────────────────────────────────
@@ -181,6 +188,7 @@ Route::middleware(['is.login', 'is.pengelola', 'is.customer'])->group(function (
         Route::get('/',       [WaktuController::class, 'index'])->name('index');
         Route::get('/create', [WaktuController::class, 'create'])->name('create');
         Route::post('/',      [WaktuController::class, 'store'])->name('store');
+        Route::post('{waktu}/toggle-status', [WaktuController::class, 'toggleStatus'])->name('toggle_status');
     });
 
     // ── Data ─────────────────────────────────────────────────

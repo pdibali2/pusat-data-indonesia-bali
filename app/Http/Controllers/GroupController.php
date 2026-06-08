@@ -9,7 +9,7 @@ class GroupController extends Controller
 {
     public function index(Request $request)
     {
-        $query = Group::withCount('user');
+        $query = Group::withCount('user')->where('status', 1);
 
         if ($request->filled('search')) {
             $query->where('title', 'like', '%' . $request->search . '%');
@@ -60,16 +60,19 @@ class GroupController extends Controller
             ->with('success', 'Group berhasil diperbarui.');
     }
 
-    public function destroy(Group $group)
+    public function toggleStatus(Group $group)
     {
-        if ($group->user()->count() > 0) {
-            return redirect()->route('admin.groups.index')
-                ->with('error', 'Group tidak dapat dihapus karena masih memiliki user.');
-        }
+        $group->update(['status' => $group->status === 1 ? 0 : 1]);
 
-        $group->delete();
+        $status = $group->status === 1 ? 'diaktifkan' : 'dinonaktifkan';
 
         return redirect()->route('admin.groups.index')
-            ->with('success', 'Group berhasil dihapus.');
+            ->with('success', "Group {$group->title} berhasil {$status}.");
+    }
+
+    public function destroy(Group $group)
+    {
+        return redirect()->route('admin.groups.index')
+            ->with('error', 'Group tidak dapat dihapus. Gunakan tombol nonaktifkan untuk menonaktifkan group.');
     }
 }

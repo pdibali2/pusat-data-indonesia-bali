@@ -55,6 +55,9 @@
                     <th class="p-3 text-left">
                         Nama Wilayah
                     </th>
+                    <th class="p-3 text-left">
+                        Status
+                    </th>
                 </tr>
 
             </thead>
@@ -76,6 +79,33 @@
 
                     <td class="p-3 bg-gray-50">
                         {{ $row->nama_wilayah }}
+                    </td>
+
+                    <td class="p-3">
+                        @if ($row->status === 1)
+                            <span class="px-2 py-0.5 rounded-full text-xs bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
+                                <i class="fas fa-check-circle text-xs"></i> Aktif
+                            </span>
+                        @else
+                            <span class="px-2 py-0.5 rounded-full text-xs bg-red-500/10 text-red-400 border border-red-500/20">
+                                <i class="fas fa-circle-xmark text-xs"></i> Nonaktif
+                            </span>
+                        @endif
+                    </td>
+
+                    <td class="p-3">
+                        <form action="{{ route('dimensi_lokasi.toggle_status', $row->location_id) }}" method="POST" class="inline">
+                            @csrf
+                            @if ($row->status === 1)
+                                <button type="submit" onclick="return confirm('Nonaktifkan data ini?')" class="text-yellow-500 hover:text-yellow-700 hover:bg-yellow-50 p-2 rounded transition-colors">
+                                    <i class="fas fa-ban text-sm"></i>
+                                </button>
+                            @else
+                                <button type="submit" class="text-emerald-500 hover:text-emerald-700 hover:bg-emerald-50 p-2 rounded transition-colors">
+                                    <i class="fas fa-check text-sm"></i>
+                                </button>
+                            @endif
+                        </form>
                     </td>
 
                 </tr>

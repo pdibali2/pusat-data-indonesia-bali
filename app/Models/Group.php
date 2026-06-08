@@ -15,7 +15,8 @@ class Group extends Model
     public $timestamps = false;
 
     protected $fillable = [
-        'title'
+        'title',
+        'status'
     ];
 
     public function user()

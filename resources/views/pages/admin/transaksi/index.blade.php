@@ -1,14 +1,14 @@
 @extends('layouts.main')
 
-@section('title', 'Daftar Transaksi')
+@section('title', 'Daftar Transaksi Berlangganan')
 
 @section('content')
 <div class="page-layout">
 
     <div class="page-header">
         <div>
-            <h1 class="text-xl font-bold text-gray-800">Daftar Transaksi</h1>
-            <p class="text-sm text-gray-500 mt-0.5">Semua transaksi pembayaran pengguna</p>
+            <h1 class="text-xl font-bold text-gray-800">Daftar Transaksi Berlangganan</h1>
+            <p class="text-sm text-gray-500 mt-0.5">Semua transaksi berlangganan pengguna</p>
         </div>
         <a href="{{ route('admin.transaksi.dashboard') }}"
            class="px-4 py-2 text-sm bg-white border border-gray-200 rounded-lg hover:bg-gray-50 text-gray-600 transition flex items-center gap-2">

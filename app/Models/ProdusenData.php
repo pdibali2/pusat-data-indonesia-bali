@@ -16,6 +16,7 @@ class ProdusenData extends Model
         'kontak',
         'alamat',
         'email',
-        'nama_contact_person'
+        'nama_contact_person',
+        'status'
     ];
 }

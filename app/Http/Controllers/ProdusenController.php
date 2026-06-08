@@ -9,7 +9,7 @@ class ProdusenController extends Controller
 {
     public function index(Request $request)
     {
-        $query = ProdusenData::query();
+        $query = ProdusenData::where('status', 1);
 
         if ($request->filled('search')) {
             $search = $request->search;
@@ -77,12 +77,21 @@ class ProdusenController extends Controller
             ->with('success', 'Produsen berhasil diperbarui.');
     }
 
+    public function toggleStatus(ProdusenData $produsen)
+    {
+        $produsen->update(['status' => $produsen->status === 1 ? 0 : 1]);
+
+        $status = $produsen->status === 1 ? 'diaktifkan' : 'dinonaktifkan';
+
+        return redirect()->route('admin.produsen.index')
+            ->with('success', "Produsen {$produsen->nama_produsen} berhasil {$status}.");
+    }
+
     public function destroy(ProdusenData $produsen)
     {
         try {
-            $produsen->delete();
             return redirect()->route('admin.produsen.index')
-                ->with('success', 'Produsen berhasil dihapus.');
+                ->with('error', 'Produsen tidak dapat dihapus. Gunakan tombol nonaktifkan untuk menonaktifkan produsen.');
         } catch (\Exception $e) {
             return redirect()->route('admin.produsen.index')
                 ->with('error', 'Produsen tidak dapat dihapus karena masih memiliki data rujukan.');

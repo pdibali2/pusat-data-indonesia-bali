@@ -11,7 +11,7 @@ class UserController extends Controller
 {
     public function index(Request $request)
     {
-        $query = User::with('group');
+        $query = User::with('group')->where('status', 1);
 
         if ($request->filled('search')) {
             $search = $request->search;
@@ -103,11 +103,19 @@ class UserController extends Controller
             ->with('success', 'User berhasil diperbarui.');
     }
 
-    public function destroy(User $user)
+    public function toggleStatus(User $user)
     {
-        $user->delete();
+        $user->update(['status' => $user->status === 1 ? 0 : 1]);
+
+        $status = $user->status === 1 ? 'diaktifkan' : 'dinonaktifkan';
 
         return redirect()->route('admin.users.index')
-            ->with('success', 'User berhasil dihapus.');
+            ->with('success', "User {$user->name} berhasil {$status}.");
+    }
+
+    public function destroy(User $user)
+    {
+        return redirect()->route('admin.users.index')
+            ->with('error', 'User tidak dapat dihapus. Gunakan tombol nonaktifkan untuk menonaktifkan user.');
     }
 }

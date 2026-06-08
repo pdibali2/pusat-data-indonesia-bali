@@ -53,6 +53,7 @@
                         <th class="text-left px-4 py-3 font-semibold">Contact Person</th>
                         <th class="text-left px-4 py-3 font-semibold">Kontak</th>
                         <th class="text-left px-4 py-3 font-semibold">Email</th>
+                        <th class="text-left px-4 py-3 font-semibold">Status</th>
                         <th class="text-center px-4 py-3 font-semibold">Aksi</th>
                     </tr>
                 </thead>
@@ -64,6 +65,17 @@
                             <td class="px-4 py-3 text-gray-400">{{ $p->nama_contact_person ?? '-' }}</td>
                             <td class="px-4 py-3 text-gray-400">{{ $p->kontak ?? '-' }}</td>
                             <td class="px-4 py-3 text-gray-400">{{ $p->email ?? '-' }}</td>
+                            <td class="py-3">
+                                @if ($p->status === 1)
+                                    <span class="px-2 py-0.5 rounded-full text-xs bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
+                                        <i class="fas fa-check-circle text-xs"></i> Aktif
+                                    </span>
+                                @else
+                                    <span class="px-2 py-0.5 rounded-full text-xs bg-red-500/10 text-red-400 border border-red-500/20">
+                                        <i class="fas fa-circle-xmark text-xs"></i> Nonaktif
+                                    </span>
+                                @endif
+                            </td>
                             <td class="px-4 py-3">
                                 <div class="flex items-center justify-center gap-2">
                                     <a href="{{ route('admin.produsen.show', $p) }}"
@@ -74,14 +86,22 @@
                                        class="p-1.5 rounded-md bg-green-500/10 text-green-400 hover:bg-green-500/20 transition">
                                         <i class="fas fa-edit text-xs"></i>
                                     </a>
-                                    <form action="{{ route('admin.produsen.destroy', $p) }}" method="POST"
-                                          onsubmit="return confirm('Yakin ingin menghapus produsen {{ addslashes($p->nama_produsen) }}?')">
+                                    <form action="{{ route('admin.produsen.toggle_status', $p) }}" method="POST" style="display: inline;">
                                         @csrf
-                                        @method('DELETE')
-                                        <button type="submit"
-                                                class="p-1.5 rounded-md bg-red-500/10 text-red-400 hover:bg-red-500/20 transition">
-                                            <i class="fas fa-trash text-xs"></i>
-                                        </button>
+                                        @if ($p->status === 1)
+                                            <button type="submit"
+                                                    class="p-1.5 rounded-md bg-yellow-500/10 text-yellow-400 hover:bg-yellow-500/20 transition"
+                                                    title="Nonaktifkan"
+                                                    onclick="return confirm('Yakin ingin menonaktifkan produsen {{ addslashes($p->nama_produsen) }}?')">
+                                                <i class="fas fa-ban text-xs"></i>
+                                            </button>
+                                        @else
+                                            <button type="submit"
+                                                    class="p-1.5 rounded-md bg-emerald-500/10 text-emerald-400 hover:bg-emerald-500/20 transition"
+                                                    title="Aktifkan">
+                                                <i class="fas fa-check text-xs"></i>
+                                            </button>
+                                        @endif
                                     </form>
                                 </div>
                             </td>

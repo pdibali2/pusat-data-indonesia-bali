@@ -10,7 +10,7 @@ class Waktu extends Model
     public $timestamps    = false;
     public $incrementing  = true;
 
-    protected $fillable = ['decade', 'year', 'semester', 'quarter', 'month', 'day'];
+    protected $fillable = ['decade', 'year', 'semester', 'quarter', 'month', 'day', 'status'];
 
     public function data()
     {

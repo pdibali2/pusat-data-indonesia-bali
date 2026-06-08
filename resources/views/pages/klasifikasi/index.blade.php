@@ -74,6 +74,7 @@
                     <tr class="bg-gray-50 text-gray-500 text-xs uppercase tracking-wider">
                         <th class="px-5 py-3 text-left font-medium">#</th>
                         <th class="px-5 py-3 text-left font-medium">Nama Klasifikasi</th>
+                        <th class="px-5 py-3 text-left font-medium">Status</th>
                         <th class="px-5 py-3 text-left font-medium">Dibuat</th>
                         <th class="px-5 py-3 text-right font-medium">Aksi</th>
                     </tr>
@@ -86,6 +87,17 @@
                         </td>
                         <td class="px-5 py-3.5">
                             <span class="font-medium text-gray-800">{{ $item->nama_klasifikasi }}</span>
+                        </td>
+                        <td class="px-5 py-3.5">
+                            @if ($item->status === 1)
+                                <span class="px-2 py-0.5 rounded-full text-xs bg-emerald-500/10 text-emerald-600 border border-emerald-500/20">
+                                    <i class="fas fa-check-circle text-xs"></i> Aktif
+                                </span>
+                            @else
+                                <span class="px-2 py-0.5 rounded-full text-xs bg-red-500/10 text-red-600 border border-red-500/20">
+                                    <i class="fas fa-circle-xmark text-xs"></i> Nonaktif
+                                </span>
+                            @endif
                         </td>
                         <td class="px-5 py-3.5 text-gray-500">
                             {{ $item->created_at->format('d M Y') }}
@@ -102,12 +114,23 @@
                                    title="Edit">
                                     <i class="fas fa-pen text-xs"></i>
                                 </a>
-                                <button type="button"
-                                        onclick="confirmDelete('{{ route('admin.klasifikasi.destroy', $item) }}', '{{ $item->nama_klasifikasi }}')"
-                                        class="p-1.5 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition"
-                                        title="Hapus">
-                                    <i class="fas fa-trash text-xs"></i>
-                                </button>
+                                <form action="{{ route('admin.klasifikasi.toggle_status', $item) }}" method="POST" style="display: inline;">
+                                    @csrf
+                                    @if ($item->status === 1)
+                                        <button type="submit"
+                                                class="p-1.5 text-gray-400 hover:text-yellow-600 hover:bg-yellow-50 rounded-lg transition"
+                                                title="Nonaktifkan"
+                                                onclick="return confirm('Yakin ingin menonaktifkan klasifikasi {{ addslashes($item->nama_klasifikasi) }}?')">
+                                            <i class="fas fa-ban text-xs"></i>
+                                        </button>
+                                    @else
+                                        <button type="submit"
+                                                class="p-1.5 text-gray-400 hover:text-emerald-600 hover:bg-emerald-50 rounded-lg transition"
+                                                title="Aktifkan">
+                                            <i class="fas fa-check text-xs"></i>
+                                        </button>
+                                    @endif
+                                </form>
                             </div>
                         </td>
                     </tr>

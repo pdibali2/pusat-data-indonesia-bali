@@ -4,12 +4,13 @@ namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use App\Models\Waktu;
 
 class WaktuController extends Controller
 {
     public function index(Request $request)
     {
-        $query = DB::table('time');
+        $query = DB::table('time')->where('status', 1);
 
         if ($request->filled('search')) {
             $query->where('year', 'like', '%' . $request->search . '%');
@@ -24,6 +25,7 @@ class WaktuController extends Controller
                       ->withQueryString();
 
         $availableYears = DB::table('time')
+            ->where('status', 1)
             ->select('year')
             ->where('year', '!=', 0)
             ->distinct()
@@ -235,5 +237,16 @@ class WaktuController extends Controller
         }
 
         return $rows;
+    }
+
+    public function toggleStatus(Waktu $waktu)
+    {
+        $waktu->update(['status' => $waktu->status === 1 ? 0 : 1]);
+
+        $status = $waktu->status === 1 ? 'diaktifkan' : 'dinonaktifkan';
+        $label = "Tahun {$waktu->year}";
+
+        return redirect()->route('dimensi_waktu.index')
+            ->with('success', "Data {$label} berhasil {$status}.");
     }
 }

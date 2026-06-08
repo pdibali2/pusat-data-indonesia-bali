@@ -76,6 +76,7 @@
                         <th class="text-left px-4 py-3 font-semibold">Username</th>
                         <th class="text-left px-4 py-3 font-semibold">Email</th>
                         <th class="text-left px-4 py-3 font-semibold">Group</th>
+                        <th class="text-left px-4 py-3 font-semibold">Status</th>
                         <th class="text-left px-4 py-3 font-semibold">Terdaftar</th>
                         <th class="text-center px-4 py-3 font-semibold">Aksi</th>
                     </tr>
@@ -92,6 +93,17 @@
                                     {{ $user->group->title ?? '-' }}
                                 </span>
                             </td>
+                            <td class="px-4 py-3">
+                                @if ($user->status === 1)
+                                    <span class="px-2 py-0.5 rounded-full text-xs bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
+                                        <i class="fas fa-check-circle text-xs"></i> Aktif
+                                    </span>
+                                @else
+                                    <span class="px-2 py-0.5 rounded-full text-xs bg-red-500/10 text-red-400 border border-red-500/20">
+                                        <i class="fas fa-circle-xmark text-xs"></i> Nonaktif
+                                    </span>
+                                @endif
+                            </td>
                             <td class="px-4 py-3 text-gray-500">
                                 {{ $user->registerdate ? $user->registerdate->format('d M Y') : '-' }}
                             </td>
@@ -107,15 +119,22 @@
                                        title="Edit">
                                         <i class="fas fa-edit text-xs"></i>
                                     </a>
-                                    <form action="{{ route('admin.users.destroy', $user) }}" method="POST"
-                                          onsubmit="return confirm('Yakin ingin menghapus user {{ addslashes($user->name) }}?')">
+                                    <form action="{{ route('admin.users.toggle_status', $user) }}" method="POST" style="display: inline;">
                                         @csrf
-                                        @method('DELETE')
-                                        <button type="submit"
-                                                class="p-1.5 rounded-md bg-red-500/10 text-red-400 hover:bg-red-500/20 transition"
-                                                title="Hapus">
-                                            <i class="fas fa-trash text-xs"></i>
-                                        </button>
+                                        @if ($user->status === 1)
+                                            <button type="submit"
+                                                    class="p-1.5 rounded-md bg-yellow-500/10 text-yellow-400 hover:bg-yellow-500/20 transition"
+                                                    title="Nonaktifkan"
+                                                    onclick="return confirm('Yakin ingin menonaktifkan user {{ addslashes($user->name) }}?')">
+                                                <i class="fas fa-ban text-xs"></i>
+                                            </button>
+                                        @else
+                                            <button type="submit"
+                                                    class="p-1.5 rounded-md bg-emerald-500/10 text-emerald-400 hover:bg-emerald-500/20 transition"
+                                                    title="Aktifkan">
+                                                <i class="fas fa-check text-xs"></i>
+                                            </button>
+                                        @endif
                                     </form>
                                 </div>
                             </td>

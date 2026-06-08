@@ -11,7 +11,7 @@ class RujukanController extends Controller
 {
     public function index(Request $request)
     {
-        $query = Rujukan::with('produsen');
+        $query = Rujukan::with('produsen')->where('status', 1);
 
         if ($request->filled('search')) {
             $query->where('nama_rujukan', 'like', '%' . $request->search . '%');
@@ -92,15 +92,19 @@ class RujukanController extends Controller
             ->with('success', 'Rujukan berhasil diperbarui.');
     }
 
-    public function destroy(Rujukan $rujukan)
+    public function toggleStatus(Rujukan $rujukan)
     {
-        if ($rujukan->gambar_rujukan) {
-            Storage::disk('public')->delete($rujukan->gambar_rujukan);
-        }
+        $rujukan->update(['status' => $rujukan->status === 1 ? 0 : 1]);
 
-        $rujukan->delete();
+        $status = $rujukan->status === 1 ? 'diaktifkan' : 'dinonaktifkan';
 
         return redirect()->route('admin.rujukan.index')
-            ->with('success', 'Rujukan berhasil dihapus.');
+            ->with('success', "Rujukan {$rujukan->nama_rujukan} berhasil {$status}.");
+    }
+
+    public function destroy(Rujukan $rujukan)
+    {
+        return redirect()->route('admin.rujukan.index')
+            ->with('error', 'Rujukan tidak dapat dihapus. Gunakan tombol nonaktifkan untuk menonaktifkan rujukan.');
     }
 }
