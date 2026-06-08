@@ -90,7 +90,7 @@ class LocationController extends Controller
     public function store2(Request $request)
     {
         $request->validate([
-            'location_id'  => 'required|digits:10',
+            'location_id' => ['required', 'regex:/^\d{10}$/'],
             'nama_wilayah' => 'required|string|max:255',
         ]);
 

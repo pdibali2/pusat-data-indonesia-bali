@@ -546,7 +546,9 @@ class DataImport
         $invalid_metadata = [];
 
         $metadataId = isset($row[self::COL_META_ID]) ? (int) $row[self::COL_META_ID] : null;
-        $locationId = isset($row[self::COL_LOC_ID])  ? (int) $row[self::COL_LOC_ID]  : null;
+        $locationId = isset($row[self::COL_LOC_ID]) && $row[self::COL_LOC_ID] !== '' && $row[self::COL_LOC_ID] !== null
+            ? (int) $row[self::COL_LOC_ID]
+            : null;
         $metaNama   = $row[self::COL_META_NM] ?? '-';
         $locNama    = $row[self::COL_LOC_NM]  ?? '-';
         $rujukanId  = ($rujukanColIndex !== null && isset($row[$rujukanColIndex]))
@@ -569,7 +571,7 @@ class DataImport
             }
         }
 
-        if (!$locationId) {
+        if ($locationId === null) {
             $errors[] = ['message' => "Baris $rowNum: location_id kosong atau tidak valid.", 'row' => $rowNum];
         } else {
             if (!DB::table('location')->where('location_id', $locationId)->exists()) {
@@ -581,7 +583,7 @@ class DataImport
             }
         }
 
-        if (!$metadataId || !$locationId) {
+        if (!$metadataId || $locationId === null) {
             return compact('records', 'errors', 'invalid_metadata');
         }
 

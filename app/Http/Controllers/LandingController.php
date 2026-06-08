@@ -20,7 +20,7 @@ class LandingController extends Controller
         $this->allKlasifikasi = Klasifikasi::query()
             ->whereHas('metadata', function ($q) {
                 $q->where('status', 2)
-                ->whereHas('data', fn($qd) => $qd->where('status', 1));
+                ->whereHas('data', fn($qd) => $qd->where('status', 1)->where('location_id', 0));
             })
             ->orderBy('nama_klasifikasi')
             ->pluck('nama_klasifikasi')
@@ -42,7 +42,7 @@ class LandingController extends Controller
         // Klasifikasi yang benar-benar ada data-nya (maks 10 untuk badges di hero)
         $klasifikasiAktif = Klasifikasi::whereHas('metadata', function ($q) {
             $q->where('status', 2)
-            ->whereHas('data', fn($qd) => $qd->where('status', 1));
+            ->whereHas('data', fn($qd) => $qd->where('status', 1)->where('location_id', 0));
         })
         ->orderBy('nama_klasifikasi')
         ->take(10)
@@ -59,7 +59,7 @@ class LandingController extends Controller
 
             // hanya metadata yang memiliki data aktif
             ->whereHas('data', function ($q) {
-                $q->where('status', 1);
+                $q->where('status', 1)->where('location_id', 0);
             })
 
             ->with([
@@ -121,7 +121,7 @@ class LandingController extends Controller
     {
         $counts = Metadata::with('klasifikasi')
             ->where('status', 2)
-            ->whereHas('data', fn($q) => $q->where('status', 1))
+            ->whereHas('data', fn($q) => $q->where('status', 1)->where('location_id', 0))
             ->get()
             ->groupBy(fn ($m) => $m->klasifikasi?->nama_klasifikasi)
             ->map(fn ($items) => $items->count());
@@ -155,7 +155,7 @@ class LandingController extends Controller
 
         $metadataList = Metadata::with('klasifikasi')
             ->where('status', 2)
-            ->whereHas('data', fn($q) => $q->where('status', 1))  // ← tambahan
+            ->whereHas('data', fn($q) => $q->where('status', 1)->where('location_id', 0))  // ← tambahan
             ->whereHas('klasifikasi', function ($q) use ($nama) {
                 $q->where('nama_klasifikasi', $nama);
             })
@@ -218,7 +218,7 @@ class LandingController extends Controller
             'data' => fn($q) => $q->where('status', 1)->with('location')->limit(1),
         ])
         ->where('status', 2)
-        ->whereHas('data', fn($q) => $q->where('status', 1));
+        ->whereHas('data', fn($q) => $q->where('status', 1)->where('location_id', 0));
 
         if ($q = trim($request->input('q', ''))) {
             $query->where(function ($qb) use ($q) {
@@ -309,6 +309,7 @@ class LandingController extends Controller
         $rawData = Data::with(['time', 'location'])
             ->where('metadata_id', $metadataId)
             ->where('status', 1)
+            ->where('location_id', 0)
             ->whereHas('time', fn($q) =>
                 $q->whereBetween('year', [$yearStart, $yearEnd])
             )
