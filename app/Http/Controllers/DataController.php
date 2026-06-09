@@ -374,7 +374,7 @@ class DataController extends Controller
  
         try {
             $path   = $request->file('file_excel')->getRealPath();
-            $import = new \App\Imports\DataImport();
+            $import = new DataImport();
             $result = $import->preview($path);
  
             // result sudah mengandung 'outliers' dan 'outlier_count' dari DataImport

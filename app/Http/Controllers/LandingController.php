@@ -65,7 +65,7 @@ class LandingController extends Controller
             ->with([
                 'klasifikasi',
                 'data' => function ($q) {
-                    $q->where('status', 1)->with('location')->limit(1);
+                    $q->where('status', 1)->where('location_id', 0)->with('location')->limit(1);
                 }
             ])
 
@@ -215,7 +215,7 @@ class LandingController extends Controller
 
         $query = Metadata::with([
             'klasifikasi',
-            'data' => fn($q) => $q->where('status', 1)->with('location')->limit(1),
+            'data' => fn($q) => $q->where('status', 1)->where('location_id', 0)->with('location')->limit(1),
         ])
         ->where('status', 2)
         ->whereHas('data', fn($q) => $q->where('status', 1)->where('location_id', 0));

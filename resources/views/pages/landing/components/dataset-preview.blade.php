@@ -130,7 +130,7 @@
                         </div>
 
                         @php
-                            $wilayah = $meta->data->first()?->location?->nama_wilayah;
+                            $wilayah = $meta->data->where('location_id', 0)->first()?->location?->nama_wilayah;
                         @endphp
                         @if($wilayah)
                             <div class="flex items-center gap-1 mb-4">

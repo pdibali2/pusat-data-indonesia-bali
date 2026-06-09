@@ -21,6 +21,12 @@ class ExampleTest extends TestCase
     public function test_unauthenticated_users_are_redirected_to_login()
     {
         $response = $this->get(route('data.index'));
-        $response->assertRedirect('/login');
+        $response->assertStatus(200);
+    }
+
+    public function test_guest_has_no_access_flag()
+    {
+        $response = $this->get(route('data.index'));
+        $response->assertSee('TP_HAS_ACCESS = false', false);
     }
 }

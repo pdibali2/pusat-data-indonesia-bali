@@ -201,129 +201,340 @@
         </div>
 
         {{-- ── TABEL ANOMALI ────────────────────────────────────── --}}
-        <div class="bg-white rounded-xl border border-gray-200 overflow-hidden mt-3">
-            <div class="overflow-x-auto">
-                <table class="w-full text-xs">
+        <div class="grid grid-cols-3 bg-white rounded-xl border border-gray-200 overflow-hidden mt-3">
+            {{-- Wrapper scrollable horizontal --}}
+            <div class="overflow-x-auto col-span-3">
+                <table class="w-full text-xs" style="min-width: 1100px;">
                     <thead>
-                        <tr class="bg-gray-50 border-b border-gray-200">
-                            {{-- <th class="px-3 py-3 w-8">
-                                <input type="checkbox" id="checkAll"
-                                       class="rounded border-gray-300 text-sky-600
-                                              focus:ring-sky-400 cursor-pointer"
-                                       onchange="toggleAll(this)">
-                            </th> --}}
-                            <th class="px-3 py-3 text-center font-semibold text-gray-500 w-12">
-                                #
-                            </th>
-                            <th class="px-3 py-3 text-left font-semibold text-gray-500">Severity</th>
-                            <th class="px-3 py-3 text-left font-semibold text-gray-500">Metadata / Lokasi</th>
-                            <th class="px-3 py-3 text-left font-semibold text-gray-500">Tipe</th>
-                            <th class="px-3 py-3 text-center font-semibold text-gray-500">Perubahan</th>
-                            <th class="px-3 py-3 text-left font-semibold text-gray-500">Status</th>
-                            <th class="px-3 py-3 text-left font-semibold text-gray-500">Terdeteksi</th>
-                            <th class="px-3 py-3 text-center font-semibold text-gray-500">Aksi</th>
+                        <tr class="bg-gray-50 border-b border-gray-200 text-gray-500 font-semibold">
+                            <th class="px-3 py-3 text-center w-10 sticky left-0 bg-gray-50 z-10">#</th>
+                            <th class="px-3 py-3 text-left w-28 sticky left-10 bg-gray-50 z-10">Saverity</th>
+                            <th class="px-3 py-3 text-left min-w-40">Metadata / Lokasi</th>
+                            <th class="px-3 py-3 text-left min-w-32.5">Tipe Anomali</th>
+                            {{-- Kolom kontekstual: berisi info berbeda per tipe anomali --}}
+                            <th class="px-3 py-3 text-center min-w-35">Nilai Saat Ini</th>
+                            <th class="px-3 py-3 text-center min-w-35">Nilai Referensi</th>
+                            <th class="px-3 py-3 text-center min-w-45">Selisih / Z-score</th>
+                            {{-- Kolom khusus source_conflict: produsen-produsen yang konflik --}}
+                            <th class="px-3 py-3 text-left min-w-60">Detail Perbandingan</th>
+                            <th class="px-3 py-3 text-left min-w-25">Status</th>
+                            <th class="px-3 py-3 text-left min-w-21.25">Terdeteksi</th>
+                            <th class="px-3 py-3 text-center min-w-17.5 sticky right-0 bg-gray-50 z-10">Aksi</th>
                         </tr>
                     </thead>
                     <tbody class="divide-y divide-gray-100">
                         @forelse($anomalies as $anomaly)
-                        @php $data = $anomaly->data; @endphp
-                        <tr class="hover:bg-gray-50/60 transition-colors
-                                   {{ $anomaly->severity === 'critical' ? 'bg-red-50/30' : '' }}
-                                   {{ $anomaly->severity === 'high'     ? 'bg-orange-50/20' : '' }}">
-
-                            {{-- Checkbox --}}
-                            {{-- <td class="px-3 py-3">
-                                <input type="checkbox" name="anomaly_ids[]"
-                                       value="{{ $anomaly->anomalies_id }}"
-                                       class="row-check rounded border-gray-300 text-sky-600
-                                              focus:ring-sky-400 cursor-pointer"
-                                       onchange="updateBulkBar()">
-                            </td> --}}
-                            {{-- No list --}}
-                            <td class="px-3 py-3 text-center text-gray-500 font-medium">
+                        @php
+                            $data    = $anomaly->data;
+                            $ctxType = $anomaly->_ctx_type ?? 'other';
+                            $stats   = $anomaly->_ctx_stats ?? [];
+                            $sources = $anomaly->_ctx_sources ?? [];
+        
+                            // Warna baris per severity
+                            $rowBg = match($anomaly->severity) {
+                                default    => '',
+                            };
+        
+                            // Format angka helper
+                            $fmtNum = fn($v) => $v !== null ? number_format((float)$v, 2) : '—';
+                        @endphp
+                        <tr class="hover:bg-gray-50/70 transition-colors {{ $rowBg }}">
+        
+                            {{-- # --}}
+                            <td class="px-3 py-3 text-center text-gray-400 sticky left-0 {{ $rowBg ?: 'bg-white' }} z-10">
                                 {{ $anomalies->firstItem() + $loop->index }}
                             </td>
-
-                            {{-- Severity badge --}}
-                            <td class="px-3 py-3">
-                                <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full
-                                             text-xs font-semibold"
-                                      style="{{ $anomaly->severity_style }}">
-                                    @if($anomaly->severity === 'critical') <i class="fas fa-fire text-[10px]"></i>
-                                    @elseif($anomaly->severity === 'high') <i class="fas fa-arrow-up text-[10px]"></i>
-                                    @elseif($anomaly->severity === 'medium') <i class="fas fa-minus text-[10px]"></i>
-                                    @else <i class="fas fa-info text-[10px]"></i>
+        
+                            {{-- Severity --}}
+                            <td class="px-3 py-3 sticky left-10 {{ $rowBg ?: 'bg-white' }} z-10">
+                                <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-semibold"
+                                    style="{{ $anomaly->severity_style }}">
+                                    @if($anomaly->severity === 'critical')    <i class="fas fa-fire text-[10px]"></i>
+                                    @elseif($anomaly->severity === 'high')    <i class="fas fa-arrow-up text-[10px]"></i>
+                                    @elseif($anomaly->severity === 'medium')  <i class="fas fa-minus text-[10px]"></i>
+                                    @else                                     <i class="fas fa-info text-[10px]"></i>
                                     @endif
                                     {{ $anomaly->severity_label }}
                                 </span>
                             </td>
-
+        
                             {{-- Metadata / Lokasi --}}
-                            <td class="px-3 py-3 max-w-[200px]">
-                                <p class="font-semibold text-gray-800 truncate">
+                            <td class="px-3 py-3">
+                                <p class="font-semibold text-gray-800 truncate max-w-38.75">
                                     {{ $data?->metadata?->nama ?? '-' }}
                                 </p>
-                                <p class="text-gray-400 truncate mt-0.5">
+                                <p class="text-gray-400 truncate max-w-38.75 mt-0.5">
                                     {{ $data?->location?->nama_wilayah ?? '-' }}
                                 </p>
-                            </td>
-
-                            {{-- Tipe --}}
-                            <td class="px-3 py-3">
-                                <span class="text-gray-600">{{ $anomaly->anomaly_type_label }}</span>
-                            </td>
-
-                            {{-- Perubahan --}}
-                            <td class="px-3 py-3 text-center">
-                                @if($anomaly->percentage_change !== null)
-                                    <span class="font-mono font-semibold
-                                        {{ $anomaly->percentage_change >= 0 ? 'text-red-600' : 'text-blue-600' }}">
-                                        {{ $anomaly->formatted_percentage_change }}
-                                    </span>
-                                    <div class="text-gray-400 mt-0.5">
-                                        {{ number_format($anomaly->previous_value, 2) }}
-                                        → {{ number_format($anomaly->current_value, 2) }}
-                                    </div>
-                                @else
-                                    <span class="text-gray-400">—</span>
+                                @if($data?->time)
+                                <p class="text-gray-300 mt-0.5">
+                                    {{ $data->time->year }}{{ $data->time->month ? '/Bln-'.$data->time->month : '' }}{{ $data->time->quarter ? '/Q'.$data->time->quarter : '' }}
+                                </p>
                                 @endif
                             </td>
-
-                            {{-- Status badge --}}
+        
+                            {{-- Tipe Anomali --}}
                             <td class="px-3 py-3">
-                                <span class="inline-block px-2 py-0.5 rounded-full text-xs font-medium"
-                                      style="{{ $anomaly->status_style }}">
+                                @php
+                                    [$tipeIcon, $tipeBg, $tipeTxt] = match($anomaly->anomaly_type) {
+                                        'extreme_increase' => ['fas fa-arrow-trend-up',  'bg-red-50 text-red-700 border-red-200',      'Kenaikan Ekstrem'],
+                                        'extreme_decrease' => ['fas fa-arrow-trend-down','bg-blue-50 text-blue-700 border-blue-200',   'Penurunan Ekstrem'],
+                                        'source_conflict'  => ['fas fa-code-branch',     'bg-purple-50 text-purple-700 border-purple-200','Konflik Sumber'],
+                                        'unreasonable_value'=> ['fas fa-chart-line',     'bg-amber-50 text-amber-700 border-amber-200','Nilai Tdk Wajar'],
+                                        default            => ['fas fa-question',        'bg-gray-100 text-gray-500 border-gray-200',  $anomaly->anomaly_type_label],
+                                    };
+                                @endphp
+                                <span class="inline-flex items-center gap-1 px-2 py-1 rounded-lg border text-[11px] font-medium {{ $tipeBg }}">
+                                    <i class="{{ $tipeIcon }} text-[10px]"></i>
+                                    {{ $tipeTxt }}
+                                </span>
+                                {{-- Produsen saat ini (untuk context) --}}
+                                @if($data?->produsen?->nama_produsen)
+                                <p class="text-gray-400 mt-1 text-[11px]">
+                                    <i class="fas fa-building text-[9px] mr-0.5"></i>{{ $data->produsen->nama_produsen }}
+                                </p>
+                                @endif
+                            </td>
+        
+                            {{-- Nilai Saat Ini --}}
+                            <td class="px-3 py-3 text-center">
+                                @if($anomaly->_ctx_curr_value !== null)
+                                    <span class="font-mono font-semibold text-gray-800 text-sm">
+                                        {{ number_format((float)$anomaly->_ctx_curr_value, 2) }}
+                                    </span>
+                                    @if($data?->metadata?->satuan_data)
+                                    <p class="text-gray-400 text-[11px] mt-0.5">{{ $data->metadata->satuan_data }}</p>
+                                    @endif
+                                @else
+                                    <span class="text-gray-300">—</span>
+                                @endif
+                            </td>
+        
+                            {{-- Nilai Referensi --}}
+                            <td class="px-3 py-3 text-center">
+                                @if($anomaly->_ctx_ref_value !== null)
+                                    <span class="font-mono text-gray-600 text-sm">
+                                        {{ number_format((float)$anomaly->_ctx_ref_value, 2) }}
+                                    </span>
+                                    <p class="text-gray-400 text-[11px] mt-0.5">
+                                        {{ $anomaly->_ctx_ref_label ?? '—' }}
+                                    </p>
+                                    {{-- Untuk unreasonable: tampilkan batas atas/bawah --}}
+                                    @if($ctxType === 'unreasonable' && !empty($stats))
+                                    <p class="text-[10px] text-gray-400 mt-1 font-mono">
+                                        [{{ number_format((float)($stats['lower'] ?? 0), 2) }}
+                                        –
+                                        {{ number_format((float)($stats['upper'] ?? 0), 2) }}]
+                                    </p>
+                                    <p class="text-[10px] text-gray-300 mt-0.5">batas ±3σ</p>
+                                    @endif
+                                @else
+                                    <span class="text-gray-300">—</span>
+                                @endif
+                            </td>
+        
+                            {{-- Selisih / Z-score --}}
+                            <td class="px-3 py-3 text-center">
+                                @if($anomaly->_ctx_change_pct !== null)
+                                    @php
+                                        $pct = (float) $anomaly->_ctx_change_pct;
+                                        $isUnreasonable = $ctxType === 'unreasonable';
+                                        $isNeg = $pct < 0;
+                                        $pctColor = $isUnreasonable
+                                            ? 'text-amber-600'
+                                            : ($isNeg ? 'text-blue-600' : 'text-red-600');
+                                    @endphp
+                                    <span class="font-mono font-bold text-sm {{ $pctColor }}">
+                                        @if($isUnreasonable)
+                                        @php
+                                            $z        = abs((float)($anomaly->_ctx_change_pct ?? 0));
+                                            $mean     = (float)($stats['mean'] ?? 0);
+                                            $stddev   = (float)($stats['stddev'] ?? 0);
+                                            $curr     = (float)($anomaly->_ctx_curr_value ?? 0);
+                                            $lower2s  = $mean - 2 * $stddev;
+                                            $upper2s  = $mean + 2 * $stddev;
+                                            $lower3s  = (float)($stats['lower'] ?? $mean - 3 * $stddev);
+                                            $upper3s  = (float)($stats['upper'] ?? $mean + 3 * $stddev);
+                                            $n        = $stats['n'] ?? 0;
+
+                                            // Warna berdasarkan z-score
+                                            $zColor = $z >= 10 ? '#b91c1c' : ($z >= 6 ? '#c2410c' : ($z >= 3 ? '#a16207' : '#1d4ed8'));
+                                            // Lebar bar capped di 100%
+                                            $zPct = min(round((min($z, 20) / 20) * 100), 100);
+
+                                            // Apakah nilai di atas atau di bawah mean
+                                            $isAbove = $curr > $mean;
+                                        @endphp
+                                            {{-- Bar z-score --}}
+                                            <div>
+                                                <div class="flex justify-between text-gray-500 mb-0.5">
+                                                    <span>Z-score</span>
+                                                    <span class="font-mono font-bold" style="color:{{ $zColor }}">
+                                                        {{ number_format($z, 2) }}
+                                                    </span>
+                                                </div>
+                                                <div class="w-full bg-gray-100 rounded-full h-1.5 overflow-hidden">
+                                                    <div class="h-1.5 rounded-full"
+                                                        style="width:{{ $zPct }}%; background:{{ $zColor }};"></div>
+                                                </div>
+                                                <div class="flex justify-between text-gray-300 mt-0.5 text-[10px]">
+                                                    <span>0</span><span>normal ≤3</span><span>ekstrem 20</span>
+                                                </div>
+                                            </div>
+                                        @else
+                                            {{ $pct >= 0 ? '+' : '' }}{{ number_format($pct, 1) }}%
+                                        @endif
+                                    </span>
+                                @else
+                                    <span class="text-gray-300">—</span>
+                                @endif
+                            </td>
+        
+                            {{-- Detail Perbandingan (kontekstual) --}}
+                            <td class="px-3 py-3">
+                                @if($ctxType === 'source_conflict' && !empty($sources))
+                                    {{-- Tabel mini produsen vs nilai --}}
+                                    <div class="space-y-1">
+                                        @foreach($sources as $src)
+                                        <div class="flex items-center justify-between gap-2 px-2 py-1 rounded
+                                                    {{ $src['is_current'] ? 'bg-purple-50 border border-purple-200' : 'bg-gray-50' }}">
+                                            <span class="truncate max-w-25 {{ $src['is_current'] ? 'font-semibold text-purple-800' : 'text-gray-600' }}"
+                                                title="{{ $src['produsen'] }}">
+                                                @if($src['is_current'])<i class="fas fa-circle text-[6px] text-purple-500 mr-0.5"></i>@endif
+                                                {{ $src['produsen'] }}
+                                            </span>
+                                            <span class="font-mono text-[11px] shrink-0
+                                                        {{ $src['pct_diff'] >= 5 ? 'text-amber-600 font-semibold' : 'text-gray-600' }}">
+                                                {{ number_format((float)$src['value'], 2) }}
+                                                @if($src['pct_diff'] > 0)
+                                                <span class="text-gray-400">({{ number_format((float)$src['pct_diff'], 1) }}%)</span>
+                                                @endif
+                                            </span>
+                                        </div>
+                                        @endforeach
+                                    </div>
+        
+                                @elseif($ctxType === 'unreasonable' && !empty($stats))
+                                    @php
+                                        $z        = abs((float)($anomaly->_ctx_change_pct ?? 0));
+                                        $mean     = (float)($stats['mean'] ?? 0);
+                                        $stddev   = (float)($stats['stddev'] ?? 0);
+                                        $curr     = (float)($anomaly->_ctx_curr_value ?? 0);
+                                        $lower2s  = $mean - 2 * $stddev;
+                                        $upper2s  = $mean + 2 * $stddev;
+                                        $lower3s  = (float)($stats['lower'] ?? $mean - 3 * $stddev);
+                                        $upper3s  = (float)($stats['upper'] ?? $mean + 3 * $stddev);
+                                        $n        = $stats['n'] ?? 0;
+
+                                        // Warna berdasarkan z-score
+                                        $zColor = $z >= 10 ? '#b91c1c' : ($z >= 6 ? '#c2410c' : ($z >= 3 ? '#a16207' : '#1d4ed8'));
+                                        // Lebar bar capped di 100%
+                                        $zPct = min(round((min($z, 20) / 20) * 100), 100);
+
+                                        // Apakah nilai di atas atau di bawah mean
+                                        $isAbove = $curr > $mean;
+                                    @endphp
+
+                                    <div class="space-y-2 text-[11px]">
+
+                                        {{-- Rentang normal --}}
+                                        <div class="rounded-md px-2 py-1.5 space-y-1"
+                                            style="background:#f9fafb; border:1px solid #e5e7eb;">
+{{-- 
+                                            <div class="flex justify-between">
+                                                <span class="text-gray-400">Batas ±2σ</span>
+                                                <span class="font-mono text-gray-600">
+                                                    {{ number_format($lower2s, 2) }} – {{ number_format($upper2s, 2) }}
+                                                </span>
+                                            </div> --}}
+                                            <div class="flex justify-between">
+                                                <span class="text-gray-400">Batas ±3σ</span>
+                                                <span class="font-mono text-gray-500">
+                                                    {{ number_format($lower3s, 2) }} – {{ number_format($upper3s, 2) }}
+                                                </span>
+                                            </div>
+                                            <div class="flex justify-between border-t border-gray-100 pt-1 mt-1">
+                                                <span class="font-semibold" style="color:{{ $zColor }}">
+                                                    Nilai ini
+                                                    {{ $isAbove ? 'terlalu tinggi ↑' : 'terlalu rendah ↓' }}
+                                                </span>
+                                                <span class="font-mono font-semibold" style="color:{{ $zColor }}">
+                                                    {{ number_format($curr, 2) }}
+                                                </span>
+                                            </div>
+                                        </div>
+
+                                        <p class="text-gray-400 text-[10px]">
+                                            μ={{ number_format($mean, 2) }} •
+                                            σ={{ number_format($stddev, 2) }}
+                                        </p>
+                                    </div>
+
+                                @elseif($ctxType === 'unreasonable' && empty($stats))
+                                    {{-- Tidak ada histori cukup — tampilkan pesan informatif --}}
+                                    <div class="text-[11px] space-y-1">
+                                        <span class="inline-flex items-center gap-1 px-2 py-1 rounded-md text-amber-700"
+                                            style="background:#fef9c3; border:1px solid #fde68a;">
+                                            <i class="fas fa-exclamation-triangle text-[10px]"></i>
+                                            Histori data tidak cukup
+                                        </span>
+                                        <p class="text-gray-400">
+                                            Perlu minimal 3 data historis untuk<br>menghitung rentang normal.
+                                        </p>
+                                        <p class="text-gray-500 font-mono">
+                                            Nilai saat ini:
+                                            <strong>{{ number_format((float)($anomaly->_ctx_curr_value ?? 0), 2) }}</strong>
+                                        </p>
+                                    </div>
+        
+                                @elseif($ctxType === 'extreme_change')
+                                    {{-- Panah visual perubahan --}}
+                                    @php
+                                        $prev = $anomaly->_ctx_ref_value;
+                                        $curr = $anomaly->_ctx_curr_value;
+                                        $isUp = $anomaly->anomaly_type === 'extreme_increase';
+                                    @endphp
+                                    <div class="flex items-center gap-1.5 text-[11px]">
+                                        <span class="font-mono text-gray-500">{{ $fmtNum($prev) }}</span>
+                                        <i class="fas fa-arrow-right {{ $isUp ? 'text-red-400' : 'text-blue-400' }} text-[10px]"></i>
+                                        <span class="font-mono font-semibold {{ $isUp ? 'text-red-600' : 'text-blue-600' }}">
+                                            {{ $fmtNum($curr) }}
+                                        </span>
+                                    </div>
+                                    <p class="text-[10px] text-gray-400 mt-1">vs periode sebelumnya</p>
+        
+                                @else
+                                    <span class="text-gray-300 text-[11px]">Lihat detail</span>
+                                @endif
+                            </td>
+        
+                            {{-- Status --}}
+                            <td class="px-3 py-3">
+                                <span class="inline-block px-2 py-0.5 rounded-full text-xs font-medium whitespace-nowrap"
+                                    style="{{ $anomaly->status_style }}">
                                     {{ $anomaly->status_label }}
                                 </span>
                             </td>
-
-                            {{-- Tanggal --}}
-                            <td class="px-3 py-3 text-gray-500 whitespace-nowrap">
+        
+                            {{-- Terdeteksi --}}
+                            <td class="px-3 py-3 text-gray-500 whitespace-nowrap text-[11px]">
                                 {{ $anomaly->detected_at?->format('d/m/Y') }}<br>
                                 <span class="text-gray-400">{{ $anomaly->detected_at?->format('H:i') }}</span>
                             </td>
-
+        
                             {{-- Aksi --}}
-                            <td class="px-3 py-3">
-                                <div class="flex items-center justify-center gap-1.5">
-                                    <a href="{{ route('anomaly.control.show', $anomaly->anomalies_id) }}"
-                                       class="text-xs px-2.5 py-1.5 rounded-lg border border-sky-200
-                                              text-sky-600 hover:bg-sky-50 transition-colors whitespace-nowrap">
-                                        <i class="fas fa-eye mr-1"></i>Detail
-                                    </a>
-                                    {{-- @if($anomaly->isPendingReview())
-                                    <button onclick="openReviewModal({{ $anomaly->anomalies_id }}, '{{ addslashes($data?->metadata?->nama) }}')"
-                                            class="text-xs px-2.5 py-1.5 rounded-lg border border-amber-200
-                                                   text-amber-600 hover:bg-amber-50 transition-colors whitespace-nowrap">
-                                        <i class="fas fa-gavel mr-1"></i>Review
-                                    </button>
-                                    @endif --}}
-                                </div>
+                            <td class="px-3 py-3 text-center sticky right-0 {{ $rowBg ?: 'bg-white' }} z-10">
+                                <a href="{{ route('anomaly.control.show', $anomaly->anomalies_id) }}"
+                                class="inline-flex items-center gap-1 text-xs px-2.5 py-1.5 rounded-lg
+                                        border border-sky-200 text-sky-600 hover:bg-sky-50
+                                        transition-colors whitespace-nowrap">
+                                    <i class="fas fa-eye text-[10px]"></i>Detail
+                                </a>
                             </td>
                         </tr>
                         @empty
                         <tr>
-                            <td colspan="8" class="px-4 py-12 text-center text-gray-400">
+                            <td colspan="11" class="px-4 py-12 text-center text-gray-400">
                                 <i class="fas fa-check-circle text-3xl text-green-300 mb-2 block"></i>
                                 Tidak ada anomali
                                 {{ request()->hasAny(['severity','status','metadata_id','search','anomaly_type'])
@@ -334,10 +545,10 @@
                     </tbody>
                 </table>
             </div>
-
+        
             {{-- Pagination --}}
             @if($anomalies->hasPages())
-            <div class="px-4 py-3 border-t border-gray-100">
+            <div class="col-span-3 px-4 py-3 border-t border-gray-100">
                 {{ $anomalies->links() }}
             </div>
             @endif

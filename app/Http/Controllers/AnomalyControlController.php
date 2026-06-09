@@ -13,6 +13,7 @@ use App\Services\AuditTrailService;
 use App\Services\WorkflowService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Collection;
 use Illuminate\Validation\ValidationException;
 
 class AnomalyControlController extends Controller
@@ -34,55 +35,59 @@ class AnomalyControlController extends Controller
             'data.location',
             'data.time',
             'data.user',
-            'data.produsen',
+            'data.produsen',     // ← sudah ada, pastikan tetap ada
             'reviews.reviewer',
         ]);
-
+    
         // ── Filter severity ───────────────────────────────────
         if ($request->filled('severity')) {
             $query->where('severity', $request->severity);
         }
-
+    
         // ── Filter status ─────────────────────────────────────
         if ($request->filled('status')) {
             $query->where('status', $request->status);
         } else {
-            // Default: tampilkan yang belum resolved
             $query->whereIn('status', [
                 Anomaly::STATUS_WARNING,
                 Anomaly::STATUS_UNDER_REVIEW,
             ]);
         }
-
+    
         // ── Filter metadata ───────────────────────────────────
         if ($request->filled('metadata_id')) {
             $query->whereHas('data', fn($q) =>
                 $q->where('metadata_id', $request->metadata_id)
             );
         }
-
+    
         // ── Filter anomaly_type ───────────────────────────────
         if ($request->filled('anomaly_type')) {
             $query->where('anomaly_type', $request->anomaly_type);
         }
-
+    
         // ── Search ─────────────────────────────────────────────
         if ($request->filled('search')) {
             $s = $request->search;
             $query->where(function ($q) use ($s) {
                 $q->where('message', 'like', "%{$s}%")
-                  ->orWhereHas('data.metadata', fn($m) => $m->where('nama', 'like', "%{$s}%"))
-                  ->orWhereHas('data.location', fn($l) => $l->where('nama_wilayah', 'like', "%{$s}%"));
+                ->orWhereHas('data.metadata', fn($m) => $m->where('nama', 'like', "%{$s}%"))
+                ->orWhereHas('data.location', fn($l) => $l->where('nama_wilayah', 'like', "%{$s}%"));
             });
         }
-
-        // ── Sort: critical & high dulu, lalu terbaru ──────────
+    
+        // ── Sort ───────────────────────────────────────────────
         $anomalies = $query
             ->orderByRaw("FIELD(severity, 'critical','high','medium','low')")
             ->orderBy('detected_at', 'desc')
             ->paginate(20)
             ->withQueryString();
-
+    
+        // ── Enrich: tambah konteks per anomali ────────────────
+        // Ini mengisi property sementara ke setiap anomali agar view bisa
+        // menampilkan detail tanpa query tambahan per baris.
+        $this->enrichAnomalyContext($anomalies->getCollection());
+    
         // ── Data untuk filter dropdown ─────────────────────────
         $metadataList  = Metadata::where('status', 2)->orderBy('nama')->get(['metadata_id', 'nama']);
         $severityOpts  = Anomaly::severityOptions();
@@ -93,13 +98,11 @@ class AnomalyControlController extends Controller
             Anomaly::TYPE_SOURCE_CONFLICT  => 'Konflik Sumber Data',
             Anomaly::TYPE_UNREASONABLE     => 'Nilai Tidak Wajar',
         ];
-
-        // ── Stats untuk header ────────────────────────────────
-        $stats = $this->workflow->getControlStats();
-
-        // ── Trend chart (7 hari terakhir) ─────────────────────
+    
+        // ── Stats ─────────────────────────────────────────────
+        $stats     = $this->workflow->getControlStats();
         $trendData = $this->workflow->getAnomalyTrend(7);
-
+    
         $statusData = [
             'labels' => ['Warning', 'Under Review', 'Approved', 'Approved+Note', 'Rejected'],
             'values' => [
@@ -110,7 +113,7 @@ class AnomalyControlController extends Controller
                 Anomaly::where('status', Anomaly::STATUS_REJECTED)->count(),
             ],
         ];
-
+    
         return view('pages.anomaly.control.index', compact(
             'anomalies',
             'metadataList',
@@ -121,6 +124,214 @@ class AnomalyControlController extends Controller
             'trendData',
             'statusData',
         ));
+    }
+
+    // ── ENRICH ANOMALY CONTEXT ────────────────────────────────────────────────────
+    //
+    // Menempelkan property kontekstual ke setiap anomali.
+    // Property yang ditambahkan (semua `public`, bukan relasi):
+    //
+    //   $anomaly->_ctx_type        string   'extreme_change' | 'source_conflict' | 'unreasonable' | 'other'
+    //   $anomaly->_ctx_ref_label   string   Label nilai referensi  (mis. "Periode lalu", "Rata-rata")
+    //   $anomaly->_ctx_ref_value   float|null Nilai referensi
+    //   $anomaly->_ctx_curr_value  float|null Nilai saat ini
+    //   $anomaly->_ctx_change_pct  float|null Persentase / z-score
+    //   $anomaly->_ctx_sources     array    Hanya untuk source_conflict: list [{produsen, value, selisih, pct_diff, is_current}]
+    //   $anomaly->_ctx_stats       array    Hanya untuk unreasonable: {mean, stddev, lower, upper, n, z_score}
+    //
+    // ─────────────────────────────────────────────────────────────────────────────
+    
+    private function enrichAnomalyContext(Collection $anomalies): void
+    {
+        // Kumpulkan semua kombinasi (metadata, location, time) untuk source_conflict
+        // agar bisa batch-query sekaligus.
+        $conflictKeys = $anomalies
+            ->where('anomaly_type', Anomaly::TYPE_SOURCE_CONFLICT)
+            ->map(fn($a) => [
+                'metadata_id' => $a->data?->metadata_id,
+                'location_id' => $a->data?->location_id,
+                'time_id'     => $a->data?->time_id,
+                'data_id'     => $a->data?->id,
+            ])
+            ->filter(fn($k) => $k['metadata_id'] && $k['location_id'] && $k['time_id'])
+            ->unique(fn($k) => "{$k['metadata_id']}-{$k['location_id']}-{$k['time_id']}");
+    
+        // Batch load semua data sumber untuk source_conflict
+        $conflictMap = [];
+        foreach ($conflictKeys as $key) {
+            $rows = Data::where('metadata_id', $key['metadata_id'])
+                ->where('location_id', $key['location_id'])
+                ->where('time_id', $key['time_id'])
+                ->where('status', Data::STATUS_AVAILABLE)
+                ->whereNotNull('number_value')
+                ->with('produsen')
+                ->get();
+    
+            $avg = $rows->avg('number_value');
+            $mapKey = "{$key['metadata_id']}-{$key['location_id']}-{$key['time_id']}";
+    
+            $conflictMap[$mapKey] = $rows->map(fn($d) => [
+                'data_id'    => $d->id,
+                'produsen'   => $d->produsen?->nama_produsen ?? "Produsen #{$d->produsen_id}",
+                'value'      => (float) $d->number_value,
+                'selisih'    => round((float) $d->number_value - $avg, 4),
+                'pct_diff'   => $avg > 0 ? round(abs(((float) $d->number_value - $avg) / $avg * 100), 2) : 0,
+                'is_current' => false,   // akan di-set di bawah
+            ])->toArray();
+        }
+    
+        // Kumpulkan data historis untuk unreasonable (batch per metadata+location)
+        $unreasonableKeys = $anomalies
+            ->where('anomaly_type', Anomaly::TYPE_UNREASONABLE)
+            ->map(fn($a) => [
+                'metadata_id' => $a->data?->metadata_id,
+                'location_id' => $a->data?->location_id,
+                'data_id'     => $a->data?->id,
+            ])
+            ->filter(fn($k) => $k['metadata_id'] && $k['location_id'] && $k['data_id']);
+
+        $statsMap = [];
+        foreach ($unreasonableKeys as $key) {
+            $mapKey = "{$key['metadata_id']}-{$key['location_id']}-{$key['data_id']}";
+            if (isset($statsMap[$mapKey])) continue;
+
+            $history = Data::where('metadata_id', $key['metadata_id'])
+                ->where('location_id', $key['location_id'])
+                ->where('id', '!=', $key['data_id'])
+                ->whereIn('status', [Data::STATUS_AVAILABLE, Data::STATUS_PENDING])
+                ->whereNotNull('number_value')
+                ->orderBy('time_id', 'desc')
+                ->limit(20)
+                ->pluck('number_value')
+                ->map(fn($v) => (float) $v)
+                ->toArray();
+
+            // ← Turun dari 5 ke 3 agar konsisten dengan DataImport
+            if (count($history) >= 3) {
+                $mean   = array_sum($history) / count($history);
+                $var    = array_sum(array_map(fn($v) => ($v - $mean) ** 2, $history)) / count($history);
+                $stddev = sqrt($var);
+                $statsMap[$mapKey] = [
+                    'mean'   => round($mean, 4),
+                    'stddev' => round($stddev, 4),
+                    'lower'  => round($mean - 3 * $stddev, 4),
+                    'upper'  => round($mean + 3 * $stddev, 4),
+                    'n'      => count($history),
+                ];
+            }
+            // Jika < 3 data, biarkan $statsMap[$mapKey] tidak di-set
+            // → view akan fallback ke anomaly->previous_value & percentage_change
+        }
+    
+        // Tempel property ke setiap anomali
+        foreach ($anomalies as $anomaly) {
+            $data = $anomaly->data;
+    
+            switch ($anomaly->anomaly_type) {
+    
+                // ── Kenaikan / Penurunan Ekstrem ──────────────────────────
+                case Anomaly::TYPE_EXTREME_INCREASE:
+                case Anomaly::TYPE_EXTREME_DECREASE:
+                    $anomaly->_ctx_type       = 'extreme_change';
+                    $anomaly->_ctx_ref_label  = 'Periode lalu';
+                    $anomaly->_ctx_ref_value  = $anomaly->previous_value;
+                    $anomaly->_ctx_curr_value = $anomaly->current_value;
+                    $anomaly->_ctx_change_pct = $anomaly->percentage_change;
+                    $anomaly->_ctx_sources    = [];
+                    $anomaly->_ctx_stats      = [];
+                    break;
+    
+                // ── Konflik Sumber Data ───────────────────────────────────
+                case Anomaly::TYPE_SOURCE_CONFLICT:
+                    $mapKey = "{$data?->metadata_id}-{$data?->location_id}-{$data?->time_id}";
+                    $sources = $conflictMap[$mapKey] ?? [];
+    
+                    // Tandai baris mana yang merupakan data saat ini
+                    foreach ($sources as &$src) {
+                        $src['is_current'] = ($src['data_id'] === $data?->id);
+                    }
+                    unset($src);
+    
+                    $anomaly->_ctx_type       = 'source_conflict';
+                    $anomaly->_ctx_ref_label  = 'Rata-rata sumber';
+                    $anomaly->_ctx_ref_value  = count($sources) > 0
+                        ? round(array_sum(array_column($sources, 'value')) / count($sources), 4)
+                        : null;
+                    $anomaly->_ctx_curr_value = $anomaly->current_value;
+                    $anomaly->_ctx_change_pct = $anomaly->percentage_change;
+                    $anomaly->_ctx_sources    = $sources;
+                    $anomaly->_ctx_stats      = [];
+                    break;
+    
+                // ── Nilai Tidak Wajar ────────────────────────────────────
+                case Anomaly::TYPE_UNREASONABLE:
+                    $mapKey = "{$data?->metadata_id}-{$data?->location_id}-{$data?->id}";
+                    $s      = $statsMap[$mapKey] ?? [];
+
+                    // ── Hitung z-score ─────────────────────────────────────────
+                    $zScore = null;
+                    if (!empty($s) && isset($s['stddev']) && $s['stddev'] > 0) {
+                        // Hitung ulang dari histori yang baru di-query
+                        $zScore = round(
+                            abs(((float) $anomaly->current_value - $s['mean']) / $s['stddev']),
+                            2
+                        );
+                    } elseif ($anomaly->percentage_change !== null) {
+                        // Fallback: pakai z-score yang sudah tersimpan saat deteksi
+                        $zScore = (float) $anomaly->percentage_change;
+                    }
+
+                    // ── Ref value & stats ──────────────────────────────────────
+                    if (!empty($s)) {
+                        // Histori ditemukan dari DB → pakai hasil query
+                        $refValue  = $s['mean'];
+                        $refLabel  = "Rata-rata histori";
+                        $statsData = $s;
+                    } elseif ($anomaly->previous_value !== null) {
+                        // Fallback: rekonstruksi stats dari nilai tersimpan di anomaly
+                        $storedMean   = (float) $anomaly->previous_value;
+                        $storedCurr   = (float) $anomaly->current_value;
+                        $storedZ      = $zScore ?? 0;
+
+                        // Estimasi stddev dari z-score dan mean yang tersimpan
+                        // z = |curr - mean| / stddev  →  stddev = |curr - mean| / z
+                        $absDiff      = abs($storedCurr - $storedMean);
+                        $estStddev    = ($storedZ > 0) ? round($absDiff / $storedZ, 4) : 0;
+
+                        $refValue  = $storedMean;
+                        $refLabel  = "Rata-rata histori (saat deteksi)";
+                        $statsData = [
+                            'mean'   => $storedMean,
+                            'stddev' => $estStddev,
+                            'lower'  => round($storedMean - 3 * $estStddev, 4),
+                            'upper'  => round($storedMean + 3 * $estStddev, 4),
+                            'n'      => null,  // tidak diketahui dari rekonstruksi
+                        ];
+                    } else {
+                        $refValue  = null;
+                        $refLabel  = "—";
+                        $statsData = [];
+                    }
+
+                    $anomaly->_ctx_type       = 'unreasonable';
+                    $anomaly->_ctx_ref_label  = $refLabel;
+                    $anomaly->_ctx_ref_value  = $refValue;
+                    $anomaly->_ctx_curr_value = $anomaly->current_value;
+                    $anomaly->_ctx_change_pct = $zScore;
+                    $anomaly->_ctx_sources    = [];
+                    $anomaly->_ctx_stats      = $statsData;
+                    break;
+    
+                default:
+                    $anomaly->_ctx_type       = 'other';
+                    $anomaly->_ctx_ref_label  = '—';
+                    $anomaly->_ctx_ref_value  = $anomaly->previous_value;
+                    $anomaly->_ctx_curr_value = $anomaly->current_value;
+                    $anomaly->_ctx_change_pct = $anomaly->percentage_change;
+                    $anomaly->_ctx_sources    = [];
+                    $anomaly->_ctx_stats      = [];
+            }
+        }
     }
 
     public function scanAll(Request $request)

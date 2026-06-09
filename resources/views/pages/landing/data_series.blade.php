@@ -306,7 +306,7 @@
                                             </span>
                                             <span class="text-gray-400 text-xs whitespace-nowrap">sejak {{ $meta->tahun_mulai_data }}</span>
                                         </div>
-                                        @php $wilayah = $meta->data->first()?->location?->nama_wilayah; @endphp
+                                        @php $wilayah = $meta->data->where('location_id', 0)->first()?->location?->nama_wilayah; @endphp
                                         @if($wilayah)
                                             <div class="flex items-center gap-1 mb-3">
                                                 <svg class="w-3 h-3 text-gray-400 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">

@@ -292,8 +292,8 @@ class DataImport
             foreach ($criteria as $c) {
                 $q->orWhere(function ($qq) use ($c) {
                     $qq->where('metadata_id', $c['metadata_id'])
-                       ->where('location_id', $c['location_id'])
-                       ->where('time_id', $c['time_id']);
+                    ->where('location_id', $c['location_id'])
+                    ->where('time_id', $c['time_id']);
                     if ($c['rujukan_id'] === null) {
                         $qq->whereNull('rujukan_id');
                     } else {
@@ -303,25 +303,105 @@ class DataImport
             }
         });
 
-        $rows = $query->get(['id', 'number_value']);
+        $rows = $query->get(['id', 'number_value', 'metadata_id', 'location_id']);
+
         foreach ($rows as $row) {
-            $anomaly = Anomaly::firstOrCreate([
-                'id'           => $row->id,
-                'table_name'   => 'data',
-                'anomaly_type' => Anomaly::TYPE_UNREASONABLE,
-            ], [
-                'severity'          => Anomaly::SEVERITY_MEDIUM,
-                'previous_value'    => null,
-                'current_value'     => $row->number_value,
-                'percentage_change' => null,
-                'message'           => 'Data ditandai sebagai outlier oleh pengguna saat import.',
-                'status'            => Anomaly::STATUS_WARNING,
-                'detected_at'       => now(),
-            ]);
+            $currentValue = (float) $row->number_value;
+
+            // ── Histori: izinkan pending + available ──────────────
+            $history = DB::table('data')
+                ->where('metadata_id', $row->metadata_id)
+                ->where('location_id', $row->location_id)
+                ->where('id', '!=', $row->id)
+                ->whereIn('status', [0, 1])  // 0=pending, 1=available
+                ->whereNotNull('number_value')
+                ->orderBy('time_id', 'desc')
+                ->limit(20)
+                ->pluck('number_value')
+                ->map(fn($v) => (float) $v)
+                ->toArray();
+
+            $previousValue    = null;
+            $percentageChange = null;
+            $severity         = Anomaly::SEVERITY_MEDIUM;
+            $message          = 'Data ditandai sebagai outlier oleh pengguna saat import.';
+
+            if (count($history) >= 1) {
+                $mean   = array_sum($history) / count($history);
+                $var    = array_sum(array_map(fn($v) => ($v - $mean) ** 2, $history)) / count($history);
+                $stdDev = sqrt($var);
+
+                $previousValue = round($mean, 4);
+
+                if ($stdDev > 0) {
+                    $zScore           = abs(($currentValue - $mean) / $stdDev);
+                    $percentageChange = round($zScore, 4);
+                    $upperBound       = round($mean + 3 * $stdDev, 2);
+                    $lowerBound       = round($mean - 3 * $stdDev, 2);
+
+                    $message = sprintf(
+                        'Outlier ditandai pengguna saat import. Z-score=%.2f '
+                        . '(mean=%.2f, σ=%.2f, batas=[%s – %s], n=%d)',
+                        $zScore, $mean, $stdDev,
+                        $lowerBound, $upperBound,
+                        count($history)
+                    );
+
+                    $severity = match(true) {
+                        $zScore >= 10 => Anomaly::SEVERITY_CRITICAL,
+                        $zScore >= 6  => Anomaly::SEVERITY_HIGH,
+                        $zScore >= 3  => Anomaly::SEVERITY_MEDIUM,
+                        default       => Anomaly::SEVERITY_LOW,
+                    };
+                } else {
+                    $message = sprintf(
+                        'Outlier ditandai pengguna saat import. Mean histori=%.2f (n=%d, σ≈0)',
+                        $mean, count($history)
+                    );
+                }
+            }
+
+            $anomaly = Anomaly::firstOrCreate(
+                [
+                    'id'           => $row->id,
+                    'table_name'   => 'data',
+                    'anomaly_type' => Anomaly::TYPE_UNREASONABLE,
+                ],
+                [
+                    'severity'          => $severity,
+                    'previous_value'    => $previousValue,
+                    'current_value'     => $currentValue,
+                    'percentage_change' => $percentageChange,
+                    'message'           => $message,
+                    'status'            => Anomaly::STATUS_WARNING,
+                    'detected_at'       => now(),
+                ]
+            );
 
             if ($anomaly->wasRecentlyCreated ?? false) {
                 $this->anomaliesCreated++;
             }
+
+            // ── Audit trail — agar konsisten dengan AnomalyDetectionService ──
+            DB::table('audit_trails')->insert([
+                'user_id'    => $this->userId ?: null,
+                'table_name' => 'data',
+                'record_id'  => (string) $row->id,
+                'action_type'=> 'screened',
+                'old_value'  => null,
+                'new_value'  => json_encode([
+                    'anomalies_found' => 1,
+                    'workflow_status' => 'warning',
+                    'checks_run'      => ['manual_outlier_flag_import'],
+                    'z_score'         => $percentageChange,
+                    'mean'            => $previousValue,
+                    'history_n'       => count($history),
+                ]),
+                'reason'     => 'Screening otomatis sistem',
+                'ip_address' => null,
+                'user_agent' => null,
+                'created_at' => now(),
+            ]);
         }
     }
 
