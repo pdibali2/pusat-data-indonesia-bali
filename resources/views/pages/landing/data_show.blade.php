@@ -191,7 +191,7 @@
                             ■ {{ $metadata->klasifikasi?->nama_klasifikasi ?? 'Data Statistik' }}
                         </span>
                     </div>
-                    @php $wilayah = $meta->data->where('location_id', 0)->first()?->location?->nama_wilayah; @endphp
+                    @php $wilayah = $metadata->data->where('location_id', 0)->first()?->location?->nama_wilayah; @endphp
                     <h1 class="text-3xl lg:text-4xl font-extrabold text-white leading-tight mb-4 max-w-2xl fade-up d2">
                         {{ $metadata->nama }}
                         @if($wilayah)
