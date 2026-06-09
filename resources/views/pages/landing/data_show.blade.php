@@ -191,7 +191,7 @@
                             ■ {{ $metadata->klasifikasi?->nama_klasifikasi ?? 'Data Statistik' }}
                         </span>
                     </div>
-                    @php $wilayah = $metadata->data->first()?->location?->nama_wilayah; @endphp
+                    @php $wilayah = $meta->data->where('location_id', 0)->first()?->location?->nama_wilayah; @endphp
                     <h1 class="text-3xl lg:text-4xl font-extrabold text-white leading-tight mb-4 max-w-2xl fade-up d2">
                         {{ $metadata->nama }}
                         @if($wilayah)
@@ -246,41 +246,6 @@
                 $latestRow = $tableRows->sortByDesc('year')->first();
                 $dec       = $metadata->flag_desimal ?? 0;
             @endphp
-
-            {{-- Stat Cards --}}
-            {{-- <div class="grid grid-cols-2 lg:grid-cols-4 gap-3 mb-6 fade-up d1">
-                <div class="stat-card bg-white rounded px-5 py-4 shadow-sm border border-slate-200">
-                    <div class="text-xs font-700 uppercase tracking-widest text-slate-400 mb-2">Data Terbaru</div>
-                    <div class="text-2xl font-extrabold text-slate-800 leading-none">
-                        @if($latestRow && !is_null($latestRow['value']))
-                            {{ number_format((float)$latestRow['value'], $dec, ',', '.') }}
-                        @else —
-                        @endif
-                    </div>
-                    <div class="text-xs text-slate-400 mt-1.5">{{ $metadata->satuan_data }} · {{ $latestRow['period'] ?? '—' }}</div>
-                </div>
-                <div class="stat-card bg-white rounded px-5 py-4 shadow-sm border border-slate-200">
-                    <div class="text-xs font-700 uppercase tracking-widest text-slate-400 mb-2">Tertinggi</div>
-                    <div class="text-2xl font-extrabold text-blue-600 leading-none">
-                        {{ $values->isNotEmpty() ? number_format((float)$values->max(), $dec, ',', '.') : '—' }}
-                    </div>
-                    <div class="text-xs text-slate-400 mt-1.5">{{ $metadata->satuan_data }}</div>
-                </div>
-                <div class="stat-card bg-white rounded px-5 py-4 shadow-sm border border-slate-200">
-                    <div class="text-xs font-700 uppercase tracking-widest text-slate-400 mb-2">Terendah</div>
-                    <div class="text-2xl font-extrabold text-slate-500 leading-none">
-                        {{ $values->isNotEmpty() ? number_format((float)$values->min(), $dec, ',', '.') : '—' }}
-                    </div>
-                    <div class="text-xs text-slate-400 mt-1.5">{{ $metadata->satuan_data }}</div>
-                </div>
-                <div class="stat-card bg-white rounded px-5 py-4 shadow-sm border border-slate-200">
-                    <div class="text-xs font-700 uppercase tracking-widest text-slate-400 mb-2">Rata-rata</div>
-                    <div class="text-2xl font-extrabold text-yellow-500 leading-none">
-                        {{ $values->isNotEmpty() ? number_format((float)$values->avg(), $dec, ',', '.') : '—' }}
-                    </div>
-                    <div class="text-xs text-slate-400 mt-1.5">{{ $metadata->satuan_data }}</div>
-                </div>
-            </div> --}}
 
             {{-- Chart Card --}}
             <div class="bg-white border border-slate-200 rounded mb-6 p-6 shadow-sm fade-up d2">
