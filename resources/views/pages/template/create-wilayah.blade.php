@@ -287,6 +287,8 @@
     </div>
 </div>
 
+@include('pages.template.metadata-detail-modal')
+
 {{-- Hidden form --}}
 <form id="formSave" action="{{ route('template.store') }}" method="POST" class="hidden">
     @csrf
@@ -853,11 +855,12 @@ function buildRow(row) {
             ` : ''}
         </td>
         <td class="px-4 py-3 text-center">
-            <a href="/metadata/${row.metadata_id}"
-               class="inline-flex items-center justify-center"
-               title="Klasifikasi: ${escH(row.klasifikasi || '-')}&#10;Satuan: ${escH(row.satuan_data || '-')}&#10;Frekuensi: ${escH(row.frekuensi_penerbitan || '-')}">
-                <i class="fas fa-circle-info text-sky-500 hover:text-sky-600 transition-colors cursor-pointer"></i>
-            </a>
+            <button type="button"
+                    onclick="openMetadataModal(${row.metadata_id})"
+                    title="Lihat detail metadata"
+                    class="inline-flex items-center justify-center bg-transparent border-0 p-0 cursor-pointer">
+                <i class="fas fa-circle-info text-sky-500 hover:text-sky-600 transition-colors"></i>
+            </button>
         </td>
         <td class="px-4 py-3 text-center">${detailBtn}</td>
     </tr>`;

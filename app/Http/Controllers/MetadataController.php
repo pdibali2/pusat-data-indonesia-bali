@@ -839,4 +839,33 @@ class MetadataController extends Controller
 
         return view('pages.metadata.detail', compact('metadata'));
     }
+
+    public function detailApi(int $id)
+    {
+        $metadata = Metadata::where('metadata_id', $id)
+            ->with(['klasifikasi:klasifikasi_id,nama_klasifikasi', 'produsen:produsen_id,nama_produsen'])
+            ->firstOrFail();
+    
+        return response()->json([
+            'metadata_id'              => $metadata->metadata_id,
+            'nama'                     => $metadata->nama,
+            'alias'                    => $metadata->alias,
+            'konsep'                   => $metadata->konsep,
+            'definisi'                 => $metadata->definisi,
+            'metodologi'               => $metadata->metodologi,
+            'penjelasan_metodologi'    => $metadata->penjelasan_metodologi,
+            'tipe_data'                => $metadata->tipe_data,
+            'satuan_data'              => $metadata->satuan_data,
+            'frekuensi_penerbitan'     => $metadata->frekuensi_penerbitan,
+            'tahun_mulai_data'         => $metadata->tahun_mulai,      // kolom langsung
+            'tahun_pertama_rilis'      => $metadata->tahun_pertama_rilis,
+            'bulan_pertama_rilis'      => $metadata->bulan_pertama_rilis,
+            'tahun_data_tersedia'      => $metadata->tahun_data_tersedia,   // computed attribute
+            'klasifikasi'              => $metadata->klasifikasi?->nama_klasifikasi,
+            'produsen'                 => $metadata->produsen?->nama_produsen,
+            'status'                   => $metadata->status,
+            'tag'                      => $metadata->tag,
+            'date_inputed'             => $metadata->date_inputed,
+        ]);
+    }
 }

@@ -671,6 +671,7 @@
         </div>
     </div>
     
+    @include('pages.template.metadata-detail-modal')
 
 </div>
 
@@ -1549,12 +1550,13 @@ function _renderTable(d) {
                             <p class="text-xs font-bold text-gray-800 leading-tight flex items-center gap-1">
                                 ${_esc(group.nama)}
 
-                                <a href="${TMPL_URLS.metadataDetail}/${row.metadata_id}"
-                                class="text-blue-400 hover:text-sky-600 transition-colors"
-                                title="Lihat detail metadata"
-                                onclick="event.stopPropagation()">
+                                <button type="button"
+                                        onclick="event.stopPropagation(); openMetadataModal(${row.metadata_id})"
+                                        class="text-blue-400 hover:text-sky-600 transition-colors
+                                            bg-transparent border-0 p-0 cursor-pointer"
+                                        title="Lihat detail metadata">
                                     <i class="fas fa-info-circle text-[11px]"></i>
-                                </a>
+                                </button>
                             </p>
                             ${group.klasifikasi
                                 ? `<p class="text-gray-400 text-[10px] mb-1">${_esc(group.klasifikasi)}</p>`

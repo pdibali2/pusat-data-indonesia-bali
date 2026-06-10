@@ -76,6 +76,9 @@ use App\Http\Controllers\AnomalyControlController;
     // Halaman index data (daftar data) bisa diakses tanpa login, tapi untuk akses detail data tetap harus login.
     Route::get('/data',[DataController::class, 'index'])->name('data.index');
 
+    Route::get('/metadata/{id}/detail-api', [MetadataController::class, 'detailApi'])
+                ->name('metadata.detail_api');
+                
     // ── Template Tampilan ─────────────────────────────────────────────────
     Route::prefix('template-tampilan')->name('template.')->group(function () {
     
@@ -89,7 +92,6 @@ use App\Http\Controllers\AnomalyControlController;
         Route::post('/table-data-guest',  [TemplateController::class, 'fetchTableDataGuest'])->name('table_data_guest');
         Route::post('/freq-counts-guest', [TemplateController::class, 'getFreqCountsGuest'])->name('freq_counts_guest');
         Route::get('/create',             [TemplateController::class, 'create'])->name('create');
-
     
         // Form per jenis
         Route::get('/create/metadata',    [TemplateController::class, 'createByMetadata'])->name('create.metadata');
