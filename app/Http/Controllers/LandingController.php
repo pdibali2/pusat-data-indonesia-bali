@@ -8,6 +8,7 @@ use App\Models\Klasifikasi;
 use App\Models\Metadata;
 use App\Models\Data;
 use App\Models\ProdusenData;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 
 class LandingController extends Controller
@@ -302,10 +303,18 @@ class LandingController extends Controller
             ->where('status', 2)
             ->findOrFail($metadataId);
     
-        // ── 2. Hitung rentang tahun ──────────────────────────────────────────
-        //    5 tahun terakhir s.d. tahun lalu  (mis. 2026 → 2021–2025)
-        $yearEnd   = now()->year - 1;          // 2025
-        $yearStart = $yearEnd - 4;             // 2021
+        // ── 2. Hitung rentang tahun dari data aktual ─────────────────────────
+        $yearRange = DB::table('data')
+            ->join('time', 'data.time_id', '=', 'time.time_id')
+            ->where('data.metadata_id', $metadataId)
+            ->where('data.status', 1)
+            ->where('data.location_id', 0)
+            ->whereNotNull('data.number_value')
+            ->selectRaw('MIN(time.year) as min_year, MAX(time.year) as max_year')
+            ->first();
+
+        $yearStart = $yearRange?->min_year ?? (now()->year - 5);
+        $yearEnd   = $yearRange?->max_year ?? (now()->year - 1);
     
         // ── 3. Ambil data dalam rentang ──────────────────────────────────────
         //    Join ke tabel `time` untuk filter tahun

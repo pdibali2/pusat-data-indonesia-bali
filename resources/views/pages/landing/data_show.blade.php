@@ -211,10 +211,10 @@
                             {{ $metadata->frekuensi_penerbitan }}
                         </span>
                         @endif
-                        @if($metadata->tahun_mulai_data)
+                        @if($yearStart)
                         <span class="inline-flex items-center gap-1.5 text-xs text-slate-400 bg-white/5 border border-white/10 px-3 py-1.5 rounded-sm">
                             <svg class="w-3 h-3 opacity-60" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
-                            Sejak {{ $metadata->tahun_mulai_data }}
+                            Sejak {{ $yearStart }}
                         </span>
                         @endif
                         <span class="inline-flex items-center gap-1.5 text-xs text-slate-400 bg-white/5 border border-white/10 px-3 py-1.5 rounded-sm">
@@ -391,10 +391,21 @@
 
                 <div class="info-card bg-white border border-slate-200 rounded p-5 shadow-sm">
                     <div class="text-xs font-800 uppercase tracking-widest text-slate-400 mb-2">Tahun Mulai Data</div>
-                    <div class="text-sm text-slate-700">{{ $metadata->tahun_mulai_data }}</div>
+                    <div class="text-sm text-slate-700">{{ $yearStart ?? '-' }}</div>
                 </div>
 
-                <div class="info-card bg-white border border-slate-200 rounded p-5 shadow-sm md:col-span-2">
+                <div class="info-card bg-white border border-slate-200 rounded p-5 shadow-sm">
+                    <div class="text-xs font-800 uppercase tracking-widest text-slate-400 mb-2">Tahun Data Tersedia</div>
+                    <div class="text-sm text-slate-700">
+                        @if($yearStart && $yearEnd)
+                            {{ $yearStart == $yearEnd ? $yearStart : $yearStart . '–' . $yearEnd }}
+                        @else
+                            —
+                        @endif
+                    </div>
+                </div>
+
+                <div class="info-card bg-white border border-slate-200 rounded p-5 shadow-sm">
                     <div class="text-xs font-800 uppercase tracking-widest text-slate-400 mb-2">Sumber Data</div>
                     <div class="text-sm text-slate-700">
                         {{ $rujukan?->nama_rujukan ?? '—' }}

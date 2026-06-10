@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Support\Facades\DB;
 
 class Metadata extends Model
 {
@@ -24,13 +25,13 @@ class Metadata extends Model
         'penjelasan_metodologi',
         'tipe_data',
         'satuan_data',
-        'tahun_mulai_data',          
+        'tahun_mulai_data',
         'frekuensi_penerbitan',
         'tahun_pertama_rilis',
         'bulan_pertama_rilis',
         'tanggal_rilis',
         'produsen_id',
-        'tag',            
+        'tag',
         'flag_desimal',
         'tipe_group',
         'group_by',
@@ -75,7 +76,6 @@ class Metadata extends Model
         return $this->belongsTo(Metadata::class, 'group_by', 'metadata_id');
     }
 
-    
     public function groupChildren()
     {
         return $this->hasMany(Metadata::class, 'group_by', 'metadata_id');
@@ -131,5 +131,48 @@ class Metadata extends Model
     public function isPending(): bool
     {
         return $this->status === self::STATUS_PENDING;
+    }
+
+    // ── COMPUTED: Tahun Mulai Data & Tahun Data Tersedia ──────
+
+    /**
+     * Tahun paling awal yang memiliki data (single year).
+     * Contoh: 2021
+     * Akses via: $metadata->tahun_mulai
+     */
+    public function getTahunMulaiAttribute(): ?int
+    {
+        $min = DB::table('data')
+            ->join('time', 'data.time_id', '=', 'time.time_id')
+            ->where('data.metadata_id', $this->metadata_id)
+            ->where('data.status', 1)
+            ->whereNotNull('data.number_value')
+            ->min('time.year');
+
+        return $min ? (int) $min : null;
+    }
+
+    /**
+     * Rentang tahun seluruh data yang tersedia.
+     * Contoh: "2021-2025", atau "2021" jika hanya satu tahun.
+     * Akses via: $metadata->tahun_data_tersedia
+     */
+    public function getTahunDataTersediaAttribute(): ?string
+    {
+        $result = DB::table('data')
+            ->join('time', 'data.time_id', '=', 'time.time_id')
+            ->where('data.metadata_id', $this->metadata_id)
+            ->where('data.status', 1)
+            ->whereNotNull('data.number_value')
+            ->selectRaw('MIN(time.year) as min_year, MAX(time.year) as max_year')
+            ->first();
+
+        if (! $result || ! $result->min_year) {
+            return null;
+        }
+
+        return $result->min_year === $result->max_year
+            ? (string) $result->min_year
+            : $result->min_year . '-' . $result->max_year;
     }
 }

@@ -81,7 +81,6 @@
                 <div class="flex items-center gap-1.5 bg-gray-50 border border-gray-200 rounded-lg px-3 py-1.5 text-xs">
                     <i class="fas fa-tag text-sky-400"></i>
                     <span class="text-gray-500">Klasifikasi:</span>
-
                     <span class="font-semibold text-gray-700">
                         {{ $metadata->klasifikasi?->nama_klasifikasi ?? '-' }}
                     </span>
@@ -238,7 +237,6 @@
                         @endif
                     </div>
 
-                    {{-- Tampilkan anggota group jika ini adalah induk --}}
                     @if($metadata->groupChildren && $metadata->groupChildren->count() > 0)
                         <div class="pt-3 border-t">
                             <p class="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-2">
@@ -278,12 +276,14 @@
                 Informasi Publikasi
             </h2>
             <div class="space-y-4 text-sm">
-                
+
                 <div class="grid grid-cols-2 gap-4">
+                    {{-- Tahun Mulai Data: dihitung otomatis dari data terkecil --}}
                     <div>
                         <p class="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-1">Tahun Mulai Data</p>
-                        <p class="text-gray-700 font-medium">{{ $metadata->tahun_mulai_data ?? '-' }}</p>
+                        <p class="text-gray-700 font-medium">{{ $metadata->tahun_mulai ?? '-' }}</p>
                     </div>
+
                     <div>
                         <p class="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-1">Frekuensi Penerbitan</p>
                         <span class="bg-green-50 text-green-700 text-xs font-semibold px-2.5 py-1 rounded-full">
@@ -291,13 +291,12 @@
                         </span>
                     </div>
 
-                    @if($metadata->tahun_pertama_rilis)
-                    <div>
-                        <p class="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-1">Tahun Pertama Rilis</p>
-                        <p class="text-gray-700 font-medium">
-                            {{ $metadata->tahun_pertama_rilis }}
-                        </p>
-                    </div>
+                    {{-- Tahun Data Tersedia: rentang min-max, dihitung otomatis --}}
+                    @if($metadata->tahun_data_tersedia)
+                        <div>
+                            <p class="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-1">Tahun Data Tersedia</p>
+                            <p class="text-gray-700 font-medium">{{ $metadata->tahun_data_tersedia }}</p>
+                        </div>
                     @endif
 
                     @if($metadata->bulan_pertama_rilis)
@@ -347,18 +346,15 @@
                     <p class="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-1">Produsen Data</p>
                     <p class="text-gray-800 font-semibold">{{ $metadata->produsen->nama_produsen ?? '-' }}</p>
                 </div>
-                
             </div>
         </div>
     </div>
 
     {{-- ═══════════════════════════════════════════ --}}
     {{-- PANEL KEPUTUSAN VERIFIKASI                  --}}
-    {{-- Hanya muncul saat dibuka dari halaman approval --}}
     {{-- ═══════════════════════════════════════════ --}}
     @if($from === 'approval')
         <div class="mt-5 bg-white rounded-xl shadow overflow-hidden">
-            {{-- Accent bar --}}
             <div style="height:4px; background: linear-gradient(90deg,
                 @if($metadata->status == 1) #f59e0b, #fde68a
                 @elseif($metadata->status == 2) #22c55e, #86efac
@@ -373,7 +369,6 @@
                     Tinjau seluruh informasi metadata di atas sebelum mengambil keputusan.
                 </p>
 
-                {{-- Info status saat ini --}}
                 <div class="flex items-center gap-3 mb-5 p-4 rounded-lg border"
                      style="@if($metadata->status==1) background:#fffbeb; border-color:#fde68a;
                             @elseif($metadata->status==2) background:#f0fdf4; border-color:#bbf7d0;
@@ -391,39 +386,31 @@
                     </div>
                 </div>
 
-                {{-- Tombol keputusan --}}
                 <div class="flex flex-wrap gap-3">
-
                     @if($metadata->status == 1)
-                        {{-- PENDING → bisa Setujui atau Tolak --}}
                         <form action="{{ route('metadata.approve', $metadata->metadata_id) }}" method="POST">
                             @csrf
                             <button type="submit"
                                 style="background:#22c55e; color:#fff;"
                                 onmouseover="this.style.background='#16a34a'"
                                 onmouseout="this.style.background='#22c55e'"
-                                class="px-6 py-2.5 rounded-lg text-sm font-semibold flex items-center gap-2
-                                       transition-colors shadow-md">
+                                class="px-6 py-2.5 rounded-lg text-sm font-semibold flex items-center gap-2 transition-colors shadow-md">
                                 <i class="fas fa-check-circle"></i>
                                 Setujui & Aktifkan Metadata
                             </button>
                         </form>
-
                         <form action="{{ route('metadata.reject', $metadata->metadata_id) }}" method="POST">
                             @csrf
                             <button type="submit"
                                 style="background:#f87171; color:#fff;"
                                 onmouseover="this.style.background='#ef4444'"
                                 onmouseout="this.style.background='#f87171'"
-                                class="px-6 py-2.5 rounded-lg text-sm font-semibold flex items-center gap-2
-                                       transition-colors shadow-md">
+                                class="px-6 py-2.5 rounded-lg text-sm font-semibold flex items-center gap-2 transition-colors shadow-md">
                                 <i class="fas fa-times-circle"></i>
                                 Tolak Metadata
                             </button>
                         </form>
-
                     @elseif($metadata->status == 2)
-                        {{-- ACTIVE → bisa Nonaktifkan --}}
                         <form action="{{ route('metadata.reject', $metadata->metadata_id) }}" method="POST">
                             @csrf
                             <button type="submit"
@@ -435,24 +422,20 @@
                                 Nonaktifkan Metadata
                             </button>
                         </form>
-
                     @elseif($metadata->status == 3)
-                        {{-- INACTIVE → bisa Aktifkan Kembali --}}
                         <form action="{{ route('metadata.reactivate', $metadata->metadata_id) }}" method="POST">
                             @csrf
                             <button type="submit"
                                 style="background:#22c55e; color:#fff;"
                                 onmouseover="this.style.background='#16a34a'"
                                 onmouseout="this.style.background='#22c55e'"
-                                class="px-6 py-2.5 rounded-lg text-sm font-semibold flex items-center gap-2
-                                       transition-colors shadow-md">
+                                class="px-6 py-2.5 rounded-lg text-sm font-semibold flex items-center gap-2 transition-colors shadow-md">
                                 <i class="fas fa-redo"></i>
                                 Aktifkan Kembali
                             </button>
                         </form>
                     @endif
 
-                    {{-- Tombol kembali --}}
                     <a href="{{ route('metadata.approval') }}"
                        class="px-6 py-2.5 rounded-lg text-sm font-semibold flex items-center gap-2 transition-colors"
                        style="border:1.5px solid #d1d5db; color:#6b7280; background:transparent;"
