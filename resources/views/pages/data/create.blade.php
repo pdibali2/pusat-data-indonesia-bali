@@ -618,7 +618,7 @@
                     
                             <div class="flex-1 min-w-0">
                                 <p class="text-sm font-semibold" style="color:#9a3412;">
-                                    Data Outlier Terdeteksi (Modified Z-Score)
+                                    Data Outlier Terdeteksi (Standard Z-Score vs DB)
                                 </p>
                                 <p class="text-xs mt-0.5" style="color:#c2410c;" id="outlierSubtitle"></p>
                             </div>
@@ -644,13 +644,20 @@
                                 <i class="fas fa-info-circle mt-0.5 shrink-0 text-amber-500"></i>
                                 <div class="space-y-1">
                                     <p>
-                                        Sistem mendeteksi nilai yang menyimpang jauh dari pola data dalam baris yang sama
-                                        menggunakan <strong>Modified Z-Score</strong>.
+                                        Sistem mendeteksi nilai yang menyimpang jauh dari
+                                        <strong>rata-rata historis data di database</strong>
+                                        menggunakan <strong>Standard Z-Score</strong>.
                                     </p>
                                     <p>
-                                        Apabila nilai <strong>|MZ| > 3.5 &gt; </strong> dianggap outlier.
+                                        Apabila nilai <strong>z &gt; 3</strong> dianggap outlier.
                                         Anda bisa memilih untuk <strong>menyertakan</strong> atau
                                         <strong>mengecualikan</strong> data tersebut dari proses import.
+                                    </p>
+                                    <p class="text-amber-600">
+                                        <i class="fas fa-link mr-1"></i>
+                                        Nilai z-score dan mean yang ditampilkan di sini
+                                        <strong>identik</strong> dengan yang akan tersimpan di
+                                        Control Anomali setelah import.
                                     </p>
                                 </div>
                             </div>
@@ -659,32 +666,28 @@
                             <div class="px-4 py-2.5 flex items-center gap-2 flex-wrap text-xs"
                                 style="background:#fffbeb; border-bottom:1px solid #fed7aa;">
                                 <span class="font-semibold" style="color:#92400e;">Level outlier:</span>
-
+    
                                 <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full"
                                     style="background:#fefce8; color:#854d0e; border:1px solid #fde047;">
                                     <span class="w-1.5 h-1.5 rounded-full shrink-0" style="background:#ca8a04;"></span>
-                                    Low &nbsp;<span class="font-mono">|MZ| 3.5–6</span>
+                                    Medium &nbsp;<span class="font-mono">z 3–6</span>
                                 </span>
-
+    
                                 <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full"
                                     style="background:#fff7ed; color:#9a3412; border:1px solid #fb923c;">
                                     <span class="w-1.5 h-1.5 rounded-full shrink-0" style="background:#ea580c;"></span>
-                                    Medium &nbsp;<span class="font-mono">|MZ| 6–10</span>
+                                    High &nbsp;<span class="font-mono">z 6–10</span>
                                 </span>
-
-                                <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full"
-                                    style="background:#fef2f2; color:#b91c1c; border:1px solid #f87171;">
-                                    <span class="w-1.5 h-1.5 rounded-full shrink-0" style="background:#dc2626;"></span>
-                                    High &nbsp;<span class="font-mono">|MZ| 10–20</span>
-                                </span>
-
+    
                                 <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full"
                                     style="background:#fdf4ff; color:#86198f; border:1px solid #e879f9;">
                                     <span class="w-1.5 h-1.5 rounded-full shrink-0" style="background:#a21caf;"></span>
-                                    Critical &nbsp;<span class="font-mono">|MZ| &gt;20</span>
+                                    Critical &nbsp;<span class="font-mono">z &gt;10</span>
                                 </span>
-
-                                <span class="ml-auto italic" style="color:#c2410c;">Semakin tinggi |MZ|, semakin ekstrem penyimpangan</span>
+    
+                                <span class="ml-auto italic" style="color:#c2410c;">
+                                    Semakin tinggi z-score, semakin ekstrem penyimpangan dari rata-rata historis
+                                </span>
                             </div>
                     
                             {{-- Tabel outlier --}}
@@ -696,10 +699,16 @@
                                             <th class="px-3 py-2 text-left font-semibold" style="color:#9a3412;">Lokasi</th>
                                             <th class="px-3 py-2 text-center font-semibold" style="color:#9a3412;">Periode</th>
                                             <th class="px-3 py-2 text-right font-semibold" style="color:#9a3412;">Nilai</th>
-                                            <th class="px-3 py-2 text-right font-semibold" style="color:#9a3412;">Median Baris</th>
-                                            <th class="px-3 py-2 text-right font-semibold" style="color:#9a3412;">% dari Median</th>
+                                            <th class="px-3 py-2 text-right font-semibold" style="color:#9a3412;">
+                                                Mean Histori DB
+                                                <span class="block font-normal text-[10px] opacity-70">(Batas ±3σ)</span>
+                                            </th>
+                                            <th class="px-3 py-2 text-right font-semibold" style="color:#9a3412;">% dari Mean</th>
                                             <th class="px-3 py-2 text-center font-semibold" style="color:#9a3412;">Level</th>
-                                            <th class="px-3 py-2 text-center font-semibold" style="color:#9a3412;">|MZ Score|</th>
+                                            <th class="px-3 py-2 text-center font-semibold" style="color:#9a3412;">
+                                                Z-score
+                                                <span class="block font-normal text-[10px] opacity-70">(z = |x−μ|/σ)</span>
+                                            </th>
                                             <th class="px-3 py-2 text-center font-semibold" style="color:#9a3412;">
                                                 <input type="checkbox" id="checkAllInclude"
                                                     class="rounded border-orange-300 text-orange-500 focus:ring-orange-400"
@@ -1769,35 +1778,34 @@
         if (!isOpen) renderRows(type);
     }
 
-    // Severity berdasarkan nilai MZ
-            function getSeverityFromMZ(mz) {
-                if (mz > 10)  return 'critical';
-                if (mz > 6)   return 'high';
-                if (mz > 3.5) return 'medium';
-                return 'low';
+    // Severity berdasarkan standard z-score (konsisten dengan DB/createAnomaliesForPendingKeys)
+            function getSeverityFromZ(z) {
+                if (z >= 10) return 'critical';
+                if (z >= 6)  return 'high';
+                if (z >= 3)  return 'medium';
+                return 'low'; // tidak akan muncul di tabel (sudah difilter z > 3)
             }
 
-            function getLevelBadge(mz) {
-                const absMz = Math.abs(parseFloat(mz));
-                if (absMz > 20) return {
+            // Alias agar tidak perlu ubah pemanggil lain (backward compat)
+            function getSeverityFromMZ(mz) { return getSeverityFromZ(mz); }
+ 
+            function getLevelBadge(z) {
+                const absZ = Math.abs(parseFloat(z));
+                if (absZ >= 10) return {
                     label: 'Critical',
                     style: 'background:#fdf4ff; color:#86198f; border:1px solid #e879f9;',
                     dot:   'background:#a21caf;'
                 };
-                if (absMz > 10) return {
+                if (absZ >= 6) return {
                     label: 'High',
                     style: 'background:#fef2f2; color:#b91c1c; border:1px solid #f87171;',
                     dot:   'background:#dc2626;'
                 };
-                if (absMz > 6) return {
+                // z 3–6 → Medium (satu-satunya level yang mungkin selain di atas)
+                return {
                     label: 'Medium',
                     style: 'background:#fff7ed; color:#9a3412; border:1px solid #fb923c;',
                     dot:   'background:#ea580c;'
-                };
-                return {
-                    label: 'Low',
-                    style: 'background:#fefce8; color:#854d0e; border:1px solid #fde047;',
-                    dot:   'background:#ca8a04;'
                 };
             }
 
@@ -2022,45 +2030,96 @@
 
         } else if (type === 'out') {
             document.getElementById('outTableBody').innerHTML = rows.map((rec, i) => {
-                const info   = rec.outlier_info;
-                const mz     = info ? Math.abs(info.modified_zscore).toFixed(2) : '-';
-                const median = info ? formatNum(info.median_row) : '-';
-                const pct    = info ? (info.pct_from_median !== null
-                    ? (info.pct_from_median >= 0 ? '+' : '') + info.pct_from_median.toFixed(1) + '%' : '—') : '-';
-                const level  = getLevelBadge(mz);
-                const dir    = info?.direction ?? 'high';
-                const key    = `${rec.metadata_id}_${rec.location_id}_${rec.time_id}_${rec.rujukan_id}`;
-                const rowBg  = i % 2 === 0 ? '#ffffff' : '#fff7ed';
-                const severity = info ? getSeverityFromMZ(Math.abs(info.modified_zscore)) : 'medium';
-                const mzStyle = { low:'background:#fef9c3;color:#a16207;', medium:'background:#ffedd5;color:#c2410c;', high:'background:#fee2e2;color:#b91c1c;', critical:'background:#fecaca;color:#991b1b;' }[severity];
+                const info = rec.outlier_info;
+ 
+                // ── Nilai yang ditampilkan — sekarang dari algoritma DB ──────────────
+                // info.z_score    = standard z-score (identik dengan percentage_change di anomali DB)
+                // info.mean       = mean historis DB (identik dengan previous_value di anomali DB)
+                // info.pct_from_mean = % deviasi dari mean
+                // info.lower/upper   = batas ±3σ
+                // info.n             = jumlah data historis
+ 
+                const zScore = info ? Math.abs(parseFloat(info.z_score ?? 0)).toFixed(2) : '-';
+                const mean   = info ? formatNum(info.mean) : '-';
+ 
+                // Batas ±3σ untuk tooltip
+                const batasTooltip = info && info.lower != null
+                    ? `Batas ±3σ: ${formatNum(info.lower)} – ${formatNum(info.upper)} (n=${info.n ?? '?'})`
+                    : '';
+ 
+                // % dari mean
+                const pct = info
+                    ? (info.pct_from_mean !== null && info.pct_from_mean !== undefined
+                        ? (info.pct_from_mean >= 0 ? '+' : '')
+                          + parseFloat(info.pct_from_mean).toFixed(1) + '%'
+                        : '—')
+                    : '-';
+ 
+                const level   = getLevelBadge(zScore);
+                const dir     = info?.direction ?? 'high';
+                const key     = `${rec.metadata_id}_${rec.location_id}_${rec.time_id}_${rec.rujukan_id}`;
+                const rowBg   = i % 2 === 0 ? '#ffffff' : '#fff7ed';
+                const severity = info ? getSeverityFromZ(Math.abs(parseFloat(info.z_score ?? 0))) : 'medium';
+ 
+                // Warna badge z-score
+                const zStyle = {
+                    low:      'background:#fef9c3;color:#a16207;',
+                    medium:   'background:#ffedd5;color:#c2410c;',
+                    high:     'background:#fee2e2;color:#b91c1c;',
+                    critical: 'background:#fecaca;color:#991b1b;',
+                }[severity];
+ 
+                // Tampilan khusus jika stddev = 0 (no_stddev flag)
+                const isNoStddev = info?.no_stddev === true;
+                const zDisplay   = isNoStddev
+                    ? `<span title="Semua data historis identik, z tidak dapat dihitung"
+                            style="background:#f3f4f6;color:#6b7280;"
+                            class="inline-block px-2 py-0.5 rounded-full text-xs">—*</span>`
+                    : `<span class="inline-block px-2 py-0.5 rounded-full text-xs font-bold"
+                            style="${zStyle}">${esc(zScore)}</span>`;
+ 
                 return `
                 <tr style="background:${rowBg};" class="outlier-row">
-                    <td class="px-3 py-2.5"><p class="font-medium text-gray-800">${esc(rec.nama_metadata ?? String(rec.metadata_id))}</p></td>
+                    <td class="px-3 py-2.5">
+                        <p class="font-medium text-gray-800">${esc(rec.nama_metadata ?? String(rec.metadata_id))}</p>
+                    </td>
                     <td class="px-3 py-2.5 text-gray-500">${esc(rec.nama_wilayah ?? String(rec.location_id))}</td>
                     <td class="px-3 py-2.5 text-center font-mono text-gray-700">${esc(rec.period_label)}</td>
-                    <td class="px-3 py-2.5 text-right font-mono font-semibold text-gray-900">${formatNum(rec.number_value)}</td>
-                    <td class="px-3 py-2.5 text-right font-mono text-gray-500">${median}</td>
-                    <td class="px-3 py-2.5 text-right font-mono font-semibold ${dir === 'high' ? 'text-red-600' : 'text-blue-600'}">${pct}</td>
-                    <td class="px-3 py-2.5 text-center">
-                        <span class="inline-flex items-center gap-1 text-xs px-2 py-0.5 rounded-full" style="${level.style}">
-                            <span class="w-1.5 h-1.5 rounded-full shrink-0" style="${level.dot}"></span>${level.label}
-                        </span></td>
-                    <td class="px-3 py-2.5 text-center">
-                        <span class="inline-block px-2 py-0.5 rounded-full text-xs font-bold" style="${mzStyle}">${mz}</span>
+                    <td class="px-3 py-2.5 text-right font-mono font-semibold text-gray-900">
+                        ${formatNum(rec.number_value)}
                     </td>
+                    <td class="px-3 py-2.5 text-right font-mono text-gray-500" title="${esc(batasTooltip)}">
+                        <span>${mean}</span>
+                        ${batasTooltip
+                            ? `<span class="block text-[10px] text-gray-400 font-normal">
+                                [${formatNum(info.lower)} – ${formatNum(info.upper)}]
+                               </span>
+                               <span class="block text-[10px] text-gray-300">n=${info.n ?? '?'}</span>`
+                            : ''}
+                    </td>
+                    <td class="px-3 py-2.5 text-right font-mono font-semibold
+                               ${dir === 'high' ? 'text-red-600' : 'text-blue-600'}">${pct}</td>
                     <td class="px-3 py-2.5 text-center">
-                        <input type="checkbox" class="outlier-include rounded border-orange-300 text-orange-500 focus:ring-orange-400 cursor-pointer"
+                        <span class="inline-flex items-center gap-1 text-xs px-2 py-0.5 rounded-full"
+                              style="${level.style}">
+                            <span class="w-1.5 h-1.5 rounded-full shrink-0" style="${level.dot}"></span>
+                            ${level.label}
+                        </span>
+                    </td>
+                    <td class="px-3 py-2.5 text-center">${zDisplay}</td>
+                    <td class="px-3 py-2.5 text-center">
+                        <input type="checkbox" class="outlier-include rounded border-orange-300
+                                text-orange-500 focus:ring-orange-400 cursor-pointer"
                             data-key="${esc(key)}" checked onchange="syncOutlierRow(this)">
                     </td>
                     <td class="px-3 py-2.5 text-center">
                         <input type="checkbox" class="outlier-mark rounded border-orange-300
-                            text-orange-500 focus:ring-orange-400 cursor-pointer"
-                            data-key="${esc(key)}" checked
-                            onchange="onMarkChange(this)">
+                                text-orange-500 focus:ring-orange-400 cursor-pointer"
+                            data-key="${esc(key)}" checked onchange="onMarkChange(this)">
                     </td>
                 </tr>`;
             }).join('');
-
+ 
             restoreOutlierState();
             renderPagination('out', 'outPager');
             updateOutlierSummary();

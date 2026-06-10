@@ -30,6 +30,13 @@ class DataImport
      * Semakin kecil → semakin sensitif.
      * Referensi: Iglewicz & Hoaglin (1993), "How to Detect and Handle Outliers"
      */
+    // Threshold standard z-score untuk deteksi outlier vs DB historis.
+    // Konsisten dengan AnomalyDetectionService::checkUnreasonableValue() yang pakai z > 3.
+    private const DB_ZSCORE_THRESHOLD = 3.0;
+    
+    // Minimum data historis DB agar z-score bermakna (konsisten dengan enrichAnomalyContext).
+    private const DB_HISTORY_MIN_ROWS = 3;
+
     private const OUTLIER_MZSCORE_THRESHOLD      = 3.5;   // base threshold (sama)
     private const OUTLIER_COV_SCALE_FACTOR       = 0.8;   // pengali CoV ke threshold
     private const OUTLIER_MIN_COV_TO_SCALE       = 0.6;   // CoV minimum sebelum scaling aktif
@@ -75,47 +82,39 @@ class DataImport
     public function preview(string $filePath): array
     {
         [$periodCols, $dataRows, $rujukanColIndex] = $this->readExcel($filePath);
-
+    
         $this->preloadMetadataCache($dataRows);
         $this->buildExistingSet($periodCols);
         $this->preloadRujukanCache($dataRows, $rujukanColIndex);
-
-        // ── Deteksi outlier per baris sebelum parse record ──
-        $outlierMap = $this->detectOutliersInRows($dataRows, $periodCols);
-
-        $previewRows     = [];
-        $errors          = [];
-        $duplicates      = [];
+    
+        // ── Parse semua baris dulu ─────────────────────────────────────────────
+        $previewRows      = [];
+        $errors           = [];
+        $duplicates       = [];
         $invalid_metadata = [];
-        $outliers        = [];   // baris dengan outlier untuk ditampilkan di UI
-
+    
         foreach ($dataRows as $rowNum => $row) {
             $result = $this->parseRow(
                 $row, $periodCols, $rowNum,
                 dryRun: true,
                 rujukanColIndex: $rujukanColIndex
             );
-
-            // Tandai setiap record dengan info outlier
-            $rowOutliers = $outlierMap[$rowNum] ?? [];
-
+    
             foreach ($result['records'] as $rec) {
-                $periodLabel = $rec['period_label'];
-                $isOutlier   = isset($rowOutliers[$periodLabel]);
-
-                $rec['is_outlier']    = $isOutlier;
-                $rec['outlier_info']  = $isOutlier ? $rowOutliers[$periodLabel] : null;
-                $rec['include']       = true; // default: ikut sertakan
-
+                // Default: belum diperiksa outlier
+                $rec['is_outlier']   = false;
+                $rec['outlier_info'] = null;
+                $rec['include']      = true;
+    
                 $key = "{$rec['metadata_id']}_{$rec['location_id']}_{$rec['time_id']}_{$rec['rujukan_id']}";
-
+    
                 if (isset($this->existingSet[$key])) {
                     $duplicates[] = array_merge($rec, ['row' => $rowNum]);
                 } else {
                     $previewRows[] = array_merge($rec, ['row' => $rowNum]);
                 }
             }
-
+    
             foreach ($result['errors'] as $err) {
                 $errors[] = array_merge($err, ['row' => $rowNum]);
             }
@@ -123,14 +122,17 @@ class DataImport
                 $invalid_metadata[] = array_merge($inv, ['row' => $rowNum]);
             }
         }
-
-        // ── Kumpulkan semua record outlier dalam format khusus untuk UI ──
-        foreach ($previewRows as $rec) {
-            if ($rec['is_outlier']) {
-                $outliers[] = $rec;
-            }
-        }
-
+    
+        // ── Deteksi outlier berbasis DB (batch per metadata+location) ──────────
+        // Ini menghasilkan nilai yang SAMA PERSIS dengan yang akan disimpan
+        // di tabel anomalies oleh createAnomaliesForPendingKeys().
+        $previewRows = $this->detectOutliersViaDb($previewRows);
+        $previewRows = $this->detectOutliersIntraSeries($previewRows);
+    
+        // ── Kumpulkan outlier untuk return value ───────────────────────────────
+        $outliers = array_filter($previewRows, fn($r) => $r['is_outlier']);
+        $outliers = array_values($outliers);
+    
         // Deduplikasi invalid_metadata
         $seenMetaIds   = [];
         $uniqueInvalid = [];
@@ -141,23 +143,84 @@ class DataImport
                 $uniqueInvalid[]   = $inv;
             }
         }
-
+    
         return [
             'success'           => true,
             'rows'              => $previewRows,
             'errors'            => $errors,
             'duplicates'        => $duplicates,
             'invalid_metadata'  => $uniqueInvalid,
-            'outliers'          => $outliers,             // ← BARU
+            'outliers'          => $outliers,
             'total_rows'        => count($dataRows),
             'valid'             => count($previewRows),
             'duplicate'         => count($duplicates),
             'error'             => count($errors),
-            'outlier_count'     => count($outliers),      // ← BARU
+            'outlier_count'     => count($outliers),
             'invalid_meta_count'=> count($uniqueInvalid),
             'period_type'       => $this->detectPeriodType($periodCols[0] ?? ''),
             'period_cols'       => $periodCols,
         ];
+    }
+
+    private function detectOutliersIntraSeries(array $previewRows): array
+    {
+        // Group semua nilai per metadata+location — susun sebagai "baris lintas periode"
+        $seriesMap = [];
+        foreach ($previewRows as $idx => $rec) {
+            if ($rec['is_outlier']) continue;
+            $key = "{$rec['metadata_id']}_{$rec['location_id']}";
+            $seriesMap[$key][] = ['idx' => $idx, 'value' => (float) $rec['number_value']];
+        }
+
+        foreach ($seriesMap as $members) {
+            if (count($members) < 3) continue;
+
+            $values  = array_column($members, 'value');
+            $median  = $this->median($values);
+            $mzScores = $this->calculateModifiedZScores($values);
+
+            foreach ($members as $i => $m) {
+                $mz = abs($mzScores[$i]);
+                if ($mz <= self::OUTLIER_MZSCORE_THRESHOLD) continue;
+
+                // Minimum deviation guard (sama dengan detectOutliersInRows)
+                $absDeviation = abs($m['value'] - $median);
+                if (abs($median) < self::OUTLIER_NEAR_ZERO_THRESHOLD) {
+                    if ($absDeviation < self::OUTLIER_NEAR_ZERO_MIN_ABS) continue;
+                } else {
+                    if (($absDeviation / abs($median)) < self::OUTLIER_MIN_PCT_FROM_MEDIAN) continue;
+                }
+
+                $pctFromMean = $median > 0
+                    ? round((($m['value'] - $median) / abs($median)) * 100, 2)
+                    : null;
+
+                $n = count($values);
+                $mean = array_sum($values) / $n;
+                $stddev = $this->stdDev($values, $mean);
+
+                $previewRows[$m['idx']]['is_outlier']  = true;
+                $previewRows[$m['idx']]['outlier_info'] = [
+                    'mean'          => round($median, 4), // gunakan median sebagai "mean" untuk konsistensi UI
+                    'stddev'        => round($stddev, 4),
+                    'z_score'       => round($mz, 4),     // MZ-score ditampilkan sebagai z
+                    'lower'         => round($median - 3 * $stddev, 4),
+                    'upper'         => round($median + 3 * $stddev, 4),
+                    'n'             => $n,
+                    'direction'     => $m['value'] > $median ? 'high' : 'low',
+                    'pct_from_mean' => $pctFromMean,
+                    'severity'      => match(true) {
+                        $mz >= 10 => 'critical',
+                        $mz >= 6  => 'high',
+                        default   => 'medium',
+                    },
+                    'no_stddev'     => false,
+                    'source'        => 'intra_series',
+                ];
+            }
+        }
+
+        return $previewRows;
     }
 
     // ══════════════════════════════════════════════════════════
@@ -268,6 +331,157 @@ class DataImport
             'anomalies_created' => $this->anomaliesCreated,
             'message'      => $this->buildSummaryMessage(),
         ];
+    }
+
+    private function detectOutliersViaDb(array $previewRows): array
+    {
+        if (empty($previewRows)) return $previewRows;
+    
+        // ── Kumpulkan kombinasi unik (metadata_id, location_id) ───────────────
+        // Sekaligus kumpulkan semua time_id yang akan diimport per kombinasi,
+        // agar bisa di-exclude dari histori (data baru tidak boleh jadi histori diri sendiri).
+        $groups = [];
+        foreach ($previewRows as $idx => $rec) {
+            $mid = $rec['metadata_id'];
+            $lid = $rec['location_id'];
+            $key = "{$mid}-{$lid}";
+    
+            if (!isset($groups[$key])) {
+                $groups[$key] = [
+                    'metadata_id' => $mid,
+                    'location_id' => $lid,
+                    'new_time_ids'=> [],   // time_id yang akan diimport — exclude dari histori
+                    'indices'     => [],   // index di $previewRows untuk kombinasi ini
+                ];
+            }
+            $groups[$key]['new_time_ids'][] = $rec['time_id'];
+            $groups[$key]['indices'][]      = $idx;
+        }
+    
+        // ── Batch: hitung stats DB per kombinasi ──────────────────────────────
+        $statsPerGroup = [];
+        foreach ($groups as $key => $group) {
+            $history = DB::table('data')
+                ->where('metadata_id', $group['metadata_id'])
+                ->where('location_id', $group['location_id'])
+                // Exclude time_id yang sedang diimport agar tidak muncul sebagai histori diri sendiri.
+                // Catatan: data belum ada di DB saat preview, jadi sebenarnya tidak perlu,
+                // tapi ini jaga-jaga untuk kasus re-preview setelah partial import.
+                ->whereNotIn('time_id', array_unique($group['new_time_ids']))
+                // Hanya ambil data yang sudah approved/available sebagai baseline bersih
+                ->where('status', \App\Models\Data::STATUS_AVAILABLE)
+                ->whereNotNull('number_value')
+                ->orderBy('time_id', 'desc')
+                ->limit(20)
+                ->pluck('number_value')
+                ->map(fn($v) => (float) $v)
+                ->toArray();
+    
+            $n = count($history);
+    
+            if ($n < self::DB_HISTORY_MIN_ROWS) {
+                // Tidak cukup data historis — tidak bisa hitung z-score bermakna.
+                // Tandai sebagai null agar UI menampilkan info yang jujur.
+                $statsPerGroup[$key] = null;
+                continue;
+            }
+    
+            $mean   = array_sum($history) / $n;
+            $var    = array_sum(array_map(fn($v) => ($v - $mean) ** 2, $history)) / $n;
+            $stddev = sqrt($var);
+    
+            $statsPerGroup[$key] = [
+                'mean'   => round($mean, 4),
+                'stddev' => round($stddev, 4),
+                'lower'  => round($mean - 3 * $stddev, 4),
+                'upper'  => round($mean + 3 * $stddev, 4),
+                'n'      => $n,
+            ];
+        }
+    
+        // ── Tandai outlier per record ─────────────────────────────────────────
+        foreach ($previewRows as $idx => &$rec) {
+            $key   = "{$rec['metadata_id']}-{$rec['location_id']}";
+            $stats = $statsPerGroup[$key] ?? null;
+    
+            if ($stats === null) {
+                // Tidak ada histori cukup — tidak bisa menentukan outlier
+                $rec['is_outlier']   = false;
+                $rec['outlier_info'] = null;
+                continue;
+            }
+    
+            $current = (float) $rec['number_value'];
+            $mean    = (float) $stats['mean'];
+            $stddev  = (float) $stats['stddev'];
+    
+            // Jika stddev = 0 (semua data historis identik), gunakan deviation absolut
+            if ($stddev < 1e-10) {
+                if (abs($current - $mean) < 1e-10) {
+                    // Nilai sama persis dengan semua histori → bukan outlier
+                    $rec['is_outlier']   = false;
+                    $rec['outlier_info'] = null;
+                } else {
+                    // Nilai beda dari histori yang semua identik → flag sebagai outlier
+                    $pctFromMean = $mean > 0
+                        ? round((($current - $mean) / abs($mean)) * 100, 2)
+                        : null;
+                    $rec['is_outlier']   = true;
+                    $rec['outlier_info'] = [
+                        'mean'         => $mean,
+                        'stddev'       => 0.0,
+                        'z_score'      => null,   // tidak bisa hitung
+                        'lower'        => $mean,
+                        'upper'        => $mean,
+                        'n'            => $stats['n'],
+                        'direction'    => $current > $mean ? 'high' : 'low',
+                        'pct_from_mean'=> $pctFromMean,
+                        'severity'     => 'medium',
+                        'no_stddev'    => true,   // flag untuk UI: tampilkan pesan khusus
+                    ];
+                }
+                continue;
+            }
+    
+            // Hitung standard z-score — IDENTIK dengan createAnomaliesForPendingKeys()
+            $zScore = abs(($current - $mean) / $stddev);
+    
+            if ($zScore <= self::DB_ZSCORE_THRESHOLD) {
+                // Di bawah threshold → bukan outlier
+                $rec['is_outlier']   = false;
+                $rec['outlier_info'] = null;
+                continue;
+            }
+    
+            // Hitung severity — IDENTIK dengan createAnomaliesForPendingKeys()
+            $severity = match(true) {
+                $zScore >= 10 => 'critical',
+                $zScore >= 6  => 'high',
+                $zScore >= 3  => 'medium',
+                default       => 'low',
+            };
+    
+            $pctFromMean = $mean > 0
+                ? round((($current - $mean) / abs($mean)) * 100, 2)
+                : null;
+    
+            $rec['is_outlier']   = true;
+            $rec['outlier_info'] = [
+                'mean'         => $mean,                     // = previous_value di anomali DB
+                'stddev'       => round($stddev, 4),
+                'z_score'      => round($zScore, 4),         // = percentage_change di anomali DB
+                'lower'        => $stats['lower'],
+                'upper'        => $stats['upper'],
+                'n'            => $stats['n'],
+                'direction'    => $current > $mean ? 'high' : 'low',
+                'pct_from_mean'=> $pctFromMean,
+                'severity'     => $severity,
+                'no_stddev'    => false,
+            ];
+        }
+        unset($rec);
+    
+        return $previewRows;
     }
 
     private function createAnomaliesForPendingKeys(string $insertedAt): void

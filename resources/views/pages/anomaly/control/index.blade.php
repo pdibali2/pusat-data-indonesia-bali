@@ -10,7 +10,7 @@
             <p class="text-xs text-gray-400 mt-0.5">Review dan kelola anomali yang terdeteksi sistem</p>
         </div>
         <div class="flex items-center gap-2">
-            <button type="button" onclick="openScanModal()"
+            {{-- <button type="button" onclick="openScanModal()"
                     class="flex items-center gap-1.5 text-xs px-3 py-2 rounded-lg btn-primary">
                 <i class="fas fa-chart-bar"></i> Scan Data
             </button>
@@ -18,7 +18,7 @@
                class="flex items-center gap-1.5 text-xs px-3 py-2 rounded-lg border border-gray-200
                       text-gray-600 hover:bg-gray-50 transition-colors">
                 <i class="fas fa-sliders-h"></i> Atur Threshold
-            </a>
+            </a> --}}
             <a href="{{ route('data.approval') }}"
                class="flex items-center gap-1.5 text-xs px-3 py-2 rounded-lg border border-gray-200
                       text-gray-600 hover:bg-gray-50 transition-colors">

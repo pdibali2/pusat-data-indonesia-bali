@@ -26,19 +26,32 @@ class RegisterController extends Controller
             return redirect('/data');
         }
 
-        // ── Rate Limiting per IP ──────────────────────────────────
+        // ── Rate Limiting per IP ─────────────────────────────
         $key = 'register:' . $request->ip();
 
-        if (RateLimiter::tooManyAttempts($key, 5)) {
+        // maksimal 10 percobaan
+        if (RateLimiter::tooManyAttempts($key, 10)) {
             $seconds = RateLimiter::availableIn($key);
+
+            // ubah detik → menit + detik
+            $minutes = floor($seconds / 60);
+            $remainingSeconds = $seconds % 60;
+
+            $message = $minutes > 0
+                ? "Terlalu banyak percobaan pendaftaran. Coba lagi dalam {$minutes} menit {$remainingSeconds} detik."
+                : "Terlalu banyak percobaan pendaftaran. Coba lagi dalam {$remainingSeconds} detik.";
+
             return back()
-                ->withErrors(['email' => "Terlalu banyak percobaan pendaftaran. Coba lagi dalam {$seconds} detik."])
+                ->withErrors([
+                    'email' => $message
+                ])
                 ->withInput();
         }
 
-        RateLimiter::hit($key, 3600); // 5 percobaan per jam
+        // reset dalam 10 menit (600 detik)
+        RateLimiter::hit($key, 600);
 
-        // ── Validasi ──────────────────────────────────────────────
+        // ── Validasi ─────────────────────────────────────────
         $request->validate([
             'name'           => 'required|string|max:200',
             'username'       => 'required|string|max:50|unique:user,username',
@@ -64,17 +77,21 @@ class RegisterController extends Controller
             'username'      => $request->username,
             'email'         => $request->email,
             'password'      => Hash::make($request->password),
-            'group_id'      => 3, // Customer
+            'group_id'      => 3,
             'block'         => 0,
             'registerdate'  => now(),
             'lastvisitdate' => now(),
-            'activation'    => $token, // token verifikasi, bukan 'activated'
+            'activation'    => $token,
         ]);
 
         Mail::to($user->email)->send(new VerifikasiEmail($user, $token));
 
-        return redirect()->route('login')
-            ->with('success', 'Registrasi berhasil! Silakan cek email untuk verifikasi akun.');
+        return redirect()
+            ->route('login')
+            ->with(
+                'success',
+                'Registrasi berhasil! Silakan cek email untuk verifikasi akun.'
+            );
     }
 
     public function verify(Request $request, string $token)
