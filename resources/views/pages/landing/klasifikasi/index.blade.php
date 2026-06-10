@@ -68,7 +68,7 @@
             </div>
 
             <div id="klasifikasi-grid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
-                @foreach($klasifikasiList as $item)
+                @forelse($klasifikasiList as $item)
                     <a
                         href="{{ route('klasifikasi.show', $item['slug']) }}"
                         data-name="{{ strtolower($item['nama']) }}"
@@ -107,7 +107,11 @@
                             </svg>
                         </div>
                     </a>
-                @endforeach
+                    @empty
+                    <div class="col-span-3 text-center py-20">
+                        <p class="text-gray-300 text-xl font-bold">Klasifikasi tidak tersedia.</p>
+                    </div>
+                @endforelse
             </div>
 
             {{-- Empty state --}}

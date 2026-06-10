@@ -148,7 +148,10 @@ class LandingController extends Controller
 
     public function klasifikasiShow(string $klasifikasi)
     {
-        $nama = collect($this->allKlasifikasi)
+        $nama = Klasifikasi::orderBy('nama_klasifikasi')
+            ->pluck('nama_klasifikasi')
+            ->map(fn($k) => trim((string) $k))
+            ->filter(fn($k) => $k !== '' && $k !== '-' && Str::slug($k) !== '')
             ->first(fn($k) => Str::slug($k) === $klasifikasi);
 
         abort_if(is_null($nama), 404);
@@ -306,7 +309,7 @@ class LandingController extends Controller
     
         // ── 3. Ambil data dalam rentang ──────────────────────────────────────
         //    Join ke tabel `time` untuk filter tahun
-        $rawData = Data::with(['time', 'location'])
+        $rawData = Data::with(['time', 'location', 'rujukan.produsen'])
             ->where('metadata_id', $metadataId)
             ->where('status', 1)
             ->where('location_id', 0)
@@ -366,6 +369,9 @@ class LandingController extends Controller
         // Wrap ke Collection biar bisa pakai ->pluck(), ->max(), dll. di blade
         $tableRows = collect($tableRows);
     
+        $firstData = $rawData->first();
+        $rujukan   = $firstData?->rujukan;
+
         return view('pages.landing.data_show', compact(
             'metadata',
             'tableRows',
@@ -373,6 +379,7 @@ class LandingController extends Controller
             'chartValues',
             'yearStart',
             'yearEnd',
+            'rujukan',
         ));
     }
 }

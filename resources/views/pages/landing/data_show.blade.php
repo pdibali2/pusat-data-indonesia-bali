@@ -219,7 +219,7 @@
                         @endif
                         <span class="inline-flex items-center gap-1.5 text-xs text-slate-400 bg-white/5 border border-white/10 px-3 py-1.5 rounded-sm">
                             <svg class="w-3 h-3 opacity-60" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"/></svg>
-                            {{ $metadata->produsen?->nama_produsen ?? 'Sumber tidak tersedia' }}
+                            {{ $rujukan?->nama_rujukan ?? $metadata->produsen?->nama_produsen ?? 'Sumber tidak tersedia' }}
                         </span>
                     </div>
                 </div>
@@ -286,7 +286,7 @@
                     </div>
                     <span class="inline-flex items-center gap-1.5 text-xs text-slate-400 border border-slate-200 bg-white px-3 py-1 rounded-sm">
                         <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"/></svg>
-                        Sumber: {{ $metadata->produsen?->nama_produsen ?? 'Tidak diketahui' }}
+                        Sumber: {{ $rujukan?->produsen?->nama_produsen ?? $metadata->produsen?->nama_produsen ?? 'Tidak diketahui' }}
                     </span>
                 </div>
 
@@ -395,8 +395,11 @@
                 </div>
 
                 <div class="info-card bg-white border border-slate-200 rounded p-5 shadow-sm md:col-span-2">
-                    <div class="text-xs font-800 uppercase tracking-widest text-slate-400 mb-2">Produsen / Sumber Data</div>
-                    <div class="text-sm text-slate-700">{{ $metadata->produsen?->nama_produsen ?? '—' }}</div>
+                    <div class="text-xs font-800 uppercase tracking-widest text-slate-400 mb-2">Sumber Data</div>
+                    <div class="text-sm text-slate-700">
+                        {{ $rujukan?->nama_rujukan ?? '—' }}
+                        ({{ $rujukan?->produsen?->nama_produsen ?? $metadata->produsen?->nama_produsen ?? '—' }})
+                    </div>
                 </div>
 
             </div>
