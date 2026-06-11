@@ -12,7 +12,7 @@
             <p class="text-sm text-gray-500 mt-0.5">Daftar kategori klasifikasi metadata</p>
         </div>
         <a href="{{ route('admin.klasifikasi.create') }}"
-           class="btn-primary">
+           class="btn-primary text-xs">
             <i class="fas fa-plus text-xs"></i> Tambah Klasifikasi
         </a>
     </div>
@@ -76,7 +76,7 @@
                         <th class="px-5 py-3 text-left font-medium">Nama Klasifikasi</th>
                         <th class="px-5 py-3 text-left font-medium">Status</th>
                         <th class="px-5 py-3 text-left font-medium">Dibuat</th>
-                        <th class="px-5 py-3 text-right font-medium">Aksi</th>
+                        <th class="px-5 py-3 text-center font-medium">Aksi</th>
                     </tr>
                 </thead>
                 <tbody class="divide-y divide-gray-100">
@@ -105,27 +105,27 @@
                         <td class="px-5 py-3.5">
                             <div class="flex items-center justify-end gap-1">
                                 <a href="{{ route('admin.klasifikasi.show', $item) }}"
-                                   class="p-1.5 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition"
+                                   class="p-1.5 rounded-md bg-blue-500/10 text-blue-400 hover:bg-blue-500/20 transition"
                                    title="Detail">
                                     <i class="fas fa-eye text-xs"></i>
                                 </a>
                                 <a href="{{ route('admin.klasifikasi.edit', $item) }}"
-                                   class="p-1.5 text-gray-400 hover:text-yellow-600 hover:bg-yellow-50 rounded-lg transition"
+                                   class="p-1.5 rounded-md bg-green-500/10 text-green-400 hover:bg-green-500/20 transition"
                                    title="Edit">
-                                    <i class="fas fa-pen text-xs"></i>
+                                    <i class="fas fa-edit text-xs"></i>
                                 </a>
                                 <form action="{{ route('admin.klasifikasi.toggle_status', $item) }}" method="POST" style="display: inline;">
                                     @csrf
                                     @if ($item->status === 1)
                                         <button type="submit"
-                                                class="p-1.5 text-gray-400 hover:text-yellow-600 hover:bg-yellow-50 rounded-lg transition"
+                                                class="p-1.5 rounded-md bg-yellow-500/10 text-yellow-400 hover:bg-yellow-500/20 transition"
                                                 title="Nonaktifkan"
                                                 onclick="return confirm('Yakin ingin menonaktifkan klasifikasi {{ addslashes($item->nama_klasifikasi) }}?')">
                                             <i class="fas fa-ban text-xs"></i>
                                         </button>
                                     @else
                                         <button type="submit"
-                                                class="p-1.5 text-gray-400 hover:text-emerald-600 hover:bg-emerald-50 rounded-lg transition"
+                                                class="p-1.5 rounded-md bg-emerald-500/10 text-emerald-400 hover:bg-emerald-500/20 transition"
                                                 title="Aktifkan">
                                             <i class="fas fa-check text-xs"></i>
                                         </button>

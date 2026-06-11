@@ -168,19 +168,19 @@
                         <td class="px-5 py-3.5">
                             <div class="flex items-center justify-end gap-1">
                                 <a href="{{ route('admin.layanan.show', $item) }}"
-                                   class="p-1.5 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition" title="Detail">
+                                   class="p-1.5 rounded-md bg-blue-500/10 text-blue-400 hover:bg-blue-500/20 transition" title="Detail">
                                     <i class="fas fa-eye text-xs"></i>
                                 </a>
                                 <a href="{{ route('admin.layanan.edit', $item) }}"
-                                   class="p-1.5 text-gray-400 hover:text-yellow-600 hover:bg-yellow-50 rounded-lg transition" title="Edit">
-                                    <i class="fas fa-pen text-xs"></i>
+                                   class="p-1.5 rounded-md bg-green-500/10 text-green-400 hover:bg-green-500/20 transition" title="Edit">
+                                    <i class="fas fa-edit text-xs"></i>
                                 </a>
 
                                 {{-- Status Quick Actions --}}
                                 @if($item->status !== 'publish')
                                 <form action="{{ route('admin.layanan.publish', $item) }}" method="POST" class="inline">
                                     @csrf
-                                    <button type="submit" class="p-1.5 text-gray-400 hover:text-green-600 hover:bg-green-50 rounded-lg transition" title="Publish">
+                                    <button type="submit" class="p-1.5 rounded-md bg-emerald-500/10 text-emerald-400 hover:bg-emerald-500/20 transition" title="Publish">
                                         <i class="fas fa-check text-xs"></i>
                                     </button>
                                 </form>
@@ -188,7 +188,7 @@
                                 @if($item->status !== 'takedown')
                                 <form action="{{ route('admin.layanan.takedown', $item) }}" method="POST" class="inline">
                                     @csrf
-                                    <button type="submit" class="p-1.5 text-gray-400 hover:text-orange-600 hover:bg-orange-50 rounded-lg transition" title="Takedown">
+                                    <button type="submit" class="p-1.5 rounded-md bg-orange-500/10 text-orange-400 hover:bg-orange-500/20 transition" title="Takedown">
                                         <i class="fas fa-eye-slash text-xs"></i>
                                     </button>
                                 </form>
@@ -196,7 +196,7 @@
                                 @if($item->status !== 'pending')
                                 <form action="{{ route('admin.layanan.draft', $item) }}" method="POST" class="inline">
                                     @csrf
-                                    <button type="submit" class="p-1.5 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg transition" title="Draft">
+                                    <button type="submit" class="p-1.5 rounded-md bg-indigo-500/10 text-indigo-400 hover:bg-indigo-500/20 transition" title="Draft">
                                         <i class="fas fa-file-alt text-xs"></i>
                                     </button>
                                 </form>
@@ -204,7 +204,7 @@
 
                                 <button type="button"
                                         onclick="confirmDelete('{{ route('admin.layanan.destroy', $item) }}', '{{ $item->nama_layanan }}')"
-                                        class="p-1.5 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition" title="Hapus">
+                                        class="p-1.5 rounded-md bg-red-500/10 text-red-400 hover:bg-red-500/20 transition" title="Hapus">
                                     <i class="fas fa-trash text-xs"></i>
                                 </button>
                             </div>

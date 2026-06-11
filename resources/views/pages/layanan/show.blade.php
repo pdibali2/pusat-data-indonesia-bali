@@ -151,7 +151,7 @@
                     @if($layanan->status !== 'pending')
                     <form action="{{ route('admin.layanan.draft', $layanan) }}" method="POST">
                         @csrf
-                        <button type="submit" class="w-full flex items-center gap-2 px-4 py-2.5 bg-gray-100 hover:bg-gray-200 text-gray-700 text-sm font-medium rounded-lg transition">
+                        <button type="submit" class="w-full flex items-center gap-2 px-4 py-2.5 bg-indigo-100 hover:bg-indigo-200 text-indigo-700 text-sm font-medium rounded-lg transition">
                             <i class="fas fa-file-alt text-xs"></i> Jadikan Draft
                         </button>
                     </form>
