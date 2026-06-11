@@ -17,8 +17,9 @@
             @forelse($produkUnggulan as $i => $meta)
 
                 @php
-                    $lastYear = now()->year - 1; // Ambil data hingga tahun lalu untuk memastikan data sudah tersedia
-                    $startYear   = $lastYear - 4;
+                    $range     = $yearRangesUnggulan[$meta->metadata_id] ?? null;
+                    $startYear = $range ? (int) explode('-', $range)[0] : (now()->year - 5);
+                    $lastYear  = $range ? (int) explode('-', $range)[1] : (now()->year - 1);
 
                     
 
@@ -126,7 +127,7 @@
                             <span class="px-2 py-0.5 rounded-full bg-stikom-red/20 text-stikom-red text-xs font-semibold">
                                 {{ $meta->klasifikasi->nama_klasifikasi }}
                             </span>
-                            <span class="text-gray-400 text-xs">sejak {{ $meta->tahun_mulai_data }}</span>
+                            <span class="text-gray-400 text-xs">sejak {{ isset($yearRangesUnggulan[$meta->metadata_id]) ? explode('-', $yearRangesUnggulan[$meta->metadata_id])[0] : ($meta->tahun_mulai_data ?? '—') }}</span>
                         </div>
 
                         @php

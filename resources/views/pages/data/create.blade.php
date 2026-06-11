@@ -700,8 +700,7 @@
                                             <th class="px-3 py-2 text-center font-semibold" style="color:#9a3412;">Periode</th>
                                             <th class="px-3 py-2 text-right font-semibold" style="color:#9a3412;">Nilai</th>
                                             <th class="px-3 py-2 text-right font-semibold" style="color:#9a3412;">
-                                                Mean Histori DB
-                                                <span class="block font-normal text-[10px] opacity-70">(Batas ±3σ)</span>
+                                                Nilai Referensi
                                             </th>
                                             <th class="px-3 py-2 text-right font-semibold" style="color:#9a3412;">% dari Mean</th>
                                             <th class="px-3 py-2 text-center font-semibold" style="color:#9a3412;">Level</th>
@@ -2042,8 +2041,10 @@
                 const zScore = info ? Math.abs(parseFloat(info.z_score ?? 0)).toFixed(2) : '-';
                 const mean   = info ? formatNum(info.mean) : '-';
  
-                // Batas ±3σ untuk tooltip
-                const batasTooltip = info && info.lower != null
+                // Untuk intra_series: lower/upper dihitung dari median ± 3*stddev
+                // Untuk source DB: pakai langsung dari info
+                const hasValidBounds = info && info.lower != null && info.source === 'db';
+                const batasTooltip = hasValidBounds
                     ? `Batas ±3σ: ${formatNum(info.lower)} – ${formatNum(info.upper)} (n=${info.n ?? '?'})`
                     : '';
  
@@ -2090,12 +2091,6 @@
                     </td>
                     <td class="px-3 py-2.5 text-right font-mono text-gray-500" title="${esc(batasTooltip)}">
                         <span>${mean}</span>
-                        ${batasTooltip
-                            ? `<span class="block text-[10px] text-gray-400 font-normal">
-                                [${formatNum(info.lower)} – ${formatNum(info.upper)}]
-                               </span>
-                               <span class="block text-[10px] text-gray-300">n=${info.n ?? '?'}</span>`
-                            : ''}
                     </td>
                     <td class="px-3 py-2.5 text-right font-mono font-semibold
                                ${dir === 'high' ? 'text-red-600' : 'text-blue-600'}">${pct}</td>
@@ -2248,9 +2243,11 @@
         if (val == null || val === '') return '-';
         const n = parseFloat(val);
         if (isNaN(n)) return esc(String(val));
+        // Gunakan format serupa backend (koma untuk ribuan, titik untuk desimal)
+        // agar preview dan control index tampil konsisten.
         return n % 1 === 0
-            ? n.toLocaleString('id-ID')
-            : n.toLocaleString('id-ID', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+            ? n.toLocaleString('en-US')
+            : n.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
     }
 
     // ══════════════════════════════════════════════════════════════

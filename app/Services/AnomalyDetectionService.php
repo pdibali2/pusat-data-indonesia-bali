@@ -214,7 +214,8 @@ class AnomalyDetectionService
     {
         if ($data->number_value === null) return null;
 
-        // Ambil histori: metadata + lokasi yang sama, minimal 5 data point
+        // Ambil histori: metadata + lokasi yang sama (gunakan AnomalyStatisticsService untuk min history)
+        // Gunakan ONLY STATUS_AVAILABLE untuk konsistensi dengan DataImport & AnomalyControlController
         $history = Data::where('metadata_id', $data->metadata_id)
             ->where('location_id', $data->location_id)
             ->where('id', '!=', $data->id)
@@ -226,45 +227,48 @@ class AnomalyDetectionService
             ->map(fn($v) => (float) $v)
             ->toArray();
 
-        // Perlu minimal 5 data point untuk statistik bermakna
-        if (count($history) < 5) return null;
+        // Gunakan AnomalyStatisticsService untuk deteksi konsisten di semua lapisan
+        $outlierInfo = AnomalyStatisticsService::detectOutlier(
+            (float) $data->number_value,
+            $history,
+            [
+                'min_history' => AnomalyStatisticsService::MIN_HISTORY_FOR_MEANINGFUL_STATS,
+                'threshold'   => AnomalyStatisticsService::DB_ZSCORE_THRESHOLD,
+            ]
+        );
 
-        $mean   = array_sum($history) / count($history);
-        $stddev = $this->calculateStdDev($history, $mean);
-
-        // Jika stddev sangat kecil (data sangat konsisten), longgarkan batas
-        if ($stddev < 0.001) return null;
-
-        $current    = (float) $data->number_value;
-        $zScore     = abs(($current - $mean) / $stddev);
-        $upperBound = $mean + (3 * $stddev);
-        $lowerBound = $mean - (3 * $stddev);
-
-        // Hanya flag jika z-score > 3 (lebih dari 3 standar deviasi dari mean)
-        if ($zScore <= 3) return null;
+        if ($outlierInfo === null) return null;
 
         $severity = match (true) {
-            $zScore >= 6 => Anomaly::SEVERITY_CRITICAL,
-            $zScore >= 5 => Anomaly::SEVERITY_HIGH,
-            $zScore >= 4 => Anomaly::SEVERITY_MEDIUM,
-            default      => Anomaly::SEVERITY_LOW,
+            $outlierInfo['z_score'] >= 6 => Anomaly::SEVERITY_CRITICAL,
+            $outlierInfo['z_score'] >= 5 => Anomaly::SEVERITY_HIGH,
+            $outlierInfo['z_score'] >= 4 => Anomaly::SEVERITY_MEDIUM,
+            default                       => Anomaly::SEVERITY_LOW,
         };
+
+        $mean      = $outlierInfo['mean'];
+        $stddev    = $outlierInfo['stddev'];
+        $zScore    = $outlierInfo['z_score'] ?? 0;
+        $current   = (float) $data->number_value;
+        $lowerBound = $outlierInfo['lower_bound'];
+        $upperBound = $outlierInfo['upper_bound'];
 
         return $this->createAnomaly($data, [
             'anomaly_type'      => Anomaly::TYPE_UNREASONABLE,
             'severity'          => $severity,
-            'previous_value'    => round($mean, 4),
+            'previous_value'    => $mean,
             'current_value'     => $current,
-            'percentage_change' => round($zScore, 4),   // gunakan z-score sebagai "% change"
+            'percentage_change' => $zScore,   // gunakan z-score sebagai "% change"
             'message'           => sprintf(
                 "Nilai %s berada di luar batas wajar. "
-                . "Rata-rata histori: %s, StdDev: %s, Batas: [%s – %s]. "
+                . "Rata-rata histori: %s, StdDev: %s, Batas: [%s – %s], n=%d. "
                 . "Z-score: %.2f (ambang batas: 3.0).",
                 $current,
-                round($mean, 2),
-                round($stddev, 2),
-                round($lowerBound, 2),
-                round($upperBound, 2),
+                $mean,
+                $stddev,
+                $lowerBound,
+                $upperBound,
+                $outlierInfo['n'],
                 $zScore
             ),
         ]);
@@ -409,20 +413,6 @@ class AnomalyDetectionService
             'status'      => Anomaly::STATUS_WARNING,
             'detected_at' => now(),
         ], $attributes));
-    }
-
-    /**
-     * Hitung standar deviasi populasi dari array nilai.
-     */
-    private function calculateStdDev(array $values, float $mean): float
-    {
-        if (count($values) < 2) return 0.0;
-
-        $variance = array_sum(
-            array_map(fn($v) => ($v - $mean) ** 2, $values)
-        ) / count($values);
-
-        return sqrt($variance);
     }
 
     /**

@@ -82,6 +82,20 @@ class LandingController extends Controller
                 'tahun_mulai_data'
             ]);
 
+        // ── Rentang tahun untuk produk unggulan ────────────────────────────────
+        $unggulanIds = $produkUnggulan->pluck('metadata_id')->all();
+
+        $yearRangesUnggulan = DB::table('data')
+            ->join('time', 'data.time_id', '=', 'time.time_id')
+            ->whereIn('data.metadata_id', $unggulanIds)
+            ->where('data.status', 1)
+            ->whereNotNull('data.number_value')
+            ->groupBy('data.metadata_id')
+            ->selectRaw('data.metadata_id, MIN(time.year) as min_year, MAX(time.year) as max_year')
+            ->get()
+            ->keyBy('metadata_id')
+            ->map(fn($r) => $r->min_year . '-' . $r->max_year);
+            
         // Paket layanan untuk section pricing di landing
         $pricings = Layanan::with('fiturs')
             ->where('status', 'publish')
@@ -96,6 +110,7 @@ class LandingController extends Controller
             'jumlahProdusen',
             'produkUnggulan',
             'pricings',
+            'yearRangesUnggulan',   // ← baru
         ));
     }
 
@@ -267,6 +282,20 @@ class LandingController extends Controller
         // Berapa item di halaman ini yang masih dalam zona free?
         // freeCountOnPage = max(0, min(perPage, freeLimit - pageStartIndex + 1))
         $freeCountOnPage = max(0, min($perPage, $freeLimit - $pageStartIndex + 1));
+        
+        // ── Hitung rentang tahun aktual per metadata (batch, 1 query) ──────────
+        $metadataIds = $metadataList->pluck('metadata_id')->all();
+
+        $yearRanges = DB::table('data')
+            ->join('time', 'data.time_id', '=', 'time.time_id')
+            ->whereIn('data.metadata_id', $metadataIds)
+            ->where('data.status', 1)
+            ->whereNotNull('data.number_value')
+            ->groupBy('data.metadata_id')
+            ->selectRaw('data.metadata_id, MIN(time.year) as min_year, MAX(time.year) as max_year')
+            ->get()
+            ->keyBy('metadata_id')
+            ->map(fn($r) => $r->min_year . '-' . $r->max_year);
 
         $klasifikasiList = Klasifikasi::orderBy('nama_klasifikasi')
             ->pluck('nama_klasifikasi')->filter()->values();
@@ -293,6 +322,7 @@ class LandingController extends Controller
             'totalProdusen',
             'freeLimit',         // ← baru
             'freeCountOnPage',   // ← baru
+            'yearRanges',        // ← baru
         ));
     }
 

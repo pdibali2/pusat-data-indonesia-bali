@@ -207,8 +207,8 @@
                 <table class="w-full text-xs" style="min-width: 1100px;">
                     <thead>
                         <tr class="bg-gray-50 border-b border-gray-200 text-gray-500 font-semibold">
-                            <th class="px-3 py-3 text-center w-10 sticky left-0 bg-gray-50 z-10">#</th>
-                            <th class="px-3 py-3 text-left w-28 sticky left-10 bg-gray-50 z-10">Saverity</th>
+                            <th class="px-3 py-3 text-center sticky left-0 bg-gray-50">#</th>
+                            <th class="px-3 py-3 text-left sticky left-0 bg-gray-50">Saverity</th>
                             <th class="px-3 py-3 text-left min-w-40">Metadata / Lokasi</th>
                             <th class="px-3 py-3 text-left min-w-32.5">Tipe Anomali</th>
                             {{-- Kolom kontekstual: berisi info berbeda per tipe anomali --}}
@@ -246,7 +246,7 @@
                             </td>
         
                             {{-- Severity --}}
-                            <td class="px-3 py-3 sticky left-10 {{ $rowBg ?: 'bg-white' }} z-10">
+                            <td class="px-3 py-3 sticky left-0 {{ $rowBg ?: 'bg-white' }} z-10">
                                 <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-semibold"
                                     style="{{ $anomaly->severity_style }}">
                                     @if($anomaly->severity === 'critical')    <i class="fas fa-fire text-[10px]"></i>
@@ -414,7 +414,7 @@
                                         @endforeach
                                     </div>
         
-                                @elseif($ctxType === 'unreasonable' && !empty($stats))
+                                @elseif($ctxType === 'unreasonable' && !empty($stats) && ($stats['n'] ?? 1) > 0)
                                     @php
                                         $z        = abs((float)($anomaly->_ctx_change_pct ?? 0));
                                         $mean     = (float)($stats['mean'] ?? 0);
@@ -470,17 +470,30 @@
                                         </p>
                                     </div>
 
-                                @elseif($ctxType === 'unreasonable' && empty($stats))
+                                @elseif($ctxType === 'unreasonable' && (empty($stats) || ($stats['n'] ?? 1) === 0))
                                     {{-- Tidak ada histori cukup — tampilkan pesan informatif --}}
                                     <div class="text-[11px] space-y-1">
-                                        <span class="inline-flex items-center gap-1 px-2 py-1 rounded-md text-amber-700"
-                                            style="background:#fef9c3; border:1px solid #fde68a;">
-                                            <i class="fas fa-exclamation-triangle text-[10px]"></i>
-                                            Histori data tidak cukup
-                                        </span>
-                                        <p class="text-gray-400">
-                                            Perlu minimal 3 data historis untuk<br>menghitung rentang normal.
-                                        </p>
+                                        @if(strpos($anomaly->message ?? '', 'ditandai pengguna') !== false)
+                                            {{-- Data ditandai manual oleh user saat import --}}
+                                            <span class="inline-flex items-center gap-1 px-2 py-1 rounded-md text-blue-700"
+                                                style="background:#dbeafe; border:1px solid #93c5fd;">
+                                                <i class="fas fa-user-check text-[10px]"></i>
+                                                Ditandai pengguna
+                                            </span>
+                                            <p class="text-gray-400">
+                                                Data ditandai sebagai anomali oleh pengguna<br>saat proses import.
+                                            </p>
+                                        @else
+                                            {{-- Auto-detected tapi data historis tidak cukup --}}
+                                            <span class="inline-flex items-center gap-1 px-2 py-1 rounded-md text-amber-700"
+                                                style="background:#fef9c3; border:1px solid #fde68a;">
+                                                <i class="fas fa-exclamation-triangle text-[10px]"></i>
+                                                Histori data tidak cukup
+                                            </span>
+                                            <p class="text-gray-400">
+                                                Perlu minimal 3 data historis untuk<br>menghitung rentang normal.
+                                            </p>
+                                        @endif
                                         <p class="text-gray-500 font-mono">
                                             Nilai saat ini:
                                             <strong>{{ number_format((float)($anomaly->_ctx_curr_value ?? 0), 2) }}</strong>

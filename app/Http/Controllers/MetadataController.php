@@ -137,7 +137,7 @@ class MetadataController extends Controller
             'Satuan Data',
             'Tahun Mulai Data',
             'Frekuensi Penerbitan',
-            'Tahun Pertama Rilis',
+            'Tahun Data Tersedia',
             'Bulan Pertama Rilis',
             'Tanggal Rilis',
             'Produsen Id',
@@ -197,9 +197,9 @@ class MetadataController extends Controller
             $sheet->setCellValue("I{$row}", $m->penjelasan_metodologi);
             $sheet->setCellValue("J{$row}", $m->tipe_data);
             $sheet->setCellValue("K{$row}", $m->satuan_data);
-            $sheet->setCellValue("L{$row}", $m->tahun_mulai_data);
+            $sheet->setCellValue("L{$row}", $m->tahun_mulai);
             $sheet->setCellValue("M{$row}", $m->frekuensi_penerbitan);
-            $sheet->setCellValue("N{$row}", $m->tahun_pertama_rilis);
+            $sheet->setCellValue("N{$row}", $m->tahun_data_tersedia);
             $sheet->setCellValue("O{$row}", $m->bulan_pertama_rilis);
             $sheet->setCellValue("P{$row}", $m->tanggal_rilis);
             $sheet->setCellValue("Q{$row}", $m->produsen_id);

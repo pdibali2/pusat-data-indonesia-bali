@@ -4,6 +4,7 @@ namespace App\Imports;
 
 use App\Models\Anomaly;
 use App\Models\Data;
+use App\Services\AnomalyStatisticsService;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Carbon\Carbon;
@@ -24,18 +25,11 @@ class DataImport
     
 
     /**
-     * Threshold Modified Z-Score untuk deteksi outlier.
+     * Gunakan konstanta dari AnomalyStatisticsService untuk memastikan
+     * semua perhitungan di seluruh sistem (preview, import, control) konsisten.
      *
-     * Nilai standar industri: 3.5
-     * Semakin kecil → semakin sensitif.
-     * Referensi: Iglewicz & Hoaglin (1993), "How to Detect and Handle Outliers"
+     * Jika perlu update ambang batas, hanya update di AnomalyStatisticsService.
      */
-    // Threshold standard z-score untuk deteksi outlier vs DB historis.
-    // Konsisten dengan AnomalyDetectionService::checkUnreasonableValue() yang pakai z > 3.
-    private const DB_ZSCORE_THRESHOLD = 3.0;
-    
-    // Minimum data historis DB agar z-score bermakna (konsisten dengan enrichAnomalyContext).
-    private const DB_HISTORY_MIN_ROWS = 3;
 
     private const OUTLIER_MZSCORE_THRESHOLD      = 3.5;   // base threshold (sama)
     private const OUTLIER_COV_SCALE_FACTOR       = 0.8;   // pengali CoV ke threshold
@@ -59,9 +53,10 @@ class DataImport
     private array $duplicates      = [];
     private array $invalid_metadata = [];
     private array $outliers        = [];   // ← BARU: baris yang terdeteksi outlier
+    private array $pendingAnomalyKeys = [];
+    private array $pendingAnomalyInfo = [];
     private int   $imported        = 0;
     private int   $skipped         = 0;
-    private array $pendingAnomalyKeys = [];
     private int   $anomaliesCreated   = 0;
 
     private array $timeCache    = [];
@@ -176,8 +171,8 @@ class DataImport
             if (count($members) < 3) continue;
 
             $values  = array_column($members, 'value');
-            $median  = $this->median($values);
-            $mzScores = $this->calculateModifiedZScores($values);
+            $median  = AnomalyStatisticsService::median($values);
+            $mzScores = AnomalyStatisticsService::modifiedZScores($values);
 
             foreach ($members as $i => $m) {
                 $mz = abs($mzScores[$i]);
@@ -196,8 +191,13 @@ class DataImport
                     : null;
 
                 $n = count($values);
-                $mean = array_sum($values) / $n;
-                $stddev = $this->stdDev($values, $mean);
+                $mean = AnomalyStatisticsService::mean($values);
+                $stddev = AnomalyStatisticsService::stdDev($values, $mean);
+
+                // Jika sudah ada outlier_info (misal hasil DB), jangan timpa
+                if (!empty($previewRows[$m['idx']]['outlier_info'])) {
+                    continue;
+                }
 
                 $previewRows[$m['idx']]['is_outlier']  = true;
                 $previewRows[$m['idx']]['outlier_info'] = [
@@ -244,7 +244,9 @@ class DataImport
         $buffer    = [];
         $now       = Carbon::now()->format('Y-m-d H:i:s');
         $insertSet = [];
+        $rowsForOutlierDetection = [];
         $this->pendingAnomalyKeys = [];
+        $this->pendingAnomalyInfo = [];
         $this->anomaliesCreated   = 0;
 
         DB::beginTransaction();
@@ -278,6 +280,7 @@ class DataImport
                         $this->pendingAnomalyKeys[$key] = true;
                     }
 
+                    $rowsForOutlierDetection[] = array_merge($rec, ['key' => $key]);
                     $insertSet[$key] = true;
                     $buffer[] = [
                         'user_id'      => $this->userId,
@@ -312,8 +315,20 @@ class DataImport
                 $this->imported += count($buffer);
             }
 
+            if (!empty($rowsForOutlierDetection)) {
+                $detectedRows = $this->detectOutliersViaDb($rowsForOutlierDetection);
+                $detectedRows = $this->detectOutliersIntraSeries($detectedRows);
+
+                foreach ($detectedRows as $row) {
+                    if (!$row['is_outlier'] || empty($row['outlier_info'])) {
+                        continue;
+                    }
+                    $this->pendingAnomalyInfo[$row['key']] = $row['outlier_info'];
+                }
+            }
+
             if (!empty($this->pendingAnomalyKeys)) {
-                $this->createAnomaliesForPendingKeys($now);
+                $this->createAnomaliesForPendingKeys($now, $this->pendingAnomalyInfo);
             }
 
             DB::commit();
@@ -359,6 +374,7 @@ class DataImport
         }
     
         // ── Batch: hitung stats DB per kombinasi ──────────────────────────────
+        // Gunakan AnomalyStatisticsService untuk memastikan konsistensi di semua lapisan
         $statsPerGroup = [];
         foreach ($groups as $key => $group) {
             $history = DB::table('data')
@@ -377,25 +393,20 @@ class DataImport
                 ->map(fn($v) => (float) $v)
                 ->toArray();
     
-            $n = count($history);
-    
-            if ($n < self::DB_HISTORY_MIN_ROWS) {
+            if (count($history) < AnomalyStatisticsService::MIN_HISTORY_FOR_MEANINGFUL_STATS) {
                 // Tidak cukup data historis — tidak bisa hitung z-score bermakna.
                 // Tandai sebagai null agar UI menampilkan info yang jujur.
                 $statsPerGroup[$key] = null;
                 continue;
             }
     
-            $mean   = array_sum($history) / $n;
-            $var    = array_sum(array_map(fn($v) => ($v - $mean) ** 2, $history)) / $n;
-            $stddev = sqrt($var);
-    
+            $stats = AnomalyStatisticsService::descriptiveStats($history);
             $statsPerGroup[$key] = [
-                'mean'   => round($mean, 4),
-                'stddev' => round($stddev, 4),
-                'lower'  => round($mean - 3 * $stddev, 4),
-                'upper'  => round($mean + 3 * $stddev, 4),
-                'n'      => $n,
+                'mean'   => $stats['mean'],
+                'stddev' => $stats['stddev'],
+                'lower'  => $stats['lower_3sigma'],
+                'upper'  => $stats['upper_3sigma'],
+                'n'      => $stats['n'],
             ];
         }
     
@@ -438,22 +449,23 @@ class DataImport
                         'pct_from_mean'=> $pctFromMean,
                         'severity'     => 'medium',
                         'no_stddev'    => true,   // flag untuk UI: tampilkan pesan khusus
+                        'source'       => 'db',
                     ];
                 }
                 continue;
             }
     
-            // Hitung standard z-score — IDENTIK dengan createAnomaliesForPendingKeys()
-            $zScore = abs(($current - $mean) / $stddev);
+            // Hitung standard z-score — gunakan AnomalyStatisticsService
+            $zScore = AnomalyStatisticsService::zScore($current, $mean, $stddev);
     
-            if ($zScore <= self::DB_ZSCORE_THRESHOLD) {
+            if ($zScore === null || $zScore <= AnomalyStatisticsService::DB_ZSCORE_THRESHOLD) {
                 // Di bawah threshold → bukan outlier
                 $rec['is_outlier']   = false;
                 $rec['outlier_info'] = null;
                 continue;
             }
     
-            // Hitung severity — IDENTIK dengan createAnomaliesForPendingKeys()
+            // Hitung severity berdasarkan z-score
             $severity = match(true) {
                 $zScore >= 10 => 'critical',
                 $zScore >= 6  => 'high',
@@ -468,7 +480,7 @@ class DataImport
             $rec['is_outlier']   = true;
             $rec['outlier_info'] = [
                 'mean'         => $mean,                     // = previous_value di anomali DB
-                'stddev'       => round($stddev, 4),
+                'stddev'       => $stats['stddev'],
                 'z_score'      => round($zScore, 4),         // = percentage_change di anomali DB
                 'lower'        => $stats['lower'],
                 'upper'        => $stats['upper'],
@@ -477,6 +489,7 @@ class DataImport
                 'pct_from_mean'=> $pctFromMean,
                 'severity'     => $severity,
                 'no_stddev'    => false,
+                'source'       => 'db',
             ];
         }
         unset($rec);
@@ -484,7 +497,7 @@ class DataImport
         return $previewRows;
     }
 
-    private function createAnomaliesForPendingKeys(string $insertedAt): void
+    private function createAnomaliesForPendingKeys(string $insertedAt, array $previewOutlierInfo = []): void
     {
         if (empty($this->pendingAnomalyKeys)) {
             return;
@@ -517,61 +530,111 @@ class DataImport
             }
         });
 
-        $rows = $query->get(['id', 'number_value', 'metadata_id', 'location_id']);
+        $rows = $query->get(['id', 'number_value', 'metadata_id', 'location_id', 'time_id', 'rujukan_id']);
 
         foreach ($rows as $row) {
             $currentValue = (float) $row->number_value;
-
-            // ── Histori: izinkan pending + available ──────────────
-            $history = DB::table('data')
-                ->where('metadata_id', $row->metadata_id)
-                ->where('location_id', $row->location_id)
-                ->where('id', '!=', $row->id)
-                ->whereIn('status', [0, 1])  // 0=pending, 1=available
-                ->whereNotNull('number_value')
-                ->orderBy('time_id', 'desc')
-                ->limit(20)
-                ->pluck('number_value')
-                ->map(fn($v) => (float) $v)
-                ->toArray();
+            $rowKey = sprintf(
+                '%d_%d_%d_%s',
+                $row->metadata_id,
+                $row->location_id,
+                $row->time_id,
+                $row->rujukan_id === null ? '' : $row->rujukan_id
+            );
+            $previewInfo = $previewOutlierInfo[$rowKey] ?? null;
 
             $previousValue    = null;
             $percentageChange = null;
             $severity         = Anomaly::SEVERITY_MEDIUM;
             $message          = 'Data ditandai sebagai outlier oleh pengguna saat import.';
+            $historyCount     = 0;
 
-            if (count($history) >= 1) {
-                $mean   = array_sum($history) / count($history);
-                $var    = array_sum(array_map(fn($v) => ($v - $mean) ** 2, $history)) / count($history);
-                $stdDev = sqrt($var);
+            if (!empty($previewInfo)) {
+                $historyCount = isset($previewInfo['n']) ? (int) $previewInfo['n'] : 0;
+                $previousValue = isset($previewInfo['mean']) ? (float) $previewInfo['mean'] : null;
+                $percentageChange = array_key_exists('z_score', $previewInfo)
+                    ? ($previewInfo['z_score'] !== null ? round($previewInfo['z_score'], 4) : null)
+                    : null;
 
-                $previousValue = round($mean, 4);
+                $severity = match (($previewInfo['severity'] ?? null)) {
+                    'critical' => Anomaly::SEVERITY_CRITICAL,
+                    'high'     => Anomaly::SEVERITY_HIGH,
+                    'medium'   => Anomaly::SEVERITY_MEDIUM,
+                    'low'      => Anomaly::SEVERITY_LOW,
+                    default    => Anomaly::SEVERITY_MEDIUM,
+                };
 
-                if ($stdDev > 0) {
-                    $zScore           = abs(($currentValue - $mean) / $stdDev);
-                    $percentageChange = round($zScore, 4);
-                    $upperBound       = round($mean + 3 * $stdDev, 2);
-                    $lowerBound       = round($mean - 3 * $stdDev, 2);
+                $message = sprintf(
+                    'Outlier ditandai pengguna saat import. Preview deteksi: mean=%s, z_score=%s, source=%s, n=%s.',
+                    $previousValue !== null ? number_format($previousValue, 4, '.', '') : '-',
+                    $percentageChange !== null ? number_format($percentageChange, 4, '.', '') : '-',
+                    $previewInfo['source'] ?? 'unknown',
+                    $previewInfo['n'] ?? '-'
+                );
+            } else {
+                // ── Histori: gunakan ONLY STATUS_AVAILABLE untuk konsistensi ──────────────
+                // (sama dengan detectOutliersViaDb dan AnomalyControlController)
+                $history = DB::table('data')
+                    ->where('metadata_id', $row->metadata_id)
+                    ->where('location_id', $row->location_id)
+                    ->where('id', '!=', $row->id)
+                    ->where('status', Data::STATUS_AVAILABLE)
+                    ->whereNotNull('number_value')
+                    ->orderBy('time_id', 'desc')
+                    ->limit(20)
+                    ->pluck('number_value')
+                    ->map(fn($v) => (float) $v)
+                    ->toArray();
 
-                    $message = sprintf(
-                        'Outlier ditandai pengguna saat import. Z-score=%.2f '
-                        . '(mean=%.2f, σ=%.2f, batas=[%s – %s], n=%d)',
-                        $zScore, $mean, $stdDev,
-                        $lowerBound, $upperBound,
-                        count($history)
-                    );
+                // Gunakan AnomalyStatisticsService untuk perhitungan konsisten
+                if (count($history) >= 1) {
+                    $stats = AnomalyStatisticsService::descriptiveStats($history);
+                    $mean   = $stats['mean'];
+                    $stdDev = $stats['stddev'];
+                    $n      = $stats['n'];
 
-                    $severity = match(true) {
-                        $zScore >= 10 => Anomaly::SEVERITY_CRITICAL,
-                        $zScore >= 6  => Anomaly::SEVERITY_HIGH,
-                        $zScore >= 3  => Anomaly::SEVERITY_MEDIUM,
-                        default       => Anomaly::SEVERITY_LOW,
-                    };
-                } else {
-                    $message = sprintf(
-                        'Outlier ditandai pengguna saat import. Mean histori=%.2f (n=%d, σ≈0)',
-                        $mean, count($history)
-                    );
+                    $previousValue = $mean;
+
+                    if ($stdDev > 0) {
+                        $zScore = AnomalyStatisticsService::zScore($currentValue, $mean, $stdDev);
+                        if ($zScore !== null) {
+                            $percentageChange = round($zScore, 4);
+                            $upperBound       = round($mean + 3 * $stdDev, 2);
+                            $lowerBound       = round($mean - 3 * $stdDev, 2);
+
+                            $message = sprintf(
+                                'Outlier ditandai pengguna saat import. Z-score=%.2f '
+                                . '(mean=%.2f, σ=%.2f, batas=[%s – %s], n=%d)',
+                                $zScore, $mean, $stdDev,
+                                $lowerBound, $upperBound,
+                                $n
+                            );
+
+                            $severity = match(true) {
+                                $zScore >= 10 => Anomaly::SEVERITY_CRITICAL,
+                                $zScore >= 6  => Anomaly::SEVERITY_HIGH,
+                                $zScore >= 3  => Anomaly::SEVERITY_MEDIUM,
+                                default       => Anomaly::SEVERITY_LOW,
+                            };
+                        } else {
+                            $message = sprintf(
+                                'Outlier ditandai pengguna saat import. Mean histori=%.2f (n=%d, σ≈0).',
+                                $mean, $n
+                            );
+                        }
+
+                        if ($n < AnomalyStatisticsService::MIN_HISTORY_FOR_MEANINGFUL_STATS) {
+                            $message = sprintf(
+                                'Outlier ditandai pengguna saat import. Mean histori=%.2f (n=%d, histori kurang untuk z-score).',
+                                $mean, $n
+                            );
+                        }
+                    } else {
+                        $message = sprintf(
+                            'Outlier ditandai pengguna saat import. Mean histori=%.2f (n=%d, σ≈0).',
+                            $mean, $n
+                        );
+                    }
                 }
             }
 
@@ -609,7 +672,7 @@ class DataImport
                     'checks_run'      => ['manual_outlier_flag_import'],
                     'z_score'         => $percentageChange,
                     'mean'            => $previousValue,
-                    'history_n'       => count($history),
+                    'history_n'       => $historyCount,
                 ]),
                 'reason'     => 'Screening otomatis sistem',
                 'ip_address' => null,

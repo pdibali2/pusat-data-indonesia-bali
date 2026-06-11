@@ -195,10 +195,11 @@ class AnomalyControlController extends Controller
             $mapKey = "{$key['metadata_id']}-{$key['location_id']}-{$key['data_id']}";
             if (isset($statsMap[$mapKey])) continue;
 
+            // Gunakan ONLY STATUS_AVAILABLE agar konsisten dengan DataImport::detectOutliersViaDb
             $history = Data::where('metadata_id', $key['metadata_id'])
                 ->where('location_id', $key['location_id'])
                 ->where('id', '!=', $key['data_id'])
-                ->whereIn('status', [Data::STATUS_AVAILABLE, Data::STATUS_PENDING])
+                ->where('status', Data::STATUS_AVAILABLE)
                 ->whereNotNull('number_value')
                 ->orderBy('time_id', 'desc')
                 ->limit(20)
@@ -206,20 +207,18 @@ class AnomalyControlController extends Controller
                 ->map(fn($v) => (float) $v)
                 ->toArray();
 
-            // ← Turun dari 5 ke 3 agar konsisten dengan DataImport
-            if (count($history) >= 3) {
-                $mean   = array_sum($history) / count($history);
-                $var    = array_sum(array_map(fn($v) => ($v - $mean) ** 2, $history)) / count($history);
-                $stddev = sqrt($var);
+            // Gunakan AnomalyStatisticsService untuk perhitungan konsisten
+            if (count($history) >= \App\Services\AnomalyStatisticsService::MIN_HISTORY_FOR_MEANINGFUL_STATS) {
+                $stats = \App\Services\AnomalyStatisticsService::descriptiveStats($history);
                 $statsMap[$mapKey] = [
-                    'mean'   => round($mean, 4),
-                    'stddev' => round($stddev, 4),
-                    'lower'  => round($mean - 3 * $stddev, 4),
-                    'upper'  => round($mean + 3 * $stddev, 4),
-                    'n'      => count($history),
+                    'mean'   => $stats['mean'],
+                    'stddev' => $stats['stddev'],
+                    'lower'  => $stats['lower_3sigma'],
+                    'upper'  => $stats['upper_3sigma'],
+                    'n'      => $stats['n'],
                 ];
             }
-            // Jika < 3 data, biarkan $statsMap[$mapKey] tidak di-set
+            // Jika < MIN_HISTORY, biarkan $statsMap[$mapKey] tidak di-set
             // → view akan fallback ke anomaly->previous_value & percentage_change
         }
     
@@ -274,7 +273,7 @@ class AnomalyControlController extends Controller
                         // Hitung ulang dari histori yang baru di-query
                         $zScore = round(
                             abs(((float) $anomaly->current_value - $s['mean']) / $s['stddev']),
-                            2
+                            4
                         );
                     } elseif ($anomaly->percentage_change !== null) {
                         // Fallback: pakai z-score yang sudah tersimpan saat deteksi
@@ -308,9 +307,18 @@ class AnomalyControlController extends Controller
                             'n'      => null,  // tidak diketahui dari rekonstruksi
                         ];
                     } else {
+                        // FALLBACK TERAKHIR: Tidak ada statistik sama sekali
+                        // Tapi tetap tampilkan marker bahwa data ini ditandai sebagai anomali
+                        // Biasanya terjadi ketika user tandai outlier saat import tapi tidak ada histori
                         $refValue  = null;
-                        $refLabel  = "—";
-                        $statsData = [];
+                        $refLabel  = "Tandaan pengguna (data terbatas)";
+                        $statsData = [
+                            'mean'   => null,
+                            'stddev' => 0,
+                            'lower'  => null,
+                            'upper'  => null,
+                            'n'      => 0,  // Menandakan: tidak ada data untuk perhitungan
+                        ];
                     }
 
                     $anomaly->_ctx_type       = 'unreasonable';

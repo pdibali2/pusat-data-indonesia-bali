@@ -16,7 +16,7 @@
             "onlyAdmin"    => false,
         ],
         (object)[
-            "title"        => "Transaksi Saya",
+            "title"        => "Riwayat Berlangganan",
             "path"         => "/transaksi/riwayat",
             "icon"         => "fas fa-file-invoice-dollar",
             "active"       => request()->is('transaksi/*'),

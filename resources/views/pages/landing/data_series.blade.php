@@ -189,8 +189,9 @@
                                 $isLocked = auth()->guest() && ($i + 1) > $freeCountOnPage;
 
                                 // ── Sparkline (hanya hitung untuk card yang tidak terkunci) ──
-                                $lastYear  = now()->year - 1;
-                                $startYear = $lastYear - 4;
+                                $range     = $yearRanges[$meta->metadata_id] ?? null;
+                                $startYear = $range ? (int) explode('-', $range)[0] : (now()->year - 5);
+                                $lastYear  = $range ? (int) explode('-', $range)[1] : (now()->year - 1);
                                 $years     = range($startYear, $lastYear);
 
                                 if (!$isLocked) {
@@ -294,7 +295,7 @@
                                             <span class="px-2 py-0.5 rounded-full bg-stikom-red/20 text-stikom-red text-xs font-semibold max-w-[140px] truncate">
                                                 {{ $namaKlasifikasi }}
                                             </span>
-                                            <span class="text-gray-400 text-xs whitespace-nowrap">sejak {{ $meta->tahun_mulai_data }}</span>
+                                            <span class="text-gray-400 text-xs whitespace-nowrap">sejak {{ isset($yearRanges[$meta->metadata_id]) ? explode('-', $yearRanges[$meta->metadata_id])[0] : ($meta->tahun_mulai_data ?? '—') }}</span>
                                         </div>
                                         @php $wilayah = $meta->data->where('location_id', 0)->first()?->location?->nama_wilayah; @endphp
                                         @if($wilayah)
@@ -372,7 +373,7 @@
                                             <span class="px-2 py-0.5 rounded-full bg-stikom-red/20 text-stikom-red text-xs font-semibold max-w-[140px] truncate">
                                                 {{ $namaKlasifikasi }}
                                             </span>
-                                            <span class="text-gray-400 text-xs whitespace-nowrap">sejak {{ $meta->tahun_mulai_data }}</span>
+                                            <span class="text-gray-400 text-xs whitespace-nowrap">sejak {{ isset($yearRanges[$meta->metadata_id]) ? explode('-', $yearRanges[$meta->metadata_id])[0] : ($meta->tahun_mulai_data ?? '—') }}</span>
                                         </div>
                                         <div class="border-t border-gray-50 pt-4">
                                             <a href="{{ route('langganan') }}"
@@ -427,7 +428,7 @@
                                                 </span>
                                                 <span class="text-gray-400 text-xs">{{ $meta->satuan_data }}</span>
                                                 <span class="text-gray-300 text-xs">·</span>
-                                                <span class="text-gray-400 text-xs">sejak {{ $meta->tahun_mulai_data }}</span>
+                                                <span class="text-gray-400 text-xs">sejak {{ isset($yearRanges[$meta->metadata_id]) ? explode('-', $yearRanges[$meta->metadata_id])[0] : ($meta->tahun_mulai_data ?? '—') }}</span>
                                             </div>
                                         </div>
                                     </div>
@@ -471,7 +472,7 @@
                                                 </span>
                                                 <span class="text-gray-400 text-xs">{{ $meta->satuan_data }}</span>
                                                 <span class="text-gray-300 text-xs">·</span>
-                                                <span class="text-gray-400 text-xs">sejak {{ $meta->tahun_mulai_data }}</span>
+                                                <span class="text-gray-400 text-xs">sejak {{ isset($yearRanges[$meta->metadata_id]) ? explode('-', $yearRanges[$meta->metadata_id])[0] : ($meta->tahun_mulai_data ?? '—') }}</span>
                                             </div>
                                         </div>
                                     </div>
