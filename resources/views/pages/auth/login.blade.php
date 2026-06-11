@@ -38,7 +38,7 @@
                 <div>
                     <label for="username" class="block text-sm/6 font-medium text-gray-900">Username</label>
                     <div class="mt-2">
-                    <input id="username" type="username" name="username" required autocomplete="username" class="block w-full rounded-sm bg-black/1 px-3 py-1.5 text-base text-black outline-1 -outline-offset-1 outline-black/30 placeholder:text-stikom-blue focus:outline-2 focus:-outline-offset-2 focus:outline-stikom-blue sm:text-sm/6" />
+                    <input id="username" tabindex="1" type="username" name="username" required autocomplete="username" class="block w-full rounded-sm bg-black/1 px-3 py-1.5 text-base text-black outline-1 -outline-offset-1 outline-black/30 placeholder:text-stikom-blue focus:outline-2 focus:-outline-offset-2 focus:outline-stikom-blue sm:text-sm/6" />
                     </div>
                 </div>
                 <div>
@@ -49,6 +49,7 @@
                     <div class="mt-2 relative">
                         <input 
                             id="password" 
+                            tabindex="2"
                             type="password" 
                             name="password" 
                             required 
@@ -58,6 +59,7 @@
                         <button 
                             type="button"
                             id="togglePassword"
+                            tabindex="-1"
                             class="absolute inset-y-0 right-0 flex items-center pr-3 text-gray-500 hover:text-gray-700"
                         >
                             <!-- Eye Icon -->
@@ -73,7 +75,7 @@
                 </div>
 
                 <div class="mt-2">
-                    <button type="submit" class="btn flex w-full justify-center rounded-sm bg-linear-to-r from-blue-500 to-blue-400 px-3 py-1.5 text-white text-sm/6 font-semibold hover:from-blue-700 hover:to-blue-600 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-500 shadow-lg shadow-blue-500/30 transition duration-300 ease-in-out hover:scale-104">Login</button>
+                    <button type="submit" tabindex="3" class="btn flex w-full justify-center rounded-sm bg-linear-to-r from-blue-500 to-blue-400 px-3 py-1.5 text-white text-sm/6 font-semibold hover:from-blue-700 hover:to-blue-600 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-500 shadow-lg shadow-blue-500/30 transition duration-300 ease-in-out hover:scale-104">Login</button>
                     <p class="text-center text-sm text-gray-500 mt-4">
                         Belum punya akun?
                         <a href="/register" class="text-blue-600 hover:underline font-medium">Daftar</a>
