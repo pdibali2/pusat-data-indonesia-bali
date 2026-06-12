@@ -385,7 +385,7 @@ class DataImport
                 // tapi ini jaga-jaga untuk kasus re-preview setelah partial import.
                 ->whereNotIn('time_id', array_unique($group['new_time_ids']))
                 // Hanya ambil data yang sudah approved/available sebagai baseline bersih
-                ->where('status', \App\Models\Data::STATUS_AVAILABLE)
+                ->where('status', Data::STATUS_AVAILABLE)
                 ->whereNotNull('number_value')
                 ->orderBy('time_id', 'desc')
                 ->limit(20)

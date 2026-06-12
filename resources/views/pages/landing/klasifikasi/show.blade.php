@@ -216,7 +216,7 @@
 
                 {{-- Pesan tidak ditemukan (di luar loop) --}}
                 <div id="search-empty" class="hidden text-center py-10">
-                    <p class="text-sm text-gray-400 font-body">Metadata tidak ditemukan.</p>
+                    <p class="text-sm text-gray-400 font-body">Belum ada data yang tersedia dalam klasifikasi ini.</p>
                 </div>
 
             @endif

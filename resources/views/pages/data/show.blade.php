@@ -192,7 +192,7 @@
                         </div>
                     @endif
                 @else
-                    <p class="text-sm text-gray-400">Data metadata tidak ditemukan.</p>
+                    <p class="text-sm text-gray-400">Metadata tidak ditemukan.</p>
                 @endif
             </div>
 

@@ -4,7 +4,7 @@
     <meta charset="UTF-8"/>
     <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
     <title>Data Series</title>
-    <meta name="description" content="Jelajahi seluruh dataset yang tersedia di Pusat Data Indonesia Bali. Filter berdasarkan klasifikasi, frekuensi, dan kata kunci."/>
+    <meta name="description" content="Jelajahi seluruh data yang tersedia di Pusat Data Indonesia Bali. Filter berdasarkan klasifikasi, frekuensi, dan kata kunci."/>
     <link rel="icon" href="{{ asset('favicon.ico') }}" type="image/x-icon"/>
     <link href="https://cdn.jsdelivr.net/npm/tom-select@2.3.1/dist/css/tom-select.css" rel="stylesheet"/>
     <meta name="csrf-token" content="{{ csrf_token() }}"/>
@@ -41,7 +41,7 @@
                         Data Series
                     </h1>
                     <p class="text-white/50 text-base max-w-xl">
-                        Jelajahi seluruh dataset yang tersedia. Klik dataset untuk melihat detail dan grafik.
+                        Jelajahi seluruh data yang tersedia. Klik data untuk melihat detail dan grafik.
                     </p>
                 </div>
             </div>
@@ -146,7 +146,7 @@
                 <span class="font-bold text-[#001734]">{{ $metadataList->firstItem() }}–{{ $metadataList->lastItem() }}</span>
                 dari
                 <span class="font-bold text-[#001734]">{{ number_format($metadataList->total()) }}</span>
-                dataset
+                data
                 @if(request('q'))<span> untuk "<span class="font-semibold text-[#001734]">{{ request('q') }}</span>"</span>@endif
             </p>
         </div>
@@ -154,7 +154,7 @@
         {{-- ── Cards ──────────────────────────────────────────────────────── --}}
         @if($metadataList->isEmpty())
             <div class="text-center py-24">
-                <h3 class="text-xl font-bold text-gray-300 mb-2">Dataset tidak tersedia</h3>
+                <h3 class="text-xl font-bold text-gray-300 mb-2">Belum ada data yang tersedia</h3>
             </div>
         @else
 
@@ -166,8 +166,8 @@
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/>
                         </svg>
                         <p class="text-xs text-amber-700">
-                            Anda melihat <strong>{{ $freeCountOnPage }} dari {{ $metadataList->count() }}</strong> dataset di halaman ini secara gratis.
-                            <a href="{{ route('langganan') }}" class="font-bold underline hover:text-amber-900 transition-colors">Berlangganan</a> untuk akses penuh ke semua dataset.
+                            Anda melihat <strong>{{ $freeCountOnPage }} dari {{ $metadataList->count() }}</strong> data di halaman ini secara gratis.
+                            <a href="{{ route('langganan') }}" class="font-bold underline hover:text-amber-900 transition-colors">Berlangganan</a> untuk akses penuh ke semua data.
                         </p>
                     </div>
                 @endif
