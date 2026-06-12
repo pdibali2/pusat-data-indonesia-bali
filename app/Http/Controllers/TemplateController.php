@@ -1630,13 +1630,11 @@ class TemplateController extends Controller
         if ($tampilan->user_id !== Auth::user()->user_id) {
             abort(403);
         }
- 
-        // Load metadata yang sudah ada di template ini
+
         $tampilan->load('isiTampilan.metadata');
- 
+
         $existingMetadataIds = $tampilan->isiTampilan->pluck('metadata_id')->toArray();
- 
-        // Load detail metadata yang sudah terpilih (untuk ditampilkan sebagai chips)
+
         $existingMetadata = Metadata::whereIn('metadata_id', $existingMetadataIds)
             ->where('status', Metadata::STATUS_ACTIVE)
             ->with('klasifikasi')
@@ -1645,35 +1643,65 @@ class TemplateController extends Controller
             ->map(fn($m) => array_merge(
                 $m->toArray(),
                 ['klasifikasi' => $m->klasifikasi?->nama_klasifikasi]
-        ));
- 
-        $fp          = $tampilan->filter_params ?? [];
-        $locationIds = $fp['location_ids'] ?? [];
- 
-        // Load lokasi yang tersimpan di filter_params (untuk ditampilkan sebagai info)
-        $existingLocations = !empty($locationIds)
-            ? Location::whereIn('location_id', $locationIds)
+            ));
+
+        $fp     = $tampilan->filter_params ?? [];
+        $jenis  = $fp['jenis_template'] ?? 'metadata';
+
+        // ── Map metadata_id => location_ids (per-metadata, dari isi_tampilan) ──
+        $metaLocMap = [];
+        foreach ($tampilan->isiTampilan as $isi) {
+            $metaLocMap[(string) $isi->metadata_id] = $isi->location_ids ?? [];
+        }
+
+        // ── Kumpulkan semua location_id unik yang dipakai (untuk badge/info) ──
+        $allLocationIds = collect($metaLocMap)->flatten()->unique()->filter()->values()->all();
+
+        $existingLocations = !empty($allLocationIds)
+            ? Location::whereIn('location_id', $allLocationIds)
                 ->select('location_id', 'nama_wilayah')
                 ->get()
             : collect();
- 
-        // Load semua metadata aktif (untuk dropdown pencarian tambah metadata baru)
+
+        // ── Untuk jenis klasifikasi: ambil nama klasifikasi tersimpan ──
+        $selectedKlasifikasi = $fp['klasifikasi'] ?? null;
+
+        // FIX: fallback — baca dari metadata pertama jika fp['klasifikasi'] kosong
+        if (!$selectedKlasifikasi && $jenis === 'klasifikasi') {
+            $firstMetadata = $tampilan->isiTampilan->first()?->metadata;
+            if ($firstMetadata && $firstMetadata->klasifikasi_id) {
+                $firstMetadata->load('klasifikasi');
+                $selectedKlasifikasi = $firstMetadata->klasifikasi?->nama_klasifikasi;
+            }
+        }
+
+        // ── Daftar klasifikasi (untuk dropdown, dipakai jenis klasifikasi) ──
+        $klasifikasiList = Klasifikasi::whereHas('metadata', function ($q) {
+                $q->where('status', Metadata::STATUS_ACTIVE);
+            })
+            ->orderBy('nama_klasifikasi')
+            ->pluck('nama_klasifikasi');
+
+        // ── Semua lokasi (untuk cascade JS, sama seperti create-*) ──
         $allMetadata = Metadata::where('status', Metadata::STATUS_ACTIVE)
-        ->with('klasifikasi')
-        ->orderBy('nama')
-        ->limit(200)
-        ->get(['metadata_id', 'nama', 'klasifikasi_id', 'satuan_data', 'frekuensi_penerbitan'])
-        ->map(fn($m) => array_merge(
-            $m->toArray(),
-            ['klasifikasi' => $m->klasifikasi?->nama_klasifikasi]
-        ));
- 
+            ->with('klasifikasi')
+            ->orderBy('nama')
+            ->get(['metadata_id', 'nama', 'klasifikasi_id', 'satuan_data', 'frekuensi_penerbitan'])
+            ->map(fn($m) => array_merge(
+                $m->toArray(),
+                ['klasifikasi' => $m->klasifikasi?->nama_klasifikasi]
+            ));
+
         return view('pages.template.edit', compact(
             'tampilan',
             'existingMetadata',
             'existingLocations',
             'allMetadata',
-            'fp'
+            'fp',
+            'jenis',
+            'metaLocMap',
+            'selectedKlasifikasi',
+            'klasifikasiList',
         ));
     }
  
@@ -1685,7 +1713,7 @@ class TemplateController extends Controller
         if ($tampilan->user_id !== Auth::user()->user_id) {
             abort(403);
         }
-    
+
         $request->validate([
             'nama_tampilan'         => 'required|string|max:100',
             'metadata_ids'          => 'required|array|min:1',
@@ -1693,8 +1721,11 @@ class TemplateController extends Controller
             'metadata_location_ids' => 'nullable|string',
             'location_ids'          => 'nullable|array',
             'location_ids.*'        => 'integer|exists:location,location_id',
+            'klasifikasi'           => 'nullable|string',
+            'urutan_by'             => 'nullable|array',
+            'urutan_by.*'           => 'in:klasifikasi,wilayah',
         ]);
-    
+
         $metaLocMap = [];
         if ($request->filled('metadata_location_ids')) {
             $decoded = json_decode($request->input('metadata_location_ids'), true);
@@ -1702,14 +1733,32 @@ class TemplateController extends Controller
                 $metaLocMap = $decoded;
             }
         }
-    
+
         $flatLocationIds = $request->input('location_ids', []);
-    
-        $tampilan->update(['nama_tampilan' => $request->nama_tampilan]);
-    
+
+        // ── Update filter_params: pertahankan jenis_template lama, update klasifikasi/urutan_by jika dikirim ──
+        $fp = $tampilan->filter_params ?? [];
+
+        $jenisTemplate = $fp['jenis_template'] ?? null;
+        if ($jenisTemplate === 'klasifikasi' && $request->filled('klasifikasi')) {
+            $fp['klasifikasi'] = $request->input('klasifikasi');
+        } elseif ($request->filled('klasifikasi')) {
+            $fp['klasifikasi'] = $request->input('klasifikasi');
+        }
+
+        if ($request->has('urutan_by')) {
+            $urutanBy  = $request->input('urutan_by', []);
+            $fp['urutan_by'] = count($urutanBy) === 2 ? 'keduanya' : ($urutanBy[0] ?? null);
+        }
+
+        $tampilan->update([
+            'nama_tampilan' => $request->nama_tampilan,
+            'filter_params' => $fp ?: null,
+        ]);
+
         // Ganti seluruh isi tampilan
         IsiTampilan::where('tampilan_id', $tampilan->tampilan_id)->delete();
-    
+
         foreach ($request->metadata_ids as $metadataId) {
             if (!empty($metaLocMap) && array_key_exists((string) $metadataId, $metaLocMap)) {
                 $locIds = array_map('intval', (array) $metaLocMap[(string) $metadataId]);
@@ -1720,14 +1769,14 @@ class TemplateController extends Controller
             } else {
                 $locIds = [];
             }
-    
+
             IsiTampilan::create([
                 'tampilan_id'  => $tampilan->tampilan_id,
                 'metadata_id'  => $metadataId,
                 'location_ids' => !empty($locIds) ? $locIds : null,
             ]);
         }
-    
+
         if ($request->wantsJson()) {
             return response()->json([
                 'success'     => true,
@@ -1736,7 +1785,7 @@ class TemplateController extends Controller
                 'redirect'    => route('data.index', ['template_id' => $tampilan->tampilan_id]),
             ]);
         }
-    
+
         return redirect()
             ->route('data.index', ['template_id' => $tampilan->tampilan_id])
             ->with('success', "Template \"{$tampilan->nama_tampilan}\" berhasil diperbarui.");
