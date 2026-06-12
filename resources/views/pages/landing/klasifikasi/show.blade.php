@@ -119,7 +119,7 @@
                 <div id="metadata-container" class="space-y-2">
                     @foreach($metadataList as $i => $meta)
                         @php
-                            $isLocked = auth()->guest() && ($i + 1) > $freeCountOnPage;
+                            $isLocked = $isLimited && ($i + 1) > $freeCountOnPage;
                         @endphp
 
                         @if(!$isLocked)
@@ -190,8 +190,8 @@
                 </div>
 
                 {{-- Paywall CTA (guest + ada yang terkunci) --}}
-                @guest
-                    @if($freeCountOnPage < $metadataList->count())
+                
+                    @if($isLimited && $freeCountOnPage < $metadataList->count())
                         <div class="mt-6 bg-white border border-gray-100 border-l-4 border-l-stikom-blue shadow-lg p-8 text-center">
                             <div class="w-12 h-12 bg-stikom flex items-center justify-center mx-auto mb-4">
                                 <svg class="w-6 h-6 text-stikom-accent" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -212,7 +212,7 @@
                             </div>
                         </div>
                     @endif
-                @endguest
+                
 
                 {{-- Pesan tidak ditemukan (di luar loop) --}}
                 <div id="search-empty" class="hidden text-center py-10">

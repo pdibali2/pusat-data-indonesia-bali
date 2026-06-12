@@ -342,7 +342,7 @@
                 Penanggung Jawab
             </h2>
             <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5 text-sm">
-                <div>
+                <div class="col-span-4">
                     <p class="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-1">Produsen Data</p>
                     <p class="text-gray-800 font-semibold">{{ $metadata->produsen->nama_produsen ?? '-' }}</p>
                 </div>

@@ -7,6 +7,7 @@ use App\Models\Layanan;
 use App\Models\Klasifikasi;
 use App\Models\Metadata;
 use App\Models\Data;
+use App\Models\Transaksi;
 use App\Models\ProdusenData;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
@@ -184,8 +185,9 @@ class LandingController extends Controller
             $freeLimit       = 3;
             $pageStartIndex  = ($metadataList->currentPage() - 1) * 10 + 1;
             $freeCountOnPage = max(0, min(10, $freeLimit - $pageStartIndex + 1));
+            $isLimited = $this->isLimitedUser();
 
-        return view('pages.landing.klasifikasi.show', compact('nama', 'metadataList', 'freeLimit', 'freeCountOnPage'));
+        return view('pages.landing.klasifikasi.show', compact('nama', 'metadataList', 'freeLimit', 'freeCountOnPage', 'isLimited'));
     }
 
     // ─────────────────────────────────────────────────────────────────────────
@@ -225,6 +227,29 @@ class LandingController extends Controller
                 'tahun_mulai_data'     => $item->tahun_mulai_data,
             ])
         );
+    }
+
+    private function isLimitedUser(): bool
+    {
+        if (!auth()->check()) {
+            return true;
+        }
+
+        $user = auth()->user();
+
+        if ($user->group_id != 3) {
+            return false; // bukan customer (admin/pengelola) → tidak dibatasi
+        }
+
+        $hasActiveSubscription = Transaksi::where('user_id', $user->user_id)
+            ->where('status', 'success')
+            ->where(function ($q) {
+                $q->whereNull('aktif_sampai')
+                ->orWhere('aktif_sampai', '>=', now());
+            })
+            ->exists();
+
+        return !$hasActiveSubscription;
     }
 
     public function dataSeries(Request $request)
@@ -311,6 +336,7 @@ class LandingController extends Controller
         $totalMetadata    = Metadata::where('status', 2)->count();
         $totalKlasifikasi = Klasifikasi::count();
         $totalProdusen    = ProdusenData::count();
+        $isLimited        = $this->isLimitedUser();
 
         return view('pages.landing.data_series', compact(
             'metadataList',
@@ -323,6 +349,7 @@ class LandingController extends Controller
             'freeLimit',         // ← baru
             'freeCountOnPage',   // ← baru
             'yearRanges',        // ← baru
+            'isLimited',         // ← baru
         ));
     }
 
