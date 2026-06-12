@@ -25,7 +25,20 @@ class MetadataController extends Controller
     public function index(Request $request)
     {
         $query = Metadata::with(['produsen', 'klasifikasi'])
-                          ->where('status', self::STATUS_ACTIVE);
+                  ->where('status', self::STATUS_ACTIVE)
+                  ->leftJoinSub(
+                      \Illuminate\Support\Facades\DB::table('data')
+                          ->join('time', 'data.time_id', '=', 'time.time_id')
+                          ->where('data.status', 1)
+                          ->whereNotNull('data.number_value')
+                          ->selectRaw('data.metadata_id, MAX(time.year) as max_year')
+                          ->groupBy('data.metadata_id'),
+                      'data_avail',
+                      'data_avail.metadata_id',
+                      '=',
+                      'metadata.metadata_id'
+                  )
+                  ->select('metadata.*');
 
         // Search global
         if ($request->filled('search')) {
@@ -47,7 +60,9 @@ class MetadataController extends Controller
         if ($request->filled('filter_frekuensi'))   { $query->where('frekuensi_penerbitan', $request->filter_frekuensi); }
         if ($request->filled('filter_produsen_id')) { $query->where('produsen_id', $request->filter_produsen_id); }
 
-        $data = $query->orderBy('metadata_id', 'desc')->paginate(15)->withQueryString();
+        $data = $query->orderByRaw('data_avail.max_year IS NULL, data_avail.max_year DESC')
+              ->orderBy('metadata_id', 'desc')
+              ->paginate(15)->withQueryString();
 
         // Data dropdown filter
         $klasifikasiList = Klasifikasi::orderBy('nama_klasifikasi')
