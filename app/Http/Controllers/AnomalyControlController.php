@@ -345,17 +345,34 @@ class AnomalyControlController extends Controller
     public function scanAll(Request $request)
     {
         try {
-            $metaId = $request->input('metadata_id');
+            $metaId   = $request->input('metadata_id');
+            $scanType = $request->input('scan_type', 'all');
+
+            $scanOptions = [
+                'all'             => ['percentage_change', 'source_conflict', 'unreasonable_value'],
+                'extreme'         => ['percentage_change'],
+                'unreasonable'    => ['unreasonable_value'],
+                'source_conflict' => ['source_conflict'],
+            ];
+
+            $enabledChecks = $scanOptions[$scanType] ?? $scanOptions['all'];
+            $scanLabel = match ($scanType) {
+                'extreme' => 'Kenaikan / Penurunan Ekstrem',
+                'unreasonable' => 'Nilai Tidak Wajar',
+                'source_conflict' => 'Konflik Sumber Data',
+                default => 'Semua jenis anomali',
+            };
 
             $stats = $this->detector->scanExistingData(
                 100,    // batchSize
                 true,   // scanAll
-                $metaId // metadata filter (nullable)
+                $metaId, // metadata filter (nullable)
+                $enabledChecks,
             );
 
             return response()->json([
                 'success' => true,
-                'message' => "Scan selesai. {$stats['scanned']} data diperiksa, {$stats['anomaliesFound']} anomali ditemukan.",
+                'message' => "Scan {$scanLabel} selesai. {$stats['scanned']} data diperiksa, {$stats['anomaliesFound']} anomali ditemukan.",
                 'stats'   => $stats,
             ]);
         } catch (\Throwable $e) {

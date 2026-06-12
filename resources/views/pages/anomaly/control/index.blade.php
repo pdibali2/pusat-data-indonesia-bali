@@ -10,7 +10,7 @@
             <p class="text-xs text-gray-400 mt-0.5">Review dan kelola anomali yang terdeteksi sistem</p>
         </div>
         <div class="flex items-center gap-2">
-            {{-- <button type="button" onclick="openScanModal()"
+            <button type="button" onclick="openScanModal()"
                     class="flex items-center gap-1.5 text-xs px-3 py-2 rounded-lg btn-primary">
                 <i class="fas fa-chart-bar"></i> Scan Data
             </button>
@@ -18,7 +18,7 @@
                class="flex items-center gap-1.5 text-xs px-3 py-2 rounded-lg border border-gray-200
                       text-gray-600 hover:bg-gray-50 transition-colors">
                 <i class="fas fa-sliders-h"></i> Atur Threshold
-            </a> --}}
+            </a>
             <a href="{{ route('data.approval') }}"
                class="flex items-center gap-1.5 text-xs px-3 py-2 rounded-lg border border-gray-200
                       text-gray-600 hover:bg-gray-50 transition-colors">
@@ -707,6 +707,19 @@
                 </select>
             </div>
 
+            <div>
+                <label class="block text-xs font-semibold text-gray-700 mb-1.5">
+                    Jenis Scan
+                </label>
+                <select id="scanType"
+                        class="w-full text-xs border border-gray-200 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-sky-400">
+                    <option value="all">Semua jenis anomali</option>
+                    <option value="extreme">Kenaikan / Penurunan Ekstrem</option>
+                    <option value="unreasonable">Nilai Tidak Wajar</option>
+                    <option value="source_conflict">Konflik Sumber Data</option>
+                </select>
+            </div>
+
             {{-- Progress --}}
             <div id="scanProgress" class="hidden">
                 <div class="flex items-center gap-2 text-xs text-emerald-700 bg-emerald-50
@@ -871,9 +884,11 @@ async function doScan() {
     progress.classList.remove('hidden');
     result.classList.add('hidden');
 
+    const scanType = document.getElementById('scanType').value;
     const form = new FormData();
     form.append('_token', '{{ csrf_token() }}');
     if (metaId) form.append('metadata_id', metaId);
+    form.append('scan_type', scanType);
 
     try {
         const res  = await fetch(SCAN_URL, { method: 'POST', body: form });

@@ -26,23 +26,29 @@ class AnomalyDetectionService
      *
      * @return array{anomalies_found: bool, anomalies: Anomaly[], workflow_status: string}
      */
-    public function screenData(Data $data): array
+    public function screenData(Data $data, array $enabledChecks = ['percentage_change', 'source_conflict', 'unreasonable_value']): array
     {
         $data->loadMissing(['metadata', 'time', 'location']);
 
         $detected = [];
 
         // 1. Cek kenaikan / penurunan ekstrem vs histori
-        $changeAnomaly = $this->checkPercentageChange($data);
-        if ($changeAnomaly) $detected[] = $changeAnomaly;
+        if (in_array('percentage_change', $enabledChecks, true)) {
+            $changeAnomaly = $this->checkPercentageChange($data);
+            if ($changeAnomaly) $detected[] = $changeAnomaly;
+        }
 
         // 2. Cek konflik antar sumber (data metadata+lokasi+waktu yang sama, produsen beda)
-        $conflictAnomaly = $this->checkSourceConflict($data);
-        if ($conflictAnomaly) $detected[] = $conflictAnomaly;
+        if (in_array('source_conflict', $enabledChecks, true)) {
+            $conflictAnomaly = $this->checkSourceConflict($data);
+            if ($conflictAnomaly) $detected[] = $conflictAnomaly;
+        }
 
         // 3. Cek nilai tidak wajar (outlier statistik dari histori)
-        $unreasonableAnomaly = $this->checkUnreasonableValue($data);
-        if ($unreasonableAnomaly) $detected[] = $unreasonableAnomaly;
+        if (in_array('unreasonable_value', $enabledChecks, true)) {
+            $unreasonableAnomaly = $this->checkUnreasonableValue($data);
+            if ($unreasonableAnomaly) $detected[] = $unreasonableAnomaly;
+        }
 
         // Update workflow_status berdasarkan hasil screening
         $workflowStatus = empty($detected)
@@ -55,7 +61,7 @@ class AnomalyDetectionService
         $this->auditTrail->recordScreened('data', $data->id, [
             'anomalies_found' => count($detected),
             'workflow_status' => $workflowStatus,
-            'checks_run'      => ['percentage_change', 'source_conflict', 'unreasonable_value'],
+            'checks_run'      => $enabledChecks,
         ]);
 
         return [
@@ -286,7 +292,7 @@ class AnomalyDetectionService
      * @param  callable  $onProgress   Callback progress (dipanggil setiap batch)
      * @return array{scanned: int, anomalies_found: int, skipped: int}
      */
-    public function scanExistingData(int $batchSize = 100, bool $scanAll = false, ?int $metadataId = null, ?callable $onProgress = null): array
+    public function scanExistingData(int $batchSize = 100, bool $scanAll = false, ?int $metadataId = null, array $enabledChecks = ['percentage_change', 'source_conflict', 'unreasonable_value'], ?callable $onProgress = null): array
     {
         $scanned        = 0;
         $anomaliesFound = 0;
@@ -298,11 +304,11 @@ class AnomalyDetectionService
             ->when($metadataId, fn($q) => $q->where('metadata_id', $metadataId))
             ->with(['metadata', 'time', 'location'])
             ->chunkById($batchSize, function ($chunk) use (
-                &$scanned, &$anomaliesFound, &$skipped, $onProgress
+                &$scanned, &$anomaliesFound, &$skipped, $enabledChecks, $onProgress
             ) {
                 foreach ($chunk as $data) {
                     try {
-                        $result = $this->screenData($data);
+                        $result = $this->screenData($data, $enabledChecks);
                         $scanned++;
                         if ($result['anomalies_found']) $anomaliesFound++;
                     } catch (\Throwable $e) {
