@@ -30,8 +30,8 @@
     {{-- HEADER --}}
     <div class="flex items-start justify-between gap-3 mb-4">
         <div>
-            <h1 class="text-lg font-bold text-gray-800">Halaman Data</h1>
-            <p class="text-xs text-gray-400 mt-0.5">Menyajikan data sesuai dengan kebutuhan Anda</p>
+            <h1 class="text-lg sm:text-xl font-bold text-gray-800">Halaman Data</h1>
+            <p class="text-xs sm:text-sm text-gray-400 mt-0.5">Menyajikan data sesuai dengan kebutuhan Anda</p>
         </div>
         {{-- Clock: hidden on very small mobile, shown from sm --}}
         <div class="text-right text-xs text-gray-500 shrink-0 hidden sm:block">
@@ -43,7 +43,7 @@
     {{-- ACTION BAR — Admin & Pengelola only --}}
     @if(Auth::check() && (int) Auth::user()->group_id !== 3)
     <div class="border-t border-gray-100 pt-4">
-        <h2 class="text-sm font-bold text-gray-700 mb-3">Kelola Data</h2>
+        <h2 class="text-sm md:text-lg font-bold text-gray-700 mb-3">Kelola Data</h2>
         <div class="flex flex-wrap gap-2">
             <a href="{{ route('data.create') }}"
                class="px-3 py-2 btn-primary text-xs font-semibold rounded-lg

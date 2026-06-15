@@ -59,9 +59,13 @@
     #pivotTable th.col-sticky-nama,
     #pivotTable td.col-sticky-nama {
         left: 0;
-        min-width: 220px;
-        max-width: 260px;
+        min-width: 140px;
+        max-width: 180px;
+        width: 160px;
         background: inherit;
+        word-break: break-word;
+        white-space: normal;
+        line-height: 1.3;
     }
     /* Freeze header baris */
     #pivotTable thead th {
@@ -177,16 +181,16 @@
 <div class="tp-panel-card mt-2 bg-white rounded-xl shadow p-6">
 
     {{-- ════ HEADER ════ --}}
-    <div class="flex justify-between items-start mb-6">
+    <div class="flex flex-col sm:flex-row sm:justify-between sm:items-start gap-3 mb-6">
         <div>
             <h2 class="text-lg font-bold text-gray-800">Tampilkan Data</h2>
             <p class="text-sm text-gray-400 mt-1">
-                Pilih template → frekuensi → rentang periode → klik Tampilkan Data
+                Silakan membuat template terlebih dahulu untuk memilih data yang ingin ditampilkan.
             </p>
         </div>
         <a href="{{ route('template.create') }}"
-           class="px-4 py-2 btn-primary text-sm font-semibold rounded-lg
-                  shadow-md shadow-blue-400/30 flex items-center gap-2 transition-colors">
+        class="w-full sm:w-auto px-4 py-2.5 btn-primary text-sm font-semibold rounded-lg
+                shadow-md shadow-blue-400/30 flex items-center justify-center gap-2 transition-colors shrink-0">
             <i class="fas fa-plus"></i> Buat Template
         </a>
     </div>
@@ -238,50 +242,54 @@
                                 ][$jenis] ?? $jenis;
                                 $isActive = $activeTemplateId === (int) $tmpl->tampilan_id;
                             @endphp
-                            <div class="grid grid-cols-13 gap-5 w-full border-2 rounded-lg px-4 py-3
-                                        text-xs font-semibold items-center cursor-pointer transition-all duration-150
+        
+                            {{--
+                                MOBILE BADGE — 2 baris, tidak pakai grid-cols-13
+                                Baris 1: nama template + aksi (edit/hapus) di kanan
+                                Baris 2: meta info (jenis · count · tanggal)
+                            --}}
+                            <div class="w-full border-2 rounded-lg px-4 py-3
+                                        text-xs font-semibold cursor-pointer transition-all duration-150
                                         {{ $isActive
                                             ? 'border-sky-500 bg-sky-500 text-white'
                                             : 'border-sky-300 text-sky-500 hover:bg-sky-500 hover:text-white' }}"
                                 onclick="selectTemplate({{ $tmpl->tampilan_id }})">
-
-                                <div class="col-span-6">
-                                    <p class="font-semibold">{{ $tmpl->nama_tampilan }}</p>
-                                    <div class="mt-1 flex items-center gap-2 font-normal opacity-80">
-                                        <span>{{ $jenisLabel }}</span>
-                                        <span>•</span>
-                                        <span>{{ $tmpl->isi_tampilan_count ?? 0 }} metadata</span>
+        
+                                {{-- Baris 1: Nama + aksi --}}
+                                <div class="flex items-start justify-between gap-2">
+                                    <p class="font-semibold text-xs leading-tight">{{ $tmpl->nama_tampilan }}</p>
+        
+                                    {{-- Aksi: edit + hapus --}}
+                                    <div class="flex items-center gap-2.5 shrink-0 ml-1"
+                                        onclick="event.stopPropagation()">
+                                        <a href="{{ route('template.edit', $tmpl->tampilan_id) }}"
+                                        class="{{ $isActive ? 'text-white/80 hover:text-white' : 'text-sky-400 hover:text-sky-600' }} transition-colors"
+                                        title="Edit">
+                                            <i class="fas fa-edit text-xs"></i>
+                                        </a>
+                                        <form action="{{ route('template.destroy', $tmpl->tampilan_id) }}"
+                                            method="POST"
+                                            onsubmit="return confirm('Hapus template \'{{ addslashes($tmpl->nama_tampilan) }}\'?')">
+                                            @csrf @method('DELETE')
+                                            <button type="submit"
+                                                    class="{{ $isActive ? 'text-white/80 hover:text-white' : 'text-sky-400 hover:text-red-500' }} transition-colors"
+                                                    title="Hapus">
+                                                <i class="fas fa-trash text-xs"></i>
+                                            </button>
+                                        </form>
                                     </div>
                                 </div>
-
-                                <div class="col-span-3 font-normal opacity-70">
-                                    <span class="block">Dibuat</span>
-                                    <span>{{ $tmpl->created_at?->format('Y-m-d H:i') }}</span>
+        
+                                {{-- Baris 2: meta info --}}
+                                <div class="mt-1.5 flex flex-wrap items-center text-xs gap-x-2 gap-y-0.5 font-normal
+                                            {{ $isActive ? 'text-white/75' : 'opacity-70' }}">
+                                    <span>{{ $jenisLabel }}</span>
+                                    <span class="opacity-50">·</span>
+                                    <span>{{ $tmpl->isi_tampilan_count ?? 0 }} data</span>
+                                    <span class="opacity-50">·</span>
+                                    <span>Diperbarui {{ $tmpl->updated_at?->format('d-m-Y H.i') }}</span>
                                 </div>
-
-                                <div class="col-span-3 font-normal opacity-70">
-                                    <span class="block">Diubah</span>
-                                    <span>{{ $tmpl->updated_at?->format('Y-m-d H:i') }}</span>
-                                </div>
-
-                                <div class="col-span-1 flex gap-2 justify-end"
-                                    onclick="event.stopPropagation()">
-                                    <a href="{{ route('template.edit', $tmpl->tampilan_id) }}"
-                                    class="{{ $isActive ? 'text-white/80 hover:text-white' : 'text-sky-400 hover:text-white' }} transition-colors"
-                                    title="Edit">
-                                        <i class="fas fa-edit"></i>
-                                    </a>
-                                    <form action="{{ route('template.destroy', $tmpl->tampilan_id) }}"
-                                        method="POST"
-                                        onsubmit="return confirm('Hapus template \'{{ addslashes($tmpl->nama_tampilan) }}\'?')">
-                                        @csrf @method('DELETE')
-                                        <button type="submit"
-                                                class="{{ $isActive ? 'text-white/80 hover:text-white' : 'text-sky-400 hover:text-white' }} transition-colors"
-                                                title="Hapus">
-                                            <i class="fas fa-trash"></i>
-                                        </button>
-                                    </form>
-                                </div>
+        
                             </div>
                         @endforeach
                     </div>
@@ -576,28 +584,34 @@
                 <p class="text-xs text-gray-400 mt-0.5" id="tableSubInfo"></p>
             </div>
             <div class="flex gap-2 flex-wrap">
-                {{-- ── Tombol Export ── --}}
-                <div class="flex gap-2 flex-wrap" id="exportBtnGroup" style="display:none!important">
-                    {{-- Excel --}}
-                    <button type="button" onclick="exportData('excel')"
-                            class="px-3 py-1.5 border border-emerald-300 hover:bg-emerald-50 text-emerald-600
+                {{-- ── Tombol Export (Dropdown) ── --}}
+                <div class="relative" id="exportBtnGroup" style="display:none!important">
+                    <button type="button" onclick="toggleExportDropdown()"
+                            class="px-3 py-1.5 border border-gray-300 hover:bg-gray-50 text-gray-600
                                 text-xs font-medium rounded-lg flex items-center gap-1.5 transition-colors">
-                        <i class="fas fa-file-excel text-xs"></i> Export Excel
+                        <i class="fas fa-download text-xs"></i> Export
+                        <i class="fas fa-chevron-down text-[10px] ml-0.5" id="exportChevron"></i>
                     </button>
-                
-                    {{-- PDF --}}
-                    <button type="button" onclick="exportData('pdf')"
-                            class="px-3 py-1.5 border border-red-300 hover:bg-red-50 text-red-500
-                                text-xs font-medium rounded-lg flex items-center gap-1.5 transition-colors">
-                        <i class="fas fa-file-pdf text-xs"></i> Export PDF
-                    </button>
-                
-                    {{-- JSON --}}
-                    <button type="button" onclick="exportData('json')"
-                            class="px-3 py-1.5 border border-gray-300 hover:bg-gray-50 text-gray-500
-                                text-xs font-medium rounded-lg flex items-center gap-1.5 transition-colors">
-                        <i class="fas fa-code text-xs"></i> Export JSON
-                    </button>
+
+                    <div id="exportDropdown"
+                        class="hidden absolute left-0 right-0 mt-1 w-44 bg-white border border-gray-200
+                                rounded-lg shadow-lg z-50 overflow-hidden">
+                        <button onclick="exportData('excel'); closeExportDropdown()"
+                                class="w-full px-4 py-2.5 text-left text-xs flex items-center gap-2.5
+                                    text-emerald-600 hover:bg-emerald-50 transition-colors">
+                            <i class="fas fa-file-excel w-3.5 text-center"></i> Export Excel
+                        </button>
+                        <button onclick="exportData('pdf'); closeExportDropdown()"
+                                class="w-full px-4 py-2.5 text-left text-xs flex items-center gap-2.5
+                                    text-red-500 hover:bg-red-50 transition-colors border-t border-gray-100">
+                            <i class="fas fa-file-pdf w-3.5 text-center"></i> Export PDF
+                        </button>
+                        <button onclick="exportData('json'); closeExportDropdown()"
+                                class="w-full px-4 py-2.5 text-left text-xs flex items-center gap-2.5
+                                    text-gray-500 hover:bg-gray-50 transition-colors border-t border-gray-100">
+                            <i class="fas fa-code w-3.5 text-center"></i> Export JSON
+                        </button>
+                    </div>
                 </div>
                 <button type="button" onclick="resetFilter()"
                         class="px-3 py-1.5 border border-gray-300 hover:bg-gray-50 text-gray-500
@@ -1682,6 +1696,31 @@ function exportCsv() {
     a.href = url; a.download = `data-template-${TS.tampilan_id ?? 'export'}.csv`;
     a.click(); URL.revokeObjectURL(url);
 }
+
+// ─── Export Dropdown ──────────────────────────────────────────
+function toggleExportDropdown() {
+    const dd      = document.getElementById('exportDropdown');
+    const chevron = document.getElementById('exportChevron');
+    const isOpen  = !dd.classList.contains('hidden');
+    if (isOpen) {
+        dd.classList.add('hidden');
+        chevron.classList.remove('rotate-180');
+    } else {
+        dd.classList.remove('hidden');
+        chevron.classList.add('rotate-180');
+    }
+}
+
+function closeExportDropdown() {
+    document.getElementById('exportDropdown')?.classList.add('hidden');
+    document.getElementById('exportChevron')?.classList.remove('rotate-180');
+}
+
+// Tutup dropdown kalau klik di luar
+document.addEventListener('click', e => {
+    const group = document.getElementById('exportBtnGroup');
+    if (group && !group.contains(e.target)) closeExportDropdown();
+});
 
 // ─── Reset ────────────────────────────────────────────────────
 function resetFilter() { window.location.href = TMPL_URLS.base; }

@@ -148,7 +148,10 @@
     .canvas-col {
         flex: 1;
         position: relative;
-        min-height: 300px;
+        min-height: 260px;
+        height: 260px;      /* ← tambahkan height eksplisit */
+        max-width: 100%;    /* ← cegah overflow horizontal */
+        overflow: hidden;   /* ← tambahkan ini */
     }
 
     .x-axis-row {
@@ -205,6 +208,21 @@
         line-height: 1.6;
     }
 
+    .chart-type-option-btn {
+        border-color: #e5e7eb;
+        color: #6b7280;
+        background: #fff;
+    }
+    .chart-type-option-btn:hover {
+        border-color: #9ca3af;
+        color: #374151;
+    }
+    .chart-type-option-btn.active {
+        border-color: #0ea5e9;
+        background: #f0f9ff;
+        color: #0284c7;
+    }
+
     /* ══════════════════════════════════
        FOOTER CARD
     ══════════════════════════════════ */
@@ -226,11 +244,29 @@
         margin-top: 3px;
     }
 
-    /* ── Responsive ── */
-    @media (max-width: 600px) {
-        .chart-card   { padding: 18px 16px; }
-        .chart-header { padding-right: 0; }
-        .chart-type-wrap { position: static; margin-top: 14px; }
+    @media (max-width: 640px) {
+        .chart-card { padding: 16px 14px; }
+
+        /* Header stack vertikal di mobile */
+        .chart-header-inner {
+            flex-direction: column;
+            align-items: flex-start;
+            gap: 12px;
+        }
+
+        /* Dropdown tidak absolute di mobile */
+        .chart-type-wrap {
+            position: static;
+            margin-top: 0;
+            z-index: 50;
+        }
+
+        /* Y-label lebih kecil */
+        .y-label-col { width: 24px; }
+        .y-label-text { font-size: 9px; }
+
+        /* Canvas lebih pendek di mobile */
+        .canvas-col { min-height: 220px; }
     }
 </style>
 
@@ -251,54 +287,38 @@
 
         {{-- ── Header: Nama Metadata — Nama Wilayah — Frekuensi ── --}}
         <div class="chart-header">
-            <h1 class="text-xl font-bold pb-4">Grafik</h1>
+            <h1 class="text-xl font-bold pb-3">Grafik</h1>
 
-            <div class="grid grid-cols-2 gap-3">
-                <div class="col-1">
-                    <div class="text-md font-semibold text-gray-800">
+            <div class="chart-header-inner flex items-start justify-between gap-3">
+                {{-- Kiri: judul & badge --}}
+                <div class="flex-1 min-w-0">
+                    <div class="text-sm font-semibold text-gray-800 leading-snug">
                         {{ $metadata->nama ?? '—' }} di
                         {{ $location->nama_wilayah ?? 'Semua Wilayah' }}
                         <span class="font-medium text-gray-500">—</span>
                         <span class="font-medium text-gray-500">{{ ucfirst($metadata->frekuensi_penerbitan ?? '—') }}</span>
                     </div>
-                    <div class="flex flex-row gap-2 text-xs font-medium text-gray-300 mt-2">
-                        <span class="col-1">
-                            <i class="fas fa-tag"></i>
-                            {{ $metadata->klasifikasi?->nama_klasifikasi ?? '—' }}
-                        </span>
-                        <span class="col-1">
-                            <i class="fas fa-map-marker-alt"></i>
-                            {{ $location->nama_wilayah ?? 'Semua Wilayah' }}
-                        </span>
-                        <span class="col-1">
-                            <i class="fas fa-ruler-horizontal"></i>
-                            {{ $metadata->satuan_data ?? '—' }}
-                        </span>
+                    <div class="flex flex-wrap gap-2 text-xs font-medium text-gray-300 mt-2">
+                        <span><i class="fas fa-tag"></i> {{ $metadata->klasifikasi?->nama_klasifikasi ?? '—' }}</span>
+                        <span><i class="fas fa-map-marker-alt"></i> {{ $location->nama_wilayah ?? 'Semua Wilayah' }}</span>
+                        <span><i class="fas fa-ruler-horizontal"></i> {{ $metadata->satuan_data ?? '—' }}</span>
                     </div>
                 </div>
-                <div class="col-1">
-                    <div class="chart-type-wrap">
-                        <button type="button"
-                                class="chart-type-trigger"
-                                id="typeTrigger"
-                                onclick="ChartTypeMenu.toggle(event)"
-                                aria-haspopup="true"
-                                aria-expanded="false">
-                            <i class="fas fa-chart-line" id="triggerIcon" style="font-size:11px;"></i>
-                            <span id="triggerLabel">Garis</span>
-                            <i class="fas fa-chevron-down chevron"></i>
-                        </button>
-                        <div class="chart-type-dropdown" id="typeMenu" role="menu">
-                            <button type="button" class="chart-type-option active" id="optGaris"
-                                    onclick="ChartTypeMenu.select('line')" role="menuitem">
-                                <i class="fas fa-chart-line opt-icon"></i> Garis
-                            </button>
-                            <button type="button" class="chart-type-option" id="optBatang"
-                                    onclick="ChartTypeMenu.select('bar')" role="menuitem">
-                                <i class="fas fa-chart-bar opt-icon"></i> Batang
-                            </button>
-                        </div>
-                    </div>
+
+                {{-- Kanan: toggle Garis / Batang --}}
+                <div class="flex gap-1 shrink-0">
+                    <button type="button" id="btnGaris"
+                            onclick="ChartTypeMenu.select('line')"
+                            class="chart-type-option-btn active inline-flex items-center gap-1.5
+                                px-3 py-1.5 text-xs font-semibold border rounded-lg transition-all">
+                        <i class="fas fa-chart-line text-[11px]"></i> Garis
+                    </button>
+                    <button type="button" id="btnBatang"
+                            onclick="ChartTypeMenu.select('bar')"
+                            class="chart-type-option-btn inline-flex items-center gap-1.5
+                                px-3 py-1.5 text-xs font-semibold border rounded-lg transition-all">
+                        <i class="fas fa-chart-bar text-[11px]"></i> Batang
+                    </button>
                 </div>
             </div>
         </div>
@@ -337,7 +357,7 @@
                 </div>
 
                 {{-- Canvas Chart --}}
-                <canvas id="mainChart" style="display:none; height:300px;"></canvas>
+                <canvas id="mainChart" style="display:none; width:100%; height:100%;"></canvas>
 
             </div>
         </div>
@@ -419,18 +439,8 @@ const ChartTypeMenu = {
 
     select(type) {
         const isBar = type === 'bar';
-
-        // Update label & icon pada tombol trigger
-        document.getElementById('triggerLabel').textContent = isBar ? 'Batang' : 'Garis';
-        document.getElementById('triggerIcon').className    = isBar
-            ? 'fas fa-chart-bar'
-            : 'fas fa-chart-line';
-
-        // Toggle active state pada opsi
-        document.getElementById('optGaris').classList.toggle('active', !isBar);
-        document.getElementById('optBatang').classList.toggle('active', isBar);
-
-        this.close();
+        document.getElementById('btnGaris').classList.toggle('active', !isBar);
+        document.getElementById('btnBatang').classList.toggle('active', isBar);
         DataChart.setType(type);
     },
 };

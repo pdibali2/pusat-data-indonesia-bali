@@ -55,7 +55,7 @@
         </p>
 
         {{-- ─── Search bar ─────────────────────────────────────────── --}}
-        <div class="relative z-30 w-full max-w-sm mx-auto md:max-w-2xl mb-6 sm:mb-8"
+        <div class="relative z-30 w-full max-w-sm mx-auto px-5 md:max-w-2xl mb-6 sm:mb-8"
              x-data="heroSearch()">
             <div class="relative">
                 <div class="flex items-stretch bg-white shadow-2xl shadow-black/50 overflow-visible border-l-0 sm:border-l-4 border-stikom-red">
