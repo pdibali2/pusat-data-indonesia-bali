@@ -73,11 +73,8 @@
             "onlyAdmin"    => false,
             "active"       => request()->segment(1) === 'admin' && in_array(request()->segment(2), ['users','groups','klasifikasi','produsen','rujukan']),
             "children" => array_filter([
-                // ← Hanya Super Admin (group_id = 1)
                 $isSuperAdmin ? (object)["title" => "Kelola User",  "path" => "/admin/users",  "icon" => "fas fa-user",  "active" => request()->segment(2) === 'users',  "onlyAdmin" => false] : null,
                 $isSuperAdmin ? (object)["title" => "Kelola Group", "path" => "/admin/groups", "icon" => "fas fa-users", "active" => request()->segment(2) === 'groups', "onlyAdmin" => false] : null,
-
-                // ← Semua Admin (termasuk Pengelola)
                 (object)["title" => "Kelola Klasifikasi", "path" => "/admin/klasifikasi", "icon" => "fas fa-tags",     "active" => request()->segment(2) === 'klasifikasi', "onlyAdmin" => false],
                 (object)["title" => "Kelola Produsen",    "path" => "/admin/produsen",    "icon" => "fas fa-industry", "active" => request()->segment(2) === 'produsen',     "onlyAdmin" => false],
                 (object)["title" => "Kelola Rujukan",     "path" => "/admin/rujukan",     "icon" => "fas fa-file-alt", "active" => request()->segment(2) === 'rujukan',      "onlyAdmin" => false],
@@ -109,24 +106,34 @@
     ];
 @endphp
 
-<aside class="w-56 h-full flex flex-col" style="background: linear-gradient(180deg, #0c4a6e 0%, #0369a1 100%);">
+<aside class="w-56 h-full flex flex-col shadow-xl lg:shadow-none"
+       style="background: linear-gradient(180deg, #0c4a6e 0%, #0369a1 100%);">
 
-    {{-- Logo --}}
-    <div class="px-5 py-4 flex items-center gap-3 border-b border-white/10">
-        <div class="w-9 h-9 rounded-lg bg-white/15 border border-white/30 flex items-center justify-center text-white">
-            <i class="fas fa-database text-sm"></i>
+    {{-- ── Logo + Close button (mobile) ── --}}
+    <div class="px-4 py-4 flex items-center justify-between border-b border-white/10">
+        <div class="flex items-center gap-3">
+            <div class="w-9 h-9 rounded-lg bg-white/15 border border-white/30
+                        flex items-center justify-center text-white shrink-0">
+                <i class="fas fa-database text-sm"></i>
+            </div>
+            <div class="leading-tight">
+                <p class="text-[10px] font-semibold text-white/80 tracking-wide uppercase">Pusat Data</p>
+                <p class="text-[10px] font-bold text-white tracking-wide uppercase">Indonesia Bali</p>
+            </div>
         </div>
-        <div class="leading-tight">
-            <p class="text-[10px] font-semibold text-white/80 tracking-wide uppercase">Pusat Data</p>
-            <p class="text-[10px] font-bold text-white tracking-wide uppercase">Indonesia Bali</p>
-        </div>
+
+        {{-- Close button — only visible on mobile --}}
+        <button @click="sidebarOpen = false"
+                class="lg:hidden w-7 h-7 flex items-center justify-center rounded-md
+                       text-white/60 hover:text-white hover:bg-white/10 transition-colors">
+            <i class="fas fa-times text-xs"></i>
+        </button>
     </div>
 
-    {{-- Nav --}}
+    {{-- ── Nav ── --}}
     <nav class="flex-1 overflow-y-auto py-3 px-3 scrollbar-none">
         <ul class="flex flex-col gap-0.5">
             @foreach ($menus as $menu)
-                {{-- Skip jika customer dan menu onlyCustomer --}}
                 @if($isCustomer && $menu->onlyCustomer)
                     @continue
                 @endif
@@ -138,13 +145,13 @@
 
                 <li x-data="{ open: {{ $isOpen ? 'true' : 'false' }} }">
 
-                    {{-- Parent --}}
                     @if($hasChildren)
                     <button @click="open = !open"
-                            class="w-full flex items-center justify-between px-2.5 py-2 rounded-md transition-colors text-xs
+                            class="w-full flex items-center justify-between px-2.5 py-2 rounded-md
+                                   transition-colors text-xs
                                    {{ $menu->active
                                        ? 'bg-white/15 text-white font-semibold'
-                                       : 'text-white/70 hover:bg-white/8 hover:text-white' }}
+                                       : 'text-white/70 hover:bg-white/10 hover:text-white' }}
                                    relative">
                         @if($menu->active)
                             <span class="absolute left-0 top-1/2 -translate-y-1/2 w-0.5 h-3/5 bg-sky-300 rounded-r-full"></span>
@@ -158,10 +165,12 @@
                     </button>
                     @else
                     <a href="{{ url($menu->path) }}"
-                       class="flex items-center justify-between px-2.5 py-2 rounded-md transition-colors text-xs
+                       @click="sidebarOpen = false"
+                       class="flex items-center justify-between px-2.5 py-2 rounded-md
+                              transition-colors text-xs
                               {{ $menu->active
                                   ? 'bg-white/15 text-white font-semibold'
-                                  : 'text-white/70 hover:bg-white/8 hover:text-white' }}
+                                  : 'text-white/70 hover:bg-white/10 hover:text-white' }}
                               relative">
                         @if($menu->active)
                             <span class="absolute left-0 top-1/2 -translate-y-1/2 w-0.5 h-3/5 bg-sky-300 rounded-r-full"></span>
@@ -173,7 +182,6 @@
                     </a>
                     @endif
 
-                    {{-- Submenu --}}
                     @if($hasChildren)
                     <ul x-show="open"
                         x-transition:enter="transition ease-out duration-150"
@@ -186,7 +194,9 @@
                         @foreach($menu->children as $child)
                         <li>
                             <a href="{{ url($child->path) }}"
-                               class="flex items-center gap-2.5 px-2 py-1.5 rounded-md text-[11px] transition-colors
+                               @click="sidebarOpen = false"
+                               class="flex items-center gap-2.5 px-2 py-1.5 rounded-md text-[11px]
+                                      transition-colors
                                       {{ $child->active
                                           ? 'text-sky-300 font-semibold'
                                           : 'text-white/55 hover:text-white hover:bg-white/6' }}">
@@ -203,7 +213,7 @@
         </ul>
     </nav>
 
-    {{-- Logout --}}
+    {{-- ── Logout ── --}}
     <div class="p-4 border-t border-white/10">
         <form action="/logout" method="POST">
             @csrf

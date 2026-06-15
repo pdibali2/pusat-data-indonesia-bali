@@ -38,28 +38,24 @@
     </div>
 
     {{-- ─── Content ─────────────────────────────────────────────── --}}
-    <div class="relative z-10 w-full max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 text-left lg:text-center pt-28 pb-16 sm:pt-32 sm:pb-20 md:pt-36 md:pb-24">
+    <div class="relative z-10 w-full max-w-5xl mx-auto sm:px-6 lg:px-8 text-center pt-28 pb-16 sm:pt-32 sm:pb-20 md:pt-36 md:pb-24">
+
 
         {{-- Heading --}}
-        <h1 class="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-poppins font-bold tracking-normal text-stikom-accent leading-tight mb-3 sm:mb-4"
-            style="animation-delay:0.2s">
+        <h1 class="block sm:hidden text-5xl leading-tight sm:text-4xl md:text-5xl lg:text-6xl font-poppins font-black tracking-tight text-stikom-accent mb-3 sm:mb-4">
+            Pusat Data<br>Indonesia Bali
+        </h1>
+        <h1 class="hidden sm:block text-4xl leading-tight sm:text-4xl md:text-5xl lg:text-6xl font-poppins font-black tracking-tight text-stikom-accent mb-3 sm:mb-4">
             Pusat Data Indonesia Bali
         </h1>
 
-        <p class="text-white/80 text-sm sm:text-base md:text-lg max-w-xs sm:max-w-md md:max-w-2xl lg:mx-auto mb-8 sm:mb-10 leading-relaxed sm:px-0">
+        <p class="text-white/75 text-sm sm:text-base md:text-lg max-w-xs mx-auto sm:max-w-md md:max-w-2xl mb-10 sm:mb-10 leading-relaxed">
             Layanan penyedia data terpusat untuk memudahkan pengguna menemukan
             dan mengakses data sesuai kebutuhan.
         </p>
 
         {{-- ─── Search bar ─────────────────────────────────────────── --}}
-        {{--
-            MOBILE FIX:
-            - Input font-size text-[16px] → cegah auto-zoom iOS
-            - Touch target tombol "Cari" min-h-[44px]
-            - Autocomplete max-h-60 dengan overflow-y-auto
-            - border-l-4 hanya di sm keatas agar tidak terlalu mencolok di 320px
-        --}}
-        <div class="relative z-30 w-full max-w md:max-w-2xl lg:mx-auto mb-7 sm:mb-8"
+        <div class="relative z-30 w-full max-w-sm mx-auto md:max-w-2xl mb-6 sm:mb-8"
              x-data="heroSearch()">
             <div class="relative">
                 <div class="flex items-stretch bg-white shadow-2xl shadow-black/50 overflow-visible border-l-0 sm:border-l-4 border-stikom-red">
@@ -84,7 +80,7 @@
                         @keydown.escape="close"
                         @focus="query.length >= 2 && search()"
                         placeholder="Cari data..."
-                        class="flex-1 min-w-0 py-3 sm:py-4 pr-2 bg-transparent text-gray-800 placeholder-gray-400
+                        class="flex-1 min-w-0 py-3.5 sm:py-4 pr-2 bg-transparent text-gray-800 placeholder-gray-400
                                text-[16px] outline-none font-poppins"
                         aria-label="Cari data"
                         autocomplete="off"
@@ -93,7 +89,7 @@
                     {{-- Tombol Cari — min touch target 44px --}}
                     <button
                         @click="goToSearch"
-                        class="shrink-0 px-4 sm:px-6 min-h-[44px] bg-stikom text-white text-sm font-bold
+                        class="shrink-0 px-5 sm:px-6 min-h-[44px] bg-stikom text-white text-sm font-bold
                                transition-colors duration-200 hover:bg-stikom-red self-stretch flex items-center">
                         Cari
                     </button>
@@ -119,7 +115,6 @@
                     </template>
 
                     <template x-for="item in suggestions" :key="item.metadata_id">
-                        {{-- Touch target min 44px via py-3 --}}
                         <a :href="`/statistik/${item.metadata_id}`"
                            class="flex items-center gap-3 sm:gap-4 px-4 sm:px-5 py-3 hover:bg-stikom-accent/8
                                   border-b border-gray-50 last:border-0 transition-colors cursor-pointer
@@ -141,44 +136,35 @@
         </div>
 
         {{-- ─── Klasifikasi tags ────────────────────────────────────── --}}
-        {{--
-            Mobile: flex-wrap, scroll horizontal tidak diperlukan karena wrap
-            Limit tampilan di mobile agar tidak memenuhi layar
-        --}}
-        <div class="relative z-10 flex flex-wrap lg:justify-center gap-1.5 sm:gap-2 mb-10 sm:mb-12 sm:px-0"
-             style="animation-delay:0.5s">
+        <div class="relative z-10 flex flex-wrap justify-center gap-1.5 sm:gap-2 mb-9 sm:mb-12 sm:px-0">
             @foreach($klasifikasiAktif as $k)
                 <a href="{{ route('klasifikasi.show', ['klasifikasi' => \Illuminate\Support\Str::slug($k->nama_klasifikasi)]) }}"
-                   class="px-3 py-1.5 bg-white/8 border border-white/15 text-white/70 text-xs font-medium
+                   class="px-3 py-1 bg-white/8 border border-white/15 text-white/65 text-[12px] font-medium
                           hover:bg-stikom-accent/20 hover:text-stikom-accent hover:border-stikom-accent/50
                           transition-all duration-200 backdrop-blur-sm
-                          min-h-[36px] flex items-center">
+                          min-h-[34px] flex items-center rounded-sm">
                     {{ $k->nama_klasifikasi }}
                 </a>
             @endforeach
         </div>
 
         {{-- ─── CTA Buttons ─────────────────────────────────────────── --}}
-        {{--
-            Mobile: stack vertikal (flex-col), lebar penuh
-            sm+: sejajar horizontal (sm:flex-row)
-        --}}
-        <div class="flex flex-col sm:flex-row items-center justify-center gap-3 sm:gap-4 sm:px-0">
+        <div class="relative z-10 flex flex-col sm:flex-row items-center justify-center gap-3 sm:gap-4 max-w-sm mx-auto sm:max-w-full">
             <a href="{{ route('data.index') }}"
-               class="group w-full sm:w-auto inline-flex items-center justify-center gap-2
-                      px-6 sm:px-8 py-3.5 bg-stikom-accent text-black hover:text-white font-black
-                      text-sm transition-all duration-200 shadow-xl hover:bg-stikom-accent
-                      hover:shadow-stikom-accent/30 hover:-translate-y-0.5 min-h-[44px]">
+               class="group w-64 sm:w-auto inline-flex items-center justify-center gap-2
+                      px-7 sm:px-8 py-3.5 bg-stikom-accent text-black hover:text-white font-black
+                      text-sm transition-all duration-200 shadow-xl hover:bg-yellow-500
+                      hover:shadow-stikom-accent/30 hover:-translate-y-0.5 min-h-[48px]">
                 <svg class="w-4 h-4 group-hover:translate-x-0.5 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M13 7l5 5m0 0l-5 5m5-5H6"/>
                 </svg>
                 Mulai Eksplorasi Data
             </a>
             <a href="#tentang"
-               class="w-full sm:w-auto inline-flex items-center justify-center gap-2
-                      px-6 sm:px-8 py-3.5 bg-transparent text-white/80 font-semibold
-                      text-sm border border-white/25 hover:border-white/50 hover:text-white
-                      transition-all duration-200 min-h-[44px]">
+               class="w-64 sm:w-auto inline-flex items-center justify-center gap-2
+                      px-7 sm:px-8 py-3.5 bg-transparent text-white/85 font-semibold
+                      text-sm border border-white/25 hover:border-white/60 hover:text-white
+                      transition-all duration-200 min-h-[48px]">
                 Pelajari Lebih Lanjut
             </a>
         </div>

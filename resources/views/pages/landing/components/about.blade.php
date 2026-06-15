@@ -3,15 +3,10 @@
         <div class="grid grid-cols-1 lg:grid-cols-2 gap-10 md:gap-12 lg:gap-16 items-center">
 
             {{-- ─── Illustration Panel ──────────────────────────────── --}}
-            {{--
-                Mobile: order-2 (tampil bawah)
-                lg+: order-1 (tampil kiri)
-                Mockup menyesuaikan lebar layar tanpa overflow
-            --}}
             <div class="fade-up order-2 lg:order-1 w-full">
                 <div class="relative w-full">
 
-                    {{-- Badge floating top-right — disembunyikan di layar sangat kecil --}}
+                    {{-- Badge floating top-right --}}
                     <div class="absolute -top-3 -right-2 sm:-top-4 sm:-right-4 z-10
                                 bg-stikom-accent text-stikom px-3 py-1.5 sm:px-4 sm:py-2
                                 shadow-lg text-xs sm:text-sm font-black">
@@ -65,9 +60,6 @@
                                 <div class="w-5 h-5 rounded-full bg-stikom-blue text-white text-[10px] font-bold flex items-center justify-center shrink-0">2</div>
                                 <span class="text-xs font-bold text-stikom">Pilih Frekuensi Rentang Waktu</span>
                             </div>
-                            {{--
-                                Mobile: 2 kolom, Tablet: 3 kolom, lg: 6 kolom
-                            --}}
                             <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-1 sm:gap-1.5">
                                 @foreach([
                                     ['10 Tahunan', 'Setiap 10 tahun', false],
@@ -114,37 +106,54 @@
                             </div>
                         </div>
 
-                        {{-- ─── Result: Table di md+, Card di mobile ──── --}}
+                        {{-- ─── Result ──── --}}
                         <div class="px-4 sm:px-5 py-3">
                             <div class="flex items-center justify-between mb-2 sm:mb-3">
                                 <div class="text-xs font-bold text-stikom">Menampilkan 1 baris data</div>
-                                <div class="border border-gray-200 text-[9px] sm:text-[9px] text-gray-400 px-2 py-1 cursor-pointer">✕ Reset</div>
+                                <div class="border border-gray-200 text-[9px] text-gray-400 px-2 py-1 cursor-pointer">✕ Reset</div>
                             </div>
 
-                            {{-- CARD LAYOUT — tampil di mobile & sm, sembunyikan di md+ --}}
+                            {{--
+                                CARD LAYOUT — mobile & sm
+                                "Grafik" button diletakkan di sebelah kanan data angka (inline)
+                            --}}
                             <div class="md:hidden space-y-2">
                                 <div class="border border-gray-100 rounded-sm p-3 bg-white">
-                                    <div class="mb-2">
+                                    {{-- Judul + meta --}}
+                                    <div class="mb-2.5">
                                         <div class="text-[10px] font-bold text-stikom leading-tight">Angka Partisipasi Kasar Laki-laki</div>
                                         <div class="text-[9px] text-gray-400 mt-0.5">Kependudukan · Provinsi Bali</div>
                                     </div>
-                                    {{-- Values per tahun dalam grid --}}
-                                    <div class="grid grid-cols-5 gap-1 mb-2">
-                                        @foreach(['2021'=>105,'2022'=>120,'2023'=>165,'2024'=>200,'2025'=>260] as $tahun => $nilai)
-                                        <div class="text-center">
-                                            <div class="text-[8px] text-gray-400">{{ $tahun }}</div>
-                                            <div class="text-[10px] font-semibold text-stikom">{{ $nilai }}</div>
+
+                                    {{--
+                                        DATA ROW: angka per tahun di kiri (scroll jika perlu),
+                                        tombol Grafik di kanan — selalu sejajar
+                                    --}}
+                                    <div class="flex items-center gap-2">
+                                        {{-- Nilai per tahun — scrollable jika layar sangat sempit --}}
+                                        <div class="flex-1 overflow-x-auto">
+                                            <div class="flex gap-3 justify-between min-w-0">
+                                                @foreach(['2021'=>105,'2022'=>120,'2023'=>165,'2024'=>200,'2025'=>260] as $tahun => $nilai)
+                                                <div class="text-center shrink-0">
+                                                    <div class="text-[8px] text-gray-400">{{ $tahun }}</div>
+                                                    <div class="text-[11px] font-bold text-stikom">{{ $nilai }}</div>
+                                                </div>
+                                                @endforeach
+                                                {{-- Tombol Grafik — selalu di kanan, tidak ikut scroll --}}
+                                                <span class="shrink-0 border border-stikom-blue text-stikom-blue text-[9px] font-semibold px-2.5 py-1.5 cursor-pointer hover:bg-stikom-blue hover:text-white transition-colors whitespace-nowrap">
+                                                    Grafik
+                                                </span>
+                                            </div>
                                         </div>
-                                        @endforeach
+
                                     </div>
-                                    <div class="flex items-center justify-between">
-                                        <div class="text-[8px] text-gray-400">Satuan: Jiwa/km² · Sumber: Prov. Bali</div>
-                                        <span class="border border-gray-200 text-[8px] text-gray-400 px-1.5 py-0.5 cursor-pointer">Grafik</span>
-                                    </div>
+
+                                    {{-- Satuan --}}
+                                    <div class="text-[8px] text-gray-400 mt-2">Satuan: Jiwa/km² · Sumber: Prov. Bali</div>
                                 </div>
                             </div>
 
-                            {{-- TABLE LAYOUT — sembunyikan di mobile, tampil di md+ --}}
+                            {{-- TABLE LAYOUT — md+ --}}
                             <div class="hidden md:block overflow-x-auto">
                                 <table class="w-full text-[9px] border-collapse">
                                     <thead>
@@ -176,7 +185,7 @@
                                             <td class="text-center px-2 py-2 border border-gray-100 text-gray-400">Jiwa/km²</td>
                                             <td class="text-center px-2 py-2 border border-gray-100 text-gray-400">Prov. Bali</td>
                                             <td class="text-center px-2 py-2 border border-gray-100">
-                                                <span class="border border-gray-200 text-gray-400 px-1.5 py-0.5 cursor-pointer">Grafik</span>
+                                                <span class="border border-gray-200 text-gray-400 px-1.5 py-0.5 cursor-pointer hover:border-stikom-blue hover:text-stikom-blue transition-colors">Grafik</span>
                                             </td>
                                         </tr>
                                     </tbody>
@@ -191,10 +200,6 @@
             {{-- /illustration panel --}}
 
             {{-- ─── Text Content ────────────────────────────────────── --}}
-            {{--
-                Mobile: order-1 (tampil atas, lebih prioritas)
-                lg+: order-2 (tampil kanan)
-            --}}
             <div class="fade-up order-1 lg:order-2" style="animation-delay:0.15s">
 
                 <h2 id="tentang-heading"
@@ -215,7 +220,7 @@
                     dengan menyediakan akses yang lebih mudah dan cepat.
                 </p>
 
-                {{-- CTA Buttons — full width di mobile, auto di sm+ --}}
+                {{-- CTA Buttons --}}
                 <div class="flex flex-col sm:flex-row gap-3">
                     <a href="{{ route('data.index') }}"
                        class="inline-flex items-center justify-center gap-2

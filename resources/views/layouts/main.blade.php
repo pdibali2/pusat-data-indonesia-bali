@@ -26,26 +26,47 @@
 </head>
 <body class="bg-sky-50/60 text-slate-900 font-poppins">
 
-<div class="flex h-screen overflow-hidden">
+{{-- ══════════════════════════════════════════
+     ROOT ALPINE: manages sidebar open/close
+══════════════════════════════════════════ --}}
+<div class="flex h-screen overflow-hidden"
+     x-data="{ sidebarOpen: false }"
+     @keydown.escape.window="sidebarOpen = false">
 
-    {{-- Sidebar --}}
     @auth
-        <div class="h-screen fixed z-50">
+        {{-- ── BACKDROP (mobile only) ──────────────────── --}}
+        <div x-show="sidebarOpen"
+             x-transition:enter="transition-opacity duration-300"
+             x-transition:enter-start="opacity-0"
+             x-transition:enter-end="opacity-100"
+             x-transition:leave="transition-opacity duration-200"
+             x-transition:leave-start="opacity-100"
+             x-transition:leave-end="opacity-0"
+             @click="sidebarOpen = false"
+             class="fixed inset-0 z-40 bg-black/50 lg:hidden"
+             style="display: none;"></div>
+
+        {{-- ── SIDEBAR ──────────────────────────────────── --}}
+        {{-- Desktop: always visible, fixed left
+             Mobile: drawer, slides in from left --}}
+        <div class="fixed inset-y-0 left-0 z-50 w-56 transform transition-transform duration-300 ease-in-out
+                    lg:translate-x-0"
+             :class="sidebarOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'">
             @include('layouts.sidebar')
         </div>
     @endauth
 
-    <!-- MAIN CONTENT -->
-    <div class="flex flex-col flex-1 {{ Auth::check() ? 'ml-56' : 'ml-0' }}">
-    
-        <!-- NAVBAR (FIXED) -->
+    {{-- ── MAIN CONTENT ─────────────────────────────── --}}
+    <div class="flex flex-col flex-1 min-w-0 {{ Auth::check() ? 'lg:ml-56' : '' }}">
+
+        {{-- NAVBAR (sticky) --}}
         <div class="sticky top-0 z-40">
             @include('layouts.navbar')
         </div>
 
-        <!-- CONTENT (SCROLLABLE) -->
-        <main class="overflow-y-auto flex-1 px-3 py-5" style="overflow-x: hidden; min-width: 0;">
-            <div class="page-view-shell min-h-full">
+        {{-- SCROLLABLE CONTENT --}}
+        <main class="overflow-y-auto flex-1 px-3 py-4 lg:px-4 lg:py-5" style="overflow-x: hidden; min-width: 0;">
+            <div class="page-view-shell min-h-full max-w-full">
                 @yield('content')
             </div>
         </main>
@@ -66,7 +87,6 @@
 @endif
 
 <script>
-    // Auto-submit dengan debounce untuk input text
     function autoSubmitDebounce(input, delay = 400) {
         clearTimeout(input._timer);
         input._timer = setTimeout(() => input.form.submit(), delay);

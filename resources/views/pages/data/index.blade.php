@@ -11,91 +11,85 @@
     $activeTemplateId   = request('template_id', '');
     $activeMetadataNama = $metadataList->firstWhere('metadata_id', $activeMetadataId)?->nama ?? '';
 
-    // Ambil nama wilayah untuk display badge dari DB jika ada ID-nya
     if ($activeWilayahId && !$activeWilayah) {
         $activeWilayah = \App\Models\Location::find($activeWilayahId)?->nama_wilayah ?? '';
     }
 @endphp
 
-<div class="mt-2 bg-white rounded-xl shadow p-6">
+<div class="bg-white rounded-xl shadow p-4 lg:p-6">
 
-    {{-- ════ ALERT ════ --}}
+    {{-- ALERT --}}
     @if(session('success'))
-        <div class="mb-5 flex items-center gap-3 bg-green-50 border border-green-200
+        <div class="mb-4 flex items-center gap-3 bg-green-50 border border-green-200
                     text-green-700 px-4 py-3 rounded-lg text-sm">
             <i class="fas fa-check-circle text-green-500 shrink-0"></i>
             <span>{{ session('success') }}</span>
         </div>
     @endif
-    
+
     {{-- HEADER --}}
-    <div class="flex justify-between items-start">
+    <div class="flex items-start justify-between gap-3 mb-4">
         <div>
-            <h1 class="text-xl font-bold text-gray-800">Halaman Data</h1>
-            <p class="text-sm text-gray-400 mt-1">Menyajikan data sesuai dengan kebutuhan Anda</p>
+            <h1 class="text-lg font-bold text-gray-800">Halaman Data</h1>
+            <p class="text-xs text-gray-400 mt-0.5">Menyajikan data sesuai dengan kebutuhan Anda</p>
         </div>
-        <div class="text-right text-sm text-gray-500">
-            <p id="current-date"></p>
+        {{-- Clock: hidden on very small mobile, shown from sm --}}
+        <div class="text-right text-xs text-gray-500 shrink-0 hidden sm:block">
+            <p id="current-date" class="text-gray-400"></p>
             <p id="current-time" class="font-mono text-sky-600 font-semibold"></p>
         </div>
     </div>
 
-    {{-- ACTION BAR hanya untuk Administrator dan Pengelola --}}
+    {{-- ACTION BAR — Admin & Pengelola only --}}
     @if(Auth::check() && (int) Auth::user()->group_id !== 3)
-    <div>
-        <div class="flex flex-col justify-between items-start my-5 gap-3">
-            <div>
-                <h2 class="text-lg font-bold text-gray-800">
-                    Kelola Data
-                </h2>
-            </div>
-            <div class="flex gap-2">
-                <a href="{{ route('data.create') }}"
-                class="px-4 py-2 btn-primary text-sm font-semibold rounded-lg
-                        shadow-md shadow-blue-400/30 flex items-center gap-2 transition-colors">
-                    <i class="fas fa-plus"></i> Input Data
-                </a>
+    <div class="border-t border-gray-100 pt-4">
+        <h2 class="text-sm font-bold text-gray-700 mb-3">Kelola Data</h2>
+        <div class="flex flex-wrap gap-2">
+            <a href="{{ route('data.create') }}"
+               class="px-3 py-2 btn-primary text-xs font-semibold rounded-lg
+                      shadow-sm flex items-center gap-1.5 transition-colors">
+                <i class="fas fa-plus"></i>
+                <span>Input Data</span>
+            </a>
+            <a href="{{ route('data.approval') }}"
+               class="px-3 py-2 btn-primary text-xs font-semibold rounded-lg
+                      flex items-center gap-1.5 transition-colors">
+                <i class="fas fa-list"></i>
+                <span>Daftar Data</span>
+            </a>
+            @if(isset($pendingCount) && $pendingCount > 0)
                 <a href="{{ route('data.approval') }}"
-                    class="px-4 py-2 btn-primary text-sm font-semibold rounded-lg
-                            flex items-center gap-2 transition-colors">
-                    <i class="fas fa-list"></i> Daftar Data
+                   class="px-3 py-2 bg-stikom-accent hover:bg-yellow-600 text-white
+                          text-xs font-semibold rounded-lg flex items-center gap-1.5 transition-colors">
+                    <i class="fas fa-clock"></i>
+                    <span>Approval</span>
+                    <span class="bg-stikom-red text-white text-[10px] font-bold px-1.5 py-0.5 rounded-full">
+                        {{ $pendingCount }}
+                    </span>
                 </a>
-                @if(isset($pendingCount) && $pendingCount > 0)
-                    <a href="{{ route('data.approval') }}"
-                    class="px-4 py-2 bg-stikom-accent hover:bg-yellow-600 text-white text-sm font-semibold rounded-lg
-                            flex items-center gap-2 transition-colors">
-                        <i class="fas fa-clock"></i> Approval
-                        <span class="bg-stikom-red text-white text-xs font-bold px-1.5 py-0.5 rounded-full">
-                            {{ $pendingCount }}
-                        </span>
-                    </a>
-                @endif
-            </div>
+            @endif
         </div>
     </div>
     @endif
 </div>
-    
+
 @include('pages.template._template-panel')
 
 
 <script>
-// ────────────────────────────────────────────────────────────────
-// LIVE CLOCK
-// ────────────────────────────────────────────────────────────────
 function updateDateTime() {
     const now = new Date();
-    document.getElementById('current-date').textContent =
-        now.toLocaleDateString('id-ID', { weekday:'long', year:'numeric', month:'long', day:'numeric' });
-    document.getElementById('current-time').textContent =
+    const dateEl = document.getElementById('current-date');
+    const timeEl = document.getElementById('current-time');
+    if (dateEl) dateEl.textContent = now.toLocaleDateString('id-ID', {
+        weekday:'short', year:'numeric', month:'short', day:'numeric'
+    });
+    if (timeEl) timeEl.textContent =
         now.toLocaleTimeString('id-ID', { hour:'2-digit', minute:'2-digit', second:'2-digit' }) + ' WITA';
 }
 updateDateTime();
 setInterval(updateDateTime, 1000);
 
-// ────────────────────────────────────────────────────────────────
-// HELPER — baca state filter aktif
-// ────────────────────────────────────────────────────────────────
 function getActiveFilter() {
     return {
         metadataId:   document.getElementById('metadataId').value.trim(),
@@ -113,16 +107,12 @@ function hideSuggestions(id) {
 function onFilterChange() {
     const f = getActiveFilter();
     const hasAny = f.metadataId || f.wilayahId || f.year;
-
     document.getElementById('btnApplyFilter').classList.toggle('hidden', !hasAny);
     document.getElementById('btnSaveTemplate').classList.toggle('hidden', !hasAny);
-
     updateSelectionUI();
 }
 
-// ════════════════════════════════════════════════════════════════
-// METADATA DROPDOWN
-// ════════════════════════════════════════════════════════════════
+// ── METADATA DROPDOWN ──────────────────────────────────────────
 const metadataSearchUrl = '{{ route("data.search_metadata") }}';
 let metadataTimeout = null;
 let metadataAllCache = null;
@@ -130,13 +120,11 @@ let metadataAllCache = null;
 function renderMetadataSuggestions(results) {
     const box       = document.getElementById('metadataSuggestions');
     const currentId = document.getElementById('metadataId').value;
-
     if (results.length === 0) {
         box.innerHTML = '<p class="px-4 py-3 text-xs text-gray-400 text-center">Tidak ada hasil</p>';
         box.classList.remove('hidden');
         return;
     }
-
     box.innerHTML = results.map(m => {
         const isSelected = String(m.metadata_id) === String(currentId);
         return `<button type="button"
@@ -156,7 +144,6 @@ function renderMetadataSuggestions(results) {
             </span>
         </button>`;
     }).join('');
-
     box.classList.remove('hidden');
 }
 
@@ -164,10 +151,8 @@ function onMetadataFocus() {
     const box = document.getElementById('metadataSuggestions');
     if (!box.classList.contains('hidden')) return;
     if (metadataAllCache) { renderMetadataSuggestions(metadataAllCache); return; }
-
     box.innerHTML = '<p class="px-4 py-3 text-xs text-gray-400 text-center"><i class="fas fa-circle-notch fa-spin mr-1"></i>Memuat...</p>';
     box.classList.remove('hidden');
-
     fetch(`${metadataSearchUrl}?q=`)
         .then(r => r.json())
         .then(results => { metadataAllCache = results; renderMetadataSuggestions(results); })
@@ -211,9 +196,7 @@ function clearMetadataFilter() {
     onFilterChange();
 }
 
-// ════════════════════════════════════════════════════════════════
-// WILAYAH DROPDOWN
-// ════════════════════════════════════════════════════════════════
+// ── WILAYAH DROPDOWN ───────────────────────────────────────────
 const wilayahSearchUrl = '{{ route("data.search_wilayah") }}';
 let wilayahTimeout = null;
 let wilayahCache   = null;
@@ -221,13 +204,11 @@ let wilayahCache   = null;
 function renderWilayahSuggestions(results) {
     const box = document.getElementById('wilayahSuggestions');
     const currentId = document.getElementById('wilayahId').value;
-
     if (results.length === 0) {
         box.innerHTML = '<p class="px-4 py-3 text-xs text-gray-400 text-center">Tidak ada hasil</p>';
         box.classList.remove('hidden');
         return;
     }
-
     box.innerHTML = results.map(w => {
         const isSelected = String(w.id) === String(currentId);
         return `<button type="button"
@@ -242,7 +223,6 @@ function renderWilayahSuggestions(results) {
             <span class="text-xs ${isSelected ? 'font-semibold text-emerald-700' : 'text-gray-700'}">${w.path}</span>
         </button>`;
     }).join('');
-
     box.classList.remove('hidden');
 }
 
@@ -250,10 +230,8 @@ function onWilayahFocus() {
     const box = document.getElementById('wilayahSuggestions');
     if (!box.classList.contains('hidden')) return;
     if (wilayahCache) { renderWilayahSuggestions(wilayahCache); return; }
-
     box.innerHTML = '<p class="px-4 py-3 text-xs text-gray-400 text-center"><i class="fas fa-circle-notch fa-spin mr-1"></i>Memuat...</p>';
     box.classList.remove('hidden');
-
     fetch(`${wilayahSearchUrl}?q=`)
         .then(r => r.json())
         .then(res => { wilayahCache = res; renderWilayahSuggestions(res); })
@@ -271,14 +249,11 @@ function onWilayahInput() {
         onFilterChange();
         return;
     }
-
-    // Filter dari cache dulu (lebih cepat)
     if (wilayahCache) {
         const filtered = wilayahCache.filter(w => w.path.toLowerCase().includes(q.toLowerCase()));
         renderWilayahSuggestions(filtered);
         return;
     }
-
     wilayahTimeout = setTimeout(() => {
         fetch(`${wilayahSearchUrl}?q=${encodeURIComponent(q)}`)
             .then(r => r.json())
@@ -289,8 +264,8 @@ function onWilayahInput() {
 
 function selectWilayah(id, nama) {
     document.getElementById('wilayahSearch').value = nama;
-    document.getElementById('wilayahId').value     = id;   // → dikirim sebagai filter_wilayah_id
-    document.getElementById('wilayahNama').value   = nama; // → dikirim sebagai nama_wilayah
+    document.getElementById('wilayahId').value     = id;
+    document.getElementById('wilayahNama').value   = nama;
     document.getElementById('clearWilayah').classList.remove('hidden');
     hideSuggestions('wilayahSuggestions');
     onFilterChange();
@@ -305,9 +280,7 @@ function clearWilayahFilter() {
     onFilterChange();
 }
 
-// ════════════════════════════════════════════════════════════════
-// YEAR DROPDOWN
-// ════════════════════════════════════════════════════════════════
+// ── YEAR DROPDOWN ──────────────────────────────────────────────
 const yearSearchUrl = '{{ route("data.search_year") }}';
 let yearTimeout  = null;
 let yearAllCache = null;
@@ -315,13 +288,11 @@ let yearAllCache = null;
 function renderYearSuggestions(years) {
     const box         = document.getElementById('yearSuggestions');
     const currentYear = document.getElementById('yearSearch').value.trim();
-
     let html = `<button type="button" onclick="selectYear('')"
         class="w-full text-left px-4 py-2.5 flex items-center gap-2 border-b border-gray-100 hover:bg-gray-50">
         <i class="fas fa-layer-group text-gray-300 text-xs"></i>
         <span class="text-sm font-medium text-gray-700">Semua Tahun</span>
     </button>`;
-
     if (years.length === 0) {
         html += '<p class="px-4 py-3 text-xs text-gray-400 text-center">Tidak ada tahun tersedia</p>';
     } else {
@@ -336,7 +307,6 @@ function renderYearSuggestions(years) {
             </button>`;
         }).join('');
     }
-
     box.innerHTML = html;
     box.classList.remove('hidden');
 }
@@ -345,10 +315,8 @@ function onYearFocus() {
     const box = document.getElementById('yearSuggestions');
     if (!box.classList.contains('hidden')) return;
     if (yearAllCache) { renderYearSuggestions(yearAllCache); return; }
-
     box.innerHTML = '<p class="px-4 py-3 text-xs text-gray-400 text-center"><i class="fas fa-circle-notch fa-spin mr-1"></i>Memuat...</p>';
     box.classList.remove('hidden');
-
     fetch(`${yearSearchUrl}?q=`)
         .then(r => r.json())
         .then(years => { yearAllCache = years; renderYearSuggestions(years); })
@@ -380,9 +348,7 @@ function selectYear(year) {
     onFilterChange();
 }
 
-// ════════════════════════════════════════════════════════════════
-// TUTUP DROPDOWN — klik di luar atau Escape
-// ════════════════════════════════════════════════════════════════
+// ── CLOSE DROPDOWN ON OUTSIDE CLICK ───────────────────────────
 document.addEventListener('click', function (e) {
     if (!document.getElementById('metadataDropdownWrap').contains(e.target)) {
         hideSuggestions('metadataSuggestions');
@@ -396,7 +362,6 @@ document.addEventListener('click', function (e) {
     }
     if (!document.getElementById('wilayahDropdownWrap').contains(e.target)) {
         hideSuggestions('wilayahSuggestions');
-        // Jika teks ada tapi ID kosong (user ketik tapi tidak pilih) → reset
         const idVal  = document.getElementById('wilayahId').value;
         const txtVal = document.getElementById('wilayahSearch').value.trim();
         if (!idVal && txtVal) {
@@ -420,9 +385,7 @@ document.addEventListener('keydown', function (e) {
     }
 });
 
-// ────────────────────────────────────────────────────────────────
-// CHECKLIST & SELECTION
-// ────────────────────────────────────────────────────────────────
+// ── CHECKLIST & SELECTION ──────────────────────────────────────
 let selectedRows = {};
 
 function onRowCheck(checkbox) {
@@ -430,7 +393,7 @@ function onRowCheck(checkbox) {
     const id  = row.dataset.id;
     if (checkbox.checked) {
         selectedRows[id] = {
-            id: id, metadata: row.dataset.metadata, metadataId: row.dataset.metadataId,
+            id, metadata: row.dataset.metadata, metadataId: row.dataset.metadataId,
             lokasi: row.dataset.lokasi, waktu: row.dataset.waktu, nilai: row.dataset.nilai,
         };
         row.style.background = '#f5f3ff';
@@ -474,15 +437,12 @@ function escapeHtml(text) {
     return div.innerHTML;
 }
 
-// ────────────────────────────────────────────────────────────────
-// MODAL TEMPLATE
-// ────────────────────────────────────────────────────────────────
+// ── MODAL TEMPLATE ─────────────────────────────────────────────
 function openTemplateModal() {
     document.getElementById('templateNama').value = '';
     document.getElementById('templateNamaError').classList.add('hidden');
 
     const f = getActiveFilter();
-
     const filterDefs = [
         { label: 'Metadata', value: f.metadataNama, color: '#eff6ff', text: '#1d4ed8' },
         { label: 'Wilayah',  value: f.wilayahNama,  color: '#f0fdf4', text: '#15803d' },
@@ -523,7 +483,6 @@ function openTemplateModal() {
         ).join('');
     }
 
-    // Sync ke hidden form
     document.getElementById('formFilterMetadataId').value = f.metadataId;
     document.getElementById('formFilterWilayahId').value  = f.wilayahId;
     document.getElementById('formFilterYear').value       = f.year;
@@ -567,7 +526,6 @@ document.getElementById('modalTemplate').addEventListener('click', function (e) 
     if (e.target === this) closeTemplateModal();
 });
 
-// Init
 document.addEventListener('DOMContentLoaded', () => onFilterChange());
 </script>
 @endsection
