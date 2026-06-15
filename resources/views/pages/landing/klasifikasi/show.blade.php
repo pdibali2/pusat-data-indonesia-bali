@@ -4,7 +4,7 @@
     <meta charset="UTF-8"/>
     <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
     <title>{{ $nama }} Pusat Data Indonesia Bali</title>
-    <meta name="description" content="Daftar metadata kategori {{ $nama }} di Pusat Data Indonesia Bali."/>
+    <meta name="description" content="Daftar data kategori {{ $nama }} di Pusat Data Indonesia Bali."/>
     <link rel="icon" href="{{ asset('favicon.ico') }}" type="image/x-icon"/>
     <meta name="csrf-token" content="{{ csrf_token() }}"/>
     @vite(['resources/css/app.css', 'resources/js/app.ts'])
@@ -61,7 +61,7 @@
                             {{ $metadataList->total() }}
                         </div>
                         <div class="text-[10px] text-white/40 uppercase tracking-widest mt-1 font-body">
-                            Total Metadata
+                            Total Data
                         </div>
                     </div>
                 </div>
@@ -77,7 +77,7 @@
                 <input
                     id="search-metadata"
                     type="search"
-                    placeholder="Cari metadata..."
+                    placeholder="Cari data..."
                     data-klasifikasi="{{ $nama }}"
                     class="flex-1 bg-transparent text-sm text-gray-700 placeholder-gray-400 outline-none font-body"
                     autocomplete="off"
@@ -111,7 +111,7 @@
                 <div class="flex items-center gap-3 mb-5">
                     <div class="w-0.5 h-7 bg-stikom-blue shrink-0"></div>
                     <span class="text-[10px] font-bold text-stikom-blue uppercase tracking-[.12em] font-display">
-                        Daftar Metadata
+                        Daftar Data
                     </span>
                 </div>
 
@@ -201,7 +201,7 @@
                             </div>
                             <h3 class="text-lg font-black text-stikom mb-2 font-display">Akses Semua Dataset</h3>
                             <p class="text-gray-500 text-sm mb-6 max-w-sm mx-auto font-body">
-                                Anda hanya dapat mengakses beberapa metadata secara gratis.
+                                Anda hanya dapat mengakses beberapa data secara gratis.
                                 Berlangganan untuk akses penuh.
                             </p>
                             <div class="flex flex-col sm:flex-row gap-3 justify-center">

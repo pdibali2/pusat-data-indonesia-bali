@@ -13,7 +13,7 @@
         {{-- Grid layout --}}
         @if($pricings->isNotEmpty())
             {{-- items-stretch agar semua card sama tinggi dalam satu baris --}}
-            <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-5 gap-4 items-stretch fade-up">
+            <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 gap-4 items-stretch fade-up">
 
                 @foreach($pricings->sortBy('urutan') as $plan)
                     @php $isPopular = $plan->is_popular; @endphp

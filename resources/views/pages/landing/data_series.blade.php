@@ -68,7 +68,7 @@
                             type="search"
                             name="q"
                             value="{{ request('q') }}"
-                            placeholder="Cari nama metadata, tag..."
+                            placeholder="Cari data..."
                             autocomplete="off"
                             class="w-full pl-10 pr-9 py-2.5 rounded-xl border border-gray-200 text-sm
                                 text-gray-800 placeholder-gray-400 outline-none
@@ -85,7 +85,7 @@
                     </div>
 
                     {{-- Klasifikasi (TomSelect) --}}
-                    <div class="sm:w-56 shrink-0">
+                    <div class="w-full sm:w-56 shrink-0">
                         <select id="select-klasifikasi" name="klasifikasi"
                                 class="w-full text-sm border border-gray-200 rounded-xl">
                             <option value="">Semua Klasifikasi</option>
@@ -100,8 +100,8 @@
 
                 {{-- Active filter chips --}}
                 @if(request('q') || request('klasifikasi'))
-                    <div class="flex flex-wrap items-center gap-2 mt-3 pt-3 border-t border-gray-100">
-                        <span class="text-xs text-gray-400">Filter aktif:</span>
+                    <div class="flex flex-wrap items-center gap-2 mt-3 pt-3 border-t border-gray-100 overflow-x-auto">
+                        <span class="text-xs text-gray-400 flex-shrink-0">Filter aktif:</span>
                         @if(request('q'))
                             <span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-full
                                         bg-[#001734]/5 border border-[#001734]/10 text-xs font-semibold text-[#001734]">

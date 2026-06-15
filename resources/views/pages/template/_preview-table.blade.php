@@ -80,8 +80,9 @@
 
     {{-- TABEL METADATA --}}
     <div class="mt-4 border border-gray-200 rounded-xl overflow-hidden shadow-sm">
-        <table class="w-full text-sm text-left">
-            <thead class="bg-gray-50 text-gray-500 text-xs uppercase tracking-wider">
+        <div class="overflow-x-auto">
+            <table class="w-full min-w-[640px] text-sm text-left table-auto">
+                <thead class="bg-gray-50 text-gray-500 text-xs uppercase tracking-wider">
                 <tr class="border-b border-gray-200">
                     <th class="px-4 py-3 w-10">
                         <input type="checkbox" id="checkAllPreview" onchange="toggleAllPreview(this)"

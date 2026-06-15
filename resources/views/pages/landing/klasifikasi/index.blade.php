@@ -34,7 +34,7 @@
                     <span class="text-stikom-accent">Berdasarkan Klasifikasi</span>
                 </h1>
                 <p class="text-white/50 text-base max-w-xl mx-auto">
-                    Pilih klasifikasi untuk melihat daftar metadata yang tersedia di dalam sistem.
+                    Pilih klasifikasi untuk melihat data yang tersedia.
                 </p>
             </div>
         </div>

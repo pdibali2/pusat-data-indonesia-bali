@@ -7,7 +7,7 @@
     {{-- SEO --}}
     <title>Pusat Data Indonesia Bali</title>
     <meta name="description" content="Pusat Data Indonesia Bali adalah layanan penyedia data terpusat untuk memudahkan pengguna menemukan dan mengakses data sesuai kebutuhan."/>
-    <meta name="keywords" content="pusat data, bali, data indonesia, statistik bali, indikator, metadata"/>
+    <meta name="keywords" content="pusat data, bali, data indonesia, statistik bali, indikator"/>
     <meta name="author" content="Pusat Data Indonesia - Bali"/>
     <link rel="canonical" href="{{ url('/') }}"/>
 

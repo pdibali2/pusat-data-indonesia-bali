@@ -230,7 +230,7 @@
                 <button class="tab-btn active text-white text-sm font-700 uppercase tracking-wider px-5 py-3.5"
                         data-tab="grafik" role="tab">Grafik &amp; Tabel</button>
                 <button class="tab-btn text-slate-500 text-sm font-700 uppercase tracking-wider px-5 py-3.5 hover:text-slate-300"
-                        data-tab="info" role="tab">Informasi Metadata</button>
+                        data-tab="info" role="tab">Informasi Tentang Data</button>
             </nav>
         </div>
     </section>

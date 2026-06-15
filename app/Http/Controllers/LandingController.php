@@ -206,6 +206,11 @@ class LandingController extends Controller
         }
 
         $results = Metadata::where('status', 2)
+            // Hanya metadata yang benar-benar punya data
+            ->whereHas('data', function ($query) {
+                $query->where('status', 1)
+                    ->where('location_id', 0);
+            })
             ->where('nama', 'like', "%{$q}%")
             ->when($klasifikasi, function ($query) use ($klasifikasi) {
                 $query->whereHas('klasifikasi', fn($q) =>
@@ -216,12 +221,14 @@ class LandingController extends Controller
             ->select('metadata_id', 'nama', 'klasifikasi_id', 'satuan_data', 'frekuensi_penerbitan', 'tahun_mulai_data')
             ->limit(50)
             ->get();
+        
 
         return response()->json(
             $results->map(fn($item) => [
                 'metadata_id'          => $item->metadata_id,
                 'nama'                 => $item->nama,
                 'klasifikasi'          => $item->klasifikasi?->nama_klasifikasi,
+                'klasifikasi_slug'       => Str::slug($item->klasifikasi?->nama_klasifikasi),
                 'satuan_data'          => $item->satuan_data,
                 'frekuensi_penerbitan' => $item->frekuensi_penerbitan,
                 'tahun_mulai_data'     => $item->tahun_mulai_data,

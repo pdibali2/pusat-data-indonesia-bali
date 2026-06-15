@@ -1454,7 +1454,7 @@ function _renderTable(d) {
             <th class="px-4 py-3 text-left font-semibold text-gray-600 text-xs
                        col-sticky col-sticky-nama whitespace-nowrap"
                 rowspan="2">
-                Nama Metadata / Wilayah
+                Nama Data
             </th>
             <th class="px-4 py-3 text-center font-semibold text-gray-600 text-xs
                        whitespace-nowrap border-l border-gray-200"
