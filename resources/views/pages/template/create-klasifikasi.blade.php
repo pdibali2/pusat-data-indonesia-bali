@@ -26,7 +26,7 @@
             <h1 class="text-xl font-bold text-gray-800">Buat Template Klasifikasi</h1>
             <p class="text-sm text-gray-400 mt-1">Pilih klasifikasi data dan wilayah yang ingin ditampilkan</p>
         </div>
-        <span class="px-3 py-1.5 bg-violet-50 text-violet-600 border border-violet-100 text-xs font-semibold rounded-full">
+        <span class="hidden sm:block px-3 py-1.5 bg-violet-50 text-violet-600 border border-violet-100 text-xs font-semibold rounded-full">
             <i class="fas fa-tags mr-1"></i> Jenis: Klasifikasi
         </span>
     </div>
@@ -211,40 +211,71 @@
                 <p class="text-xs text-gray-400 mt-0.5" id="resultDesc">—</p>
             </div>
             <span id="totalFound"
-                  class="text-xs bg-violet-50 text-violet-600 border border-violet-100 px-2.5 py-1 rounded-full font-semibold">
+                  class="hidden sm:block text-xs bg-violet-50 text-violet-600 border border-violet-100 px-2.5 py-1 rounded-full font-semibold">
                 0 baris
             </span>
         </div>
 
         {{-- TABEL --}}
         <div class="border border-gray-200 rounded-xl overflow-hidden">
-            <table class="w-full text-sm text-left">
+            <table class="w-full table-fixed text-sm text-left">
+
                 <thead class="bg-gray-50 text-gray-500 text-xs uppercase tracking-wider border-b border-gray-200">
                     <tr>
-                        <th class="px-4 py-3 w-10">
-                            <input type="checkbox" id="checkAllPreview" onchange="toggleAll(this)"
+                        {{-- Checkbox --}}
+                        <th class="w-12 px-4 py-3">
+                            <input
+                                type="checkbox"
+                                id="checkAllPreview"
+                                onchange="toggleAll(this)"
                                 class="rounded border-gray-300 cursor-pointer">
                         </th>
-                        <th class="px-4 py-3 font-semibold text-gray-600">Metadata</th>
-                        <th class="px-4 py-3 font-semibold text-gray-600 w-16 text-center">Info</th>
-                        <th class="px-4 py-3 font-semibold text-gray-600 w-36 text-center">Detail Wilayah</th>
+
+                        {{-- Metadata --}}
+                        <th class="px-4 py-3 font-semibold text-gray-600">
+                            Metadata
+                        </th>
+
+                        {{-- Info --}}
+                        <th class="w-16 px-3 py-3 text-center font-semibold text-gray-600">
+                            Info
+                        </th>
+
+                        {{-- Detail --}}
+                        <th class="w-20 px-3 py-3 text-center font-semibold text-gray-600">
+                            <span class="block sm:hidden">Det.</span>
+                            <span class="hidden sm:block">Detail</span>
+                        </th>
                     </tr>
                 </thead>
-                <tbody id="previewTableBody" class="divide-y divide-gray-100 bg-white">
+
+                <tbody id="previewTableBody"
+                    class="divide-y divide-gray-100 bg-white">
+
                     <tr>
-                        <td colspan="4" class="px-4 py-10 text-center text-gray-400 text-sm">
+                        <td colspan="4"
+                            class="px-4 py-10 text-center text-gray-400">
+
                             <i class="fas fa-table text-gray-200 text-3xl block mb-2"></i>
-                            Belum ada data — klik <strong class="text-gray-500">"Pilih &amp; Tampilkan"</strong>
+
+                            Belum ada data —
+                            klik
+                            <strong class="text-gray-500">
+                                "Pilih & Tampilkan"
+                            </strong>
+
                         </td>
                     </tr>
+
                 </tbody>
+
             </table>
         </div>
 
         {{-- PAGINATION --}}
         <div id="previewPagination" class="hidden mt-3 flex items-center justify-between text-xs text-gray-500">
-            <span id="paginationInfo" class="text-gray-400"></span>
-            <div class="flex gap-1" id="paginationButtons"></div>
+            <span id="paginationInfo" class="text-gray-400 hidden sm:block"></span>
+            <div class="flex gap-1 mx-auto sm:mx-0" id="paginationButtons"></div>
         </div>
 
         {{-- SELEKSI BAR --}}
@@ -266,7 +297,7 @@
             <p class="text-xs font-bold text-gray-600 mb-3 flex items-center gap-1.5">
                 <i class="fas fa-sort-amount-down text-gray-400"></i> Pengaturan Urutan Tampilan
             </p>
-            <div class="flex flex-wrap items-center gap-4">
+            <div class="flex flex-col sm:flex-row sm:flex-wrap items-start gap-4">
                 <label class="flex items-center gap-2 cursor-pointer select-none">
                     <input type="checkbox" id="chkKlasifikasi" class="rounded border-gray-300 cursor-pointer">
                     <span class="text-xs text-gray-600">Atur berdasarkan Klasifikasi</span>
@@ -815,13 +846,28 @@ function renderTable() {
         pw.classList.remove('hidden');
         document.getElementById('paginationInfo').textContent =
             `Menampilkan ${start+1}–${end} dari ${total}`;
-        let btns = '';
-        for (let p = 1; p <= totalPages; p++) {
-            btns += `<button onclick="goPage(${p})"
-                class="w-7 h-7 text-xs rounded-md font-medium transition-colors
-                       ${p===currentPage ? 'bg-violet-500 text-white' : 'border border-gray-200 text-gray-500 hover:bg-gray-50'}">${p}</button>`;
+        function buildPaginBtns(totalPages, cur) {
+            let pages = [];
+            if (totalPages <= 7) {
+                for (let p = 1; p <= totalPages; p++) pages.push(p);
+            } else {
+                pages = [1];
+                if (cur > 3) pages.push('...');
+                const s = Math.max(2, cur - 1), e = Math.min(totalPages - 1, cur + 1);
+                for (let p = s; p <= e; p++) pages.push(p);
+                if (cur < totalPages - 2) pages.push('...');
+                pages.push(totalPages);
+            }
+            const prev = cur > 1 ? `<button onclick="goPage(${cur-1})" class="w-7 h-7 text-xs rounded-md font-medium border border-gray-200 text-gray-500 hover:bg-gray-50">&lt;</button>` : '';
+            const next = cur < totalPages ? `<button onclick="goPage(${cur+1})" class="w-7 h-7 text-xs rounded-md font-medium border border-gray-200 text-gray-500 hover:bg-gray-50">&gt;</button>` : '';
+            const mid = pages.map(p => p === '...'
+                ? `<span class="px-1 text-gray-400 text-xs self-center">…</span>`
+                : `<button onclick="goPage(${p})" class="w-7 h-7 text-xs rounded-md font-medium transition-colors ${p===cur?'bg-violet-500 text-white':'border border-gray-200 text-gray-500 hover:bg-gray-50'}">${p}</button>`
+            ).join('');
+            return prev + mid + next;
         }
-        document.getElementById('paginationButtons').innerHTML = btns;
+
+        document.getElementById('paginationButtons').innerHTML = buildPaginBtns(totalPages, currentPage);
     } else { pw.classList.add('hidden'); }
 }
 
@@ -869,14 +915,14 @@ function buildRow(row) {
                 onchange="onRowCheck(this)"
                 ${checked ? 'checked' : ''}>
         </td>
-        <td class="px-4 py-3 text-xs" style="${depth > 0 ? 'padding-left:' + (12+indent) + 'px' : ''}">
+        <td class="px-2 py-3 text-xs w-1/2 min-w-0 break-words" style="${depth > 0 ? 'padding-left:' + (8+indent) + 'px' : 'padding-left:8px'}">
             ${depth > 0 ? '<span class="text-gray-400 mr-1">↳</span>' : ''}
-            <span class="${depth===0 ? 'font-semibold' : 'font-medium'} text-gray-800">
+            <span class="${depth===0 ? 'font-semibold' : 'font-medium'} text-gray-800 leading-snug">
                 ${escH(row.nama||'')} di ${escH(locLabel)}
             </span>
             ${freqBadge}
         </td>
-        <td class="px-4 py-3 text-center">
+        <td class="px-2 py-3 text-center">
             <button type="button"
                     onclick="openMetadataModal(${row.metadata_id})"
                     title="Lihat detail metadata"
@@ -884,7 +930,7 @@ function buildRow(row) {
                 <i class="fas fa-circle-info text-sky-500 hover:text-sky-600 transition-colors"></i>
             </button>
         </td>
-        <td class="px-4 py-3 text-center">${detailBtn}</td>
+        <td class="px-2 py-3 text-center">${detailBtn}</td>
     </tr>`;
 }
 

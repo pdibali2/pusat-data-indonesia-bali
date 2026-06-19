@@ -30,7 +30,7 @@
             <h1 class="text-xl font-bold text-gray-800">Edit Template</h1>
             <p class="text-sm text-gray-400 mt-1">Ubah nama, wilayah, dan isi metadata template Anda</p>
         </div>
-        <span class="px-3 py-1.5 bg-{{ $jenisColor }}-50 text-{{ $jenisColor }}-600 border border-{{ $jenisColor }}-100 text-xs font-semibold rounded-full">
+        <span class="hidden sm:block px-3 py-1.5 bg-{{ $jenisColor }}-50 text-{{ $jenisColor }}-600 border border-{{ $jenisColor }}-100 text-xs font-semibold rounded-full">
             <i class="fas {{ $jenisIcon }} mr-1"></i> Jenis: {{ $jenisLabel }}
         </span>
     </div>
@@ -45,7 +45,7 @@
     {{-- ── NAMA TEMPLATE ── --}}
     <div class="p-5 border border-gray-200 rounded-xl mb-2 bg-gray-50/40">
         <h2 class="text-sm font-bold text-gray-700 mb-3 flex items-center gap-2">
-            <span class="inline-flex items-center justify-center w-5 h-5 rounded-full bg-gray-500 text-white text-xs font-bold">1</span>
+            <span class="inline-flex items-center justify-center w-5 h-5 rounded-full bg-sky-500 text-white text-xs font-bold">1</span>
             Nama Template
         </h2>
         <input type="text"
@@ -55,7 +55,7 @@
                required
                placeholder="Nama template..."
                class="w-full max-w-lg border border-gray-300 rounded-lg px-3 py-2.5 text-sm
-                      focus:outline-none focus:ring-2 focus:ring-sky-400 bg-white">
+                      focus:outline-none focus:ring-2 focus:ring-gray-400 bg-white">
         @error('nama_tampilan')
             <p class="mt-1 text-xs text-red-500">{{ $message }}</p>
         @enderror
@@ -520,33 +520,44 @@
                 <p class="text-xs text-gray-400 mt-0.5" id="resultDesc">—</p>
             </div>
             <span id="totalBadge"
-                  class="text-xs bg-emerald-50 text-emerald-600 border border-emerald-100 px-2.5 py-1 rounded-full font-semibold">
+                  class="hidden sm:block text-xs bg-emerald-50 text-emerald-600 border border-emerald-100 px-2.5 py-1 rounded-full font-semibold">
                 0 baris
             </span>
         </div>
 
-        {{-- Tabel --}}
         <div class="border border-gray-200 rounded-xl overflow-hidden">
-            <table class="w-full text-sm text-left">
-                <thead class="bg-gray-50 text-gray-500 text-xs uppercase tracking-wider border-b">
+            <table class="w-full table-auto text-sm text-left">
+                <thead class="bg-gray-50 text-gray-500 text-xs uppercase tracking-wider border-b border-gray-200">
                     <tr>
-                        <th class="px-4 py-3 w-10">
-                            <input type="checkbox" id="checkAll" onchange="toggleAll(this)"
+                        <th class="w-10 px-2 py-3">
+                            <input type="checkbox"
+                                id="checkAll"
+                                onchange="toggleAll(this)"
                                 class="rounded border-gray-300 cursor-pointer">
                         </th>
-                        <th class="px-4 py-3 font-semibold">Metadata – Wilayah</th>
-                        <th class="px-4 py-3 font-semibold w-16 text-center">Info</th>
-                        <th class="px-4 py-3 font-semibold w-36 text-center">Detail Wilayah</th>
+
+                        <th class="px-4 py-3 font-semibold text-gray-600">
+                            Metadata
+                        </th>
+
+                        <th class="w-14 px-3 py-3 text-center">
+                            Info
+                        </th>
+
+                        <th class="w-16 px-3 py-3 text-center">
+                            Detail
+                        </th>
                     </tr>
                 </thead>
-                <tbody id="resultTbody" class="divide-y divide-gray-100"></tbody>
+
+                <tbody id="resultTbody"></tbody>
             </table>
         </div>
 
         {{-- Pagination --}}
         <div id="paginWrap" class="hidden mt-3 flex items-center justify-between text-xs text-gray-500">
-            <span id="paginInfo"></span>
-            <div id="paginBtns" class="flex gap-1"></div>
+            <span id="paginInfo" class="hidden sm:block"></span>
+            <div id="paginBtns" class="flex gap-1 mx-auto sm:mx-0"></div>
         </div>
 
         {{-- Seleksi bar --}}
@@ -566,7 +577,7 @@
             <p class="text-xs font-bold text-gray-600 mb-3 flex items-center gap-1.5">
                 <i class="fas fa-sort-amount-down text-gray-400"></i> Pengaturan Urutan Tampilan
             </p>
-            <div class="flex flex-wrap items-center gap-4">
+            <div class="flex flex-col sm:flex-row sm:flex-wrap items-start gap-4">
                 <label class="flex items-center gap-2 cursor-pointer select-none">
                     <input type="checkbox" id="chkKlasifikasi" class="rounded border-gray-300"
                            {{ ($fp['urutan_by'] ?? '') === 'klasifikasi' || ($fp['urutan_by'] ?? '') === 'keduanya' ? 'checked' : '' }}>
@@ -1546,13 +1557,27 @@ function renderTable() {
     if (totalPages > 1) {
         pw.classList.remove('hidden');
         document.getElementById('paginInfo').textContent = `Menampilkan ${start+1}–${end} dari ${total}`;
-        let btns = '';
-        for (let p = 1; p <= totalPages; p++) {
-            btns += `<button onclick="goPage(${p})"
-                class="w-7 h-7 text-xs rounded-md font-medium transition-colors
-                       ${p === currentPage ? 'bg-sky-500 text-white' : 'border border-gray-200 text-gray-500 hover:bg-gray-50'}">${p}</button>`;
+        function buildPaginBtns(totalPages, cur) {
+            let pages = [];
+            if (totalPages <= 7) {
+                for (let p = 1; p <= totalPages; p++) pages.push(p);
+            } else {
+                pages = [1];
+                if (cur > 3) pages.push('...');
+                const s = Math.max(2, cur - 1), e = Math.min(totalPages - 1, cur + 1);
+                for (let p = s; p <= e; p++) pages.push(p);
+                if (cur < totalPages - 2) pages.push('...');
+                pages.push(totalPages);
+            }
+            const prev = cur > 1 ? `<button onclick="goPage(${cur-1})" class="w-7 h-7 text-xs rounded-md font-medium border border-gray-200 text-gray-500 hover:bg-gray-50">&lt;</button>` : '';
+            const next = cur < totalPages ? `<button onclick="goPage(${cur+1})" class="w-7 h-7 text-xs rounded-md font-medium border border-gray-200 text-gray-500 hover:bg-gray-50">&gt;</button>` : '';
+            const mid = pages.map(p => p === '...'
+                ? `<span class="px-1 text-gray-400 text-xs self-center">…</span>`
+                : `<button onclick="goPage(${p})" class="w-7 h-7 text-xs rounded-md font-medium transition-colors ${p===cur?'bg-sky-500 text-white':'border border-gray-200 text-gray-500 hover:bg-gray-50'}">${p}</button>`
+            ).join('');
+            return prev + mid + next;
         }
-        document.getElementById('paginBtns').innerHTML = btns;
+        document.getElementById('paginBtns').innerHTML = buildPaginBtns(totalPages, currentPage);
     } else {
         pw.classList.add('hidden');
     }
@@ -1589,22 +1614,19 @@ function buildRow(row) {
         ? `border-left: 3px solid ${depth === 1 ? '#7dd3fc' : '#c4b5fd'};` : '';
 
     return `<tr class="${rowBg} transition-colors">
-        <td class="py-3 pr-2" style="padding-left:${12 + indent}px; ${borderStyle}">
+        <td class="py-3 pr-1" style="padding-left:${8 + indent}px; ${borderStyle}">
             <input type="checkbox" class="row-chk rounded border-gray-300 cursor-pointer"
                 value="${escH(key)}"
                 onchange="onRowCheck(this, ${row.metadata_id}, ${row.location_id}, ${depth})"
                 ${checked ? 'checked' : ''}>
         </td>
-        <td class="px-3 py-3 text-xs" style="${depth > 0 ? 'padding-left:' + (12 + indent) + 'px' : 'padding-left:16px'}">
-            ${depth > 0 ? '<span class="text-gray-400 mr-1.5">↳</span>' : ''}
+        <td class="px-4 py-3 text-xs min-w-0 break-words" style="${depth > 0 ? 'padding-left:' + (16 + indent) + 'px' : ''}">
+            ${depth > 0 ? '<span class="text-gray-400 mr-1">↳</span>' : ''}
             ${displayName}
-            ${checked && depth === 0 ? '<span class="ml-1.5 inline-flex items-center gap-1 bg-emerald-100 text-emerald-700 text-xs px-1.5 py-0.5 rounded-full font-medium"><i class="fas fa-bookmark text-xs"></i> Tersimpan</span>' : ''}
-            ${row.frekuensi_penerbitan ? `
-                <span class="ml-1.5 text-gray-400 font-normal">
-                    (${escH(row.frekuensi_penerbitan)})
-                </span>` : ''}
+            ${row.frekuensi_penerbitan ? `<span class="ml-1 text-gray-400 font-normal">(${escH(row.frekuensi_penerbitan)})</span>` : ''}
+            ${checked && depth === 0 ? '<span class="mt-1 flex items-center gap-1 text-emerald-600 text-xs font-medium"><i class="fas fa-bookmark text-xs"></i> Tersimpan</span>' : ''}
         </td>
-        <td class="px-4 py-3 text-center">
+        <td class="px-3 py-3 text-center">
             <button type="button"
                     onclick="openMetadataModal(${row.metadata_id})"
                     title="Lihat detail metadata"
@@ -1612,7 +1634,7 @@ function buildRow(row) {
                 <i class="fas fa-circle-info text-sky-500 hover:text-sky-600 transition-colors"></i>
             </button>
         </td>
-        <td class="px-4 py-3 text-center">${detailBtn}</td>
+        <td class="px-3 py-3 text-center">${detailBtn}</td>
     </tr>`;
 }
 

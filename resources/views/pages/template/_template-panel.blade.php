@@ -302,7 +302,6 @@
             <div class="flex flex-col w-full border border-gray-300 rounded-lg">
                 <div class="border-b border-gray-300 px-3 py-2 text-xs font-medium text-gray-600">
                     Daftar Template
-                    <span class="text-gray-400 text-[10px] ml-1">(tersimpan di browser)</span>
                 </div>
                 <div id="guestTemplateList"
                     class="flex flex-col gap-2 my-3 mx-3 max-h-52 overflow-y-auto pr-1
@@ -1123,8 +1122,6 @@ function renderGuestTemplates() {
                     <span>${_esc(jenisLabel)}</span>
                     <span>•</span>
                     <span>${metaCount} metadata</span>
-                    <span>•</span>
-                    <span class="italic opacity-70">Tersimpan di browser</span>
                 </div>
             </div>
 

@@ -41,9 +41,7 @@
            class="text-xs text-sky-600 font-semibold block hover:text-sky-800 transition-colors">
             Beranda
         </a>
-        <div class="w-px h-5 bg-slate-200 hidden sm:block"></div>
-        
-        <div class="w-px h-6 bg-slate-200"></div>
+        <div class="w-px h-5 bg-slate-200 block"></div>
 
         {{-- User pill --}}
         @auth
