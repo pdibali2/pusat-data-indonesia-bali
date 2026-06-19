@@ -596,18 +596,25 @@
         </div>
 
         {{-- Tombol Simpan --}}
-        <div class="mt-5 flex items-center justify-between gap-3">
+        <div class="mt-5 flex flex-col-reverse sm:flex-row gap-3 sm:items-center sm:justify-between">
+
             <a href="{{ route('data.index') }}"
-               class="border border-gray-300 text-gray-500 hover:bg-gray-50 px-4 py-2.5 rounded-lg text-sm transition-colors">
+                class="w-full sm:w-auto border border-gray-300 text-gray-500 hover:bg-gray-50 px-4 py-2.5 rounded-lg text-sm text-center transition-colors">
                 Batal
             </a>
-            <button type="button" onclick="openSaveModal()"
-                class="px-6 py-2.5 text-white text-sm font-semibold rounded-lg flex items-center gap-2 transition-colors"
+
+            <button
+                type="button"
+                onclick="openSaveModal()"
+                class="w-full sm:w-auto px-6 py-2.5 text-white text-sm font-semibold rounded-lg flex items-center justify-center gap-2 transition-colors"
                 style="background:#8b5cf6;"
                 onmouseover="this.style.background='#7c3aed'"
                 onmouseout="this.style.background='#8b5cf6'">
-                <i class="fas fa-save"></i> Simpan Perubahan
+
+                <i class="fas fa-save"></i>
+                Simpan Perubahan
             </button>
+
         </div>
     </div>
 
@@ -639,16 +646,32 @@
                 Metadata/wilayah yang tidak dicentang akan dihapus dari template ini.
             </p>
         </div>
-        <div class="px-6 py-4 border-t bg-gray-50 rounded-b-xl flex justify-end gap-2">
-            <button onclick="closeModal()"
-                class="border border-gray-300 text-gray-500 hover:bg-gray-100 px-4 py-2 rounded-lg text-sm">Batal</button>
-            <button onclick="submitTemplate()"
-                class="px-5 py-2 text-white text-sm font-semibold rounded-lg flex items-center gap-2"
-                style="background:#8b5cf6;"
-                onmouseover="this.style.background='#7c3aed'"
-                onmouseout="this.style.background='#8b5cf6'">
-                <i class="fas fa-save"></i> Ya, Simpan
+        <div class="px-6 py-4 border-t bg-gray-50 rounded-b-xl
+            flex flex-col-reverse sm:flex-row
+                    sm:justify-end gap-3">
+
+            <button
+                onclick="closeModal()"
+                class="w-full sm:w-auto
+                    border border-gray-300
+                    text-gray-500 hover:bg-gray-100
+                    px-4 py-2 rounded-lg text-sm
+                    transition-colors">
+                Batal
             </button>
+
+            <button
+                onclick="submitTemplate()"
+                class="w-full sm:w-auto
+                    px-5 py-2 text-white text-sm font-semibold
+                    rounded-lg flex items-center justify-center gap-2
+                    bg-violet-500 hover:bg-violet-600
+                    transition-colors">
+
+                <i class="fas fa-save"></i>
+                Simpan
+            </button>
+
         </div>
     </div>
 </div>
