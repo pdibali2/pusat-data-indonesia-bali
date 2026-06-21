@@ -56,14 +56,14 @@
                     </div>
 
                     {{-- Total count card --}}
-                    <div class="shrink-0 bg-white/[.08] border border-white/10 px-6 py-4 text-center">
+                    {{-- <div class="shrink-0 bg-white/[.08] border border-white/10 px-6 py-4 text-center">
                         <div class="text-3xl font-black text-stikom-accent font-display">
                             {{ $metadataList->total() }}
                         </div>
                         <div class="text-[10px] text-white/40 uppercase tracking-widest mt-1 font-body">
                             Total Data
                         </div>
-                    </div>
+                    </div> --}}
                 </div>
             </div>
         </div>

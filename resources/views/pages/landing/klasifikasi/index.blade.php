@@ -93,14 +93,14 @@
                         </div>
 
                         <div class="flex items-center gap-2 shrink-0 ml-3">
-                            @if($item['total'] > 0)
+                            {{-- @if($item['total'] > 0)
                                 <span class="text-[11px] font-black text-stikom-blue bg-stikom-blue/10
                                              border border-stikom-blue/20 px-2.5 py-1 font-display">
                                     {{ $item['total'] }}
                                 </span>
                             @else
                                 <span class="text-[11px] text-gray-300 bg-gray-50 px-2.5 py-1 font-medium">0</span>
-                            @endif
+                            @endif --}}
                             <svg class="w-4 h-4 text-gray-300 group-hover:text-stikom-blue group-hover:translate-x-0.5 transition-all duration-200"
                                  fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/>

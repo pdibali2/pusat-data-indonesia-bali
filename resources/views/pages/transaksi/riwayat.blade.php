@@ -34,65 +34,76 @@
         }
     @endphp
 
-    <div class="grid grid-cols-2 lg:grid-cols-4 gap-4">
-        {{-- Paket Aktif --}}
-        <div class="card-panel px-5 py-4">
-            <p class="text-xs text-gray-500 mb-1">Paket Aktif Saat Ini</p>
-            @if($aktifNow)
-                <p class="text-base font-bold text-green-600">{{ $aktifNow->nama_layanan }}</p>
-            @else
-                <p class="text-base font-bold text-gray-400">Tidak ada</p>
-            @endif
+    <div class="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
+    {{-- Paket Aktif --}}
+        <div class="card-panel p-4 h-full self-stretch flex flex-col gap-3">
+            <div class="w-9 h-9 rounded-full bg-blue-50 text-blue-500 flex items-center justify-center">
+                <i class="fas fa-gift text-sm"></i>
+            </div>
+            <div class="min-w-0">
+                <p class="text-xs text-gray-500">Paket Aktif Saat Ini</p>
+                @if($aktifNow)
+                    <p class="text-base font-bold text-gray-800 mt-0.5 leading-tight">{{ $aktifNow->nama_layanan }}</p>
+                @else
+                    <p class="text-base font-bold text-gray-400 mt-0.5">Tidak ada</p>
+                @endif
+            </div>
         </div>
 
         {{-- Masa Berlaku --}}
-        <div class="card-panel px-5 py-4">
-            <p class="text-xs font-semibold text-gray-500 mb-2">Masa Berlaku Paket</p>
-            @if($aktifNow)
-                <p class="text-xs text-gray-500 mb-0.5">Mulai</p>
-                <p class="text-sm font-bold text-green-600 mb-1">
-                    {{ $aktifNow->aktif_mulai?->translatedFormat('l, d F Y') ?? '—' }}
-                </p>
-                <p class="text-xs text-gray-500 mb-0.5">Sampai</p>
-                <p class="text-sm font-bold text-green-600">
-                    {{ $aktifNow->aktif_sampai
-                        ? $aktifNow->aktif_sampai->translatedFormat('l, d F Y')
-                        : 'Selamanya' }}
-                </p>
-            @else
-                <p class="text-sm text-gray-400">—</p>
-            @endif
+        <div class="card-panel p-4 h-full self-stretch flex flex-col gap-3">
+            <div class="w-9 h-9 rounded-full bg-indigo-50 text-indigo-500 flex items-center justify-center">
+                <i class="fas fa-calendar-alt text-sm"></i>
+            </div>
+            <div class="min-w-0">
+                <p class="text-xs text-gray-500">Berlaku Sampai</p>
+                @if($aktifNow)
+                    <p class="text-base font-bold text-gray-800 mt-0.5 truncate">
+                        {{ $aktifNow->aktif_sampai ? $aktifNow->aktif_sampai->translatedFormat('d M Y') : 'Selamanya' }}
+                    </p>
+                    <p class="text-[11px] text-gray-400 mt-0.5 leading-tight">
+                        Sejak {{ $aktifNow->aktif_mulai?->translatedFormat('d M Y') ?? '—' }}
+                    </p>
+                @else
+                    <p class="text-base font-bold text-gray-400 mt-0.5">—</p>
+                @endif
+            </div>
         </div>
 
         {{-- Status Paket --}}
-        <div class="card-panel px-5 py-4">
-            <p class="text-xs text-gray-500 mb-1">Status Paket</p>
-            @if($aktifNow)
-                <span class="inline-flex items-center gap-1.5 text-sm font-bold text-green-600">
-                    <span class="w-2 h-2 rounded-full bg-green-500 inline-block"></span>
-                    Aktif
-                </span>
-            @else
-                <span class="inline-flex items-center gap-1.5 text-sm font-bold text-gray-400">
-                    <span class="w-2 h-2 rounded-full bg-gray-300 inline-block"></span>
-                    Tidak Aktif
-                </span>
-            @endif
+        <div class="card-panel p-4 h-full self-stretch flex flex-col gap-3">
+            <div class="w-9 h-9 rounded-full {{ $aktifNow ? 'bg-emerald-50 text-emerald-500' : 'bg-gray-100 text-gray-400' }} flex items-center justify-center">
+                <i class="fas fa-shield-alt text-sm"></i>
+            </div>
+            <div class="min-w-0">
+                <p class="text-xs text-gray-500">Status Paket</p>
+                <p class="text-base font-bold mt-0.5 {{ $aktifNow ? 'text-emerald-600' : 'text-gray-400' }}">
+                    {{ $aktifNow ? 'Aktif' : 'Tidak Aktif' }}
+                </p>
+            </div>
         </div>
 
         {{-- Sisa Waktu --}}
-        <div class="card-panel px-5 py-4">
-            <p class="text-xs text-gray-500 mb-1">Sisa Waktu</p>
-            @if($aktifNow && $aktifNow->aktif_sampai)
-                @php $sisaHari = (int) now()->diffInDays($aktifNow->aktif_sampai, false); @endphp
-                <p class="text-base font-bold {{ $sisaHari <= 3 ? 'text-red-500' : 'text-green-600' }}">
-                    {{ $sisaHari > 0 ? $sisaHari . ' hari lagi' : 'Hari ini berakhir' }}
-                </p>
-            @elseif($aktifNow)
-                <p class="text-base font-bold text-green-600">Selamanya</p>
-            @else
-                <p class="text-base font-bold text-gray-400">—</p>
-            @endif
+        @php
+            $sisaHari = ($aktifNow && $aktifNow->aktif_sampai) ? (int) now()->diffInDays($aktifNow->aktif_sampai, false) : null;
+            $urgent = $sisaHari !== null && $sisaHari <= 3;
+        @endphp
+        <div class="card-panel p-4 h-full self-stretch flex flex-col gap-3">
+            <div class="w-9 h-9 rounded-full {{ $urgent ? 'bg-red-50 text-red-500' : 'bg-amber-50 text-amber-500' }} flex items-center justify-center">
+                <i class="fas fa-clock text-sm"></i>
+            </div>
+            <div class="min-w-0">
+                <p class="text-xs text-gray-500">Sisa Waktu</p>
+                @if($aktifNow && $aktifNow->aktif_sampai)
+                    <p class="text-base font-bold mt-0.5 {{ $urgent ? 'text-red-500' : 'text-gray-800' }}">
+                        {{ $sisaHari > 0 ? $sisaHari . ' hari lagi' : 'Hari ini berakhir' }}
+                    </p>
+                @elseif($aktifNow)
+                    <p class="text-base font-bold text-gray-800 mt-0.5">Selamanya</p>
+                @else
+                    <p class="text-base font-bold text-gray-400 mt-0.5">—</p>
+                @endif
+            </div>
         </div>
     </div>
 
@@ -134,7 +145,9 @@
                 </a>
             </div>
             @else
-            <table class="w-full text-sm">
+
+            {{-- Tabel lengkap — tablet & desktop (sm ke atas) --}}
+            <table class="w-full text-sm hidden sm:table">
                 <thead>
                     <tr class="bg-gray-50 text-gray-500 text-xs uppercase tracking-wider">
                         <th class="px-5 py-3 text-left font-medium">Order ID</th>
@@ -186,7 +199,6 @@
                         </td>
                         <td class="px-5 py-3.5 text-xs text-gray-500">{{ $item->created_at->format('d M Y, H:i') }}</td>
                         <td class="px-5 py-3.5 text-right">
-                            {{-- Tombol Detail → buka modal --}}
                             <button type="button"
                                     onclick="showDetail({{ $item->transaksi_id }})"
                                     class="text-xs text-blue-600 hover:text-blue-800 hover:underline">
@@ -197,13 +209,113 @@
                     @endforeach
                 </tbody>
             </table>
+
+            {{-- Card list — mobile (<sm), cuma 4 info penting --}}
+            <div class="sm:hidden divide-y divide-gray-100">
+                @foreach($transaksis as $item)
+                @php
+                    $statusDot = match($item->status) {
+                        'success' => 'bg-emerald-500',
+                        'pending' => 'bg-yellow-400',
+                        'failed'  => 'bg-red-500',
+                        default   => 'bg-gray-400',
+                    };
+                @endphp
+                <button type="button"
+                        onclick="showDetail({{ $item->transaksi_id }})"
+                        class="w-full flex items-center gap-3 px-4 py-3.5 text-left hover:bg-gray-50 active:bg-gray-100 transition">
+                    <span class="w-2 h-2 rounded-full {{ $statusDot }} flex-shrink-0"></span>
+
+                    <span class="min-w-0 flex-1">
+                        <span class="block font-mono text-[11px] text-gray-400 truncate">{{ $item->order_id }}</span>
+                        <span class="block font-medium text-gray-800 text-sm truncate">{{ $item->nama_layanan }}</span>
+                        <span class="block text-sm font-semibold text-gray-700 mt-0.5">{{ $item->harga_format }}</span>
+                    </span>
+
+                    <span class="flex items-center gap-1 text-xs text-blue-600 flex-shrink-0">
+                        Detail <i class="fas fa-chevron-right text-[10px]"></i>
+                    </span>
+                </button>
+                @endforeach
+            </div>
+
             @endif
         </div>
 
         @if($transaksis->hasPages())
-        <div class="px-5 py-3 border-t border-gray-100 flex items-center justify-between text-sm text-gray-500">
-            <span>Menampilkan {{ $transaksis->firstItem() }}–{{ $transaksis->lastItem() }} dari {{ $transaksis->total() }} data</span>
-            <div>{{ $transaksis->links() }}</div>
+        <div class="px-5 py-3 border-t border-gray-100 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between text-sm text-gray-500">
+
+            <span class="hidden sm:inline text-xs sm:text-sm">
+                Menampilkan {{ $transaksis->firstItem() }}–{{ $transaksis->lastItem() }} dari {{ $transaksis->total() }} data
+            </span>
+
+            <nav class="flex items-center justify-center sm:justify-end gap-1.5">
+
+                {{-- Previous --}}
+                @if($transaksis->onFirstPage())
+                    <span class="w-9 h-9 rounded-full border border-gray-200 text-gray-300 flex items-center justify-center cursor-not-allowed">
+                        <i class="fas fa-chevron-left text-xs"></i>
+                    </span>
+                @else
+                    <a href="{{ $transaksis->previousPageUrl() }}"
+                    class="w-9 h-9 rounded-full border border-gray-200 text-gray-500 flex items-center justify-center hover:bg-gray-50 transition">
+                        <i class="fas fa-chevron-left text-xs"></i>
+                    </a>
+                @endif
+
+                @php
+                    $current = $transaksis->currentPage();
+                    $last    = $transaksis->lastPage();
+                @endphp
+
+                {{-- Halaman 1 --}}
+                <a href="{{ $transaksis->url(1) }}"
+                class="w-9 h-9 rounded-full flex items-center justify-center text-sm
+                {{ $current == 1 ? 'bg-gray-900 text-white font-semibold' : 'border border-gray-200 text-gray-600 hover:bg-gray-50' }}">
+                    1
+                </a>
+
+                {{-- Titik jika jauh dari halaman 2 --}}
+                @if($current > 3)
+                    <span class="w-9 h-9 flex items-center justify-center text-gray-400">…</span>
+                @endif
+
+                {{-- Halaman tengah (current ±1) --}}
+                @for($i = max(2, $current - 1); $i <= min($last - 1, $current + 1); $i++)
+                    <a href="{{ $transaksis->url($i) }}"
+                    class="w-9 h-9 rounded-full flex items-center justify-center text-sm
+                    {{ $current == $i ? 'bg-gray-900 text-white font-semibold' : 'border border-gray-200 text-gray-600 hover:bg-gray-50' }}">
+                        {{ $i }}
+                    </a>
+                @endfor
+
+                {{-- Titik sebelum last --}}
+                @if($current < $last - 2)
+                    <span class="w-9 h-9 flex items-center justify-center text-gray-400">…</span>
+                @endif
+
+                {{-- Halaman terakhir (kalau lebih dari 1 halaman) --}}
+                @if($last > 1)
+                    <a href="{{ $transaksis->url($last) }}"
+                    class="w-9 h-9 rounded-full flex items-center justify-center text-sm
+                    {{ $current == $last ? 'bg-gray-900 text-white font-semibold' : 'border border-gray-200 text-gray-600 hover:bg-gray-50' }}">
+                        {{ $last }}
+                    </a>
+                @endif
+
+                {{-- Next --}}
+                @if($transaksis->hasMorePages())
+                    <a href="{{ $transaksis->nextPageUrl() }}"
+                    class="w-9 h-9 rounded-full border border-gray-200 text-gray-500 flex items-center justify-center hover:bg-gray-50 transition">
+                        <i class="fas fa-chevron-right text-xs"></i>
+                    </a>
+                @else
+                    <span class="w-9 h-9 rounded-full border border-gray-200 text-gray-300 flex items-center justify-center cursor-not-allowed">
+                        <i class="fas fa-chevron-right text-xs"></i>
+                    </span>
+                @endif
+
+            </nav>
         </div>
         @endif
     </div>

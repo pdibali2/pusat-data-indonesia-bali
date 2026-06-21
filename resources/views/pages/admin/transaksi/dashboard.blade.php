@@ -16,66 +16,78 @@
     </div>
 
     {{-- Statistik Utama --}}
-    <div class="grid grid-cols-2 lg:grid-cols-3 gap-4">
+    <div class="grid grid-cols-1 gap-3">
 
-        <div class="card-panel px-5 py-4 flex items-center gap-4">
-            <div class="w-10 h-10 rounded-xl bg-blue-50 flex items-center justify-center flex-shrink-0">
-                <i class="fas fa-receipt text-blue-500"></i>
+        <div class="card-panel px-5 py-4">
+            <div class="flex items-center justify-between mb-3">
+                <div class="flex items-center gap-2">
+                    <div class="w-8 h-8 rounded-lg bg-blue-50 flex items-center justify-center">
+                        <i class="fas fa-receipt text-blue-500 text-sm"></i>
+                    </div>
+                    <span class="text-sm text-gray-500">Total Transaksi</span>
+                </div>
             </div>
-            <div>
-                <p class="text-xs text-gray-500">Total Transaksi Berlangganan</p>
-                <p class="text-2xl font-bold text-gray-800">{{ number_format($stats['total_transaksi']) }}</p>
-            </div>
+            <p class="text-3xl font-bold text-gray-800">{{ number_format($stats['total_transaksi']) }}</p>
         </div>
 
-        <div class="card-panel px-5 py-4 flex items-center gap-4">
-            <div class="w-10 h-10 rounded-xl bg-green-50 flex items-center justify-center flex-shrink-0">
-                <i class="fas fa-coins text-green-500"></i>
+        <div class="card-panel px-5 py-4">
+            <div class="flex items-center justify-between mb-3">
+                <div class="flex items-center gap-2">
+                    <div class="w-8 h-8 rounded-lg bg-green-50 flex items-center justify-center">
+                        <i class="fas fa-coins text-green-500 text-sm"></i>
+                    </div>
+                    <span class="text-sm text-gray-500">Total Pendapatan</span>
+                </div>
             </div>
-            <div>
-                <p class="text-xs text-gray-500">Total Pendapatan</p>
-                <p class="text-xl font-bold text-green-700">Rp {{ number_format($stats['total_pendapatan'], 0, ',', '.') }}</p>
-            </div>
+            <p class="text-2xl font-bold text-green-700">Rp {{ number_format($stats['total_pendapatan'], 0, ',', '.') }}</p>
         </div>
 
-        <div class="card-panel px-5 py-4 flex items-center gap-4">
-            <div class="w-10 h-10 rounded-xl bg-purple-50 flex items-center justify-center flex-shrink-0">
-                <i class="fas fa-users text-purple-500"></i>
+        <div class="card-panel px-5 py-4">
+            <div class="flex items-center justify-between mb-3">
+                <div class="flex items-center gap-2">
+                    <div class="w-8 h-8 rounded-lg bg-purple-50 flex items-center justify-center">
+                        <i class="fas fa-users text-purple-500 text-sm"></i>
+                    </div>
+                    <span class="text-sm text-gray-500">Pelanggan Aktif</span>
+                </div>
             </div>
-            <div>
-                <p class="text-xs text-gray-500">Pelanggan Aktif</p>
-                <p class="text-2xl font-bold text-purple-700">{{ number_format($stats['pelanggan_aktif']) }}</p>
-            </div>
+            <p class="text-3xl font-bold text-purple-700">{{ number_format($stats['pelanggan_aktif']) }}</p>
         </div>
 
-        <div class="card-panel px-5 py-4 flex items-center gap-4">
-            <div class="w-10 h-10 rounded-xl bg-yellow-50 flex items-center justify-center flex-shrink-0">
-                <i class="fas fa-clock text-yellow-500"></i>
+        <div class="card-panel px-5 py-4">
+            <div class="flex items-center justify-between mb-3">
+                <div class="flex items-center gap-2">
+                    <div class="w-8 h-8 rounded-lg bg-yellow-50 flex items-center justify-center">
+                        <i class="fas fa-clock text-yellow-500 text-sm"></i>
+                    </div>
+                    <span class="text-sm text-gray-500">Menunggu Bayar</span>
+                </div>
             </div>
-            <div>
-                <p class="text-xs text-gray-500">Menunggu Bayar</p>
-                <p class="text-2xl font-bold text-yellow-600">{{ number_format($stats['transaksi_pending']) }}</p>
-            </div>
+            <p class="text-3xl font-bold text-yellow-600">{{ number_format($stats['transaksi_pending']) }}</p>
         </div>
 
-        <div class="card-panel px-5 py-4 flex items-center gap-4">
-            <div class="w-10 h-10 rounded-xl bg-emerald-50 flex items-center justify-center flex-shrink-0">
-                <i class="fas fa-check-circle text-emerald-500"></i>
+        <div class="card-panel px-5 py-4">
+            <div class="flex items-center justify-between mb-3">
+                <div class="flex items-center gap-2">
+                    <div class="w-8 h-8 rounded-lg bg-emerald-50 flex items-center justify-center">
+                        <i class="fas fa-check-circle text-emerald-500 text-sm"></i>
+                    </div>
+                    <span class="text-sm text-gray-500">Transaksi Sukses</span>
+                </div>
             </div>
-            <div>
-                <p class="text-xs text-gray-500">Transaksi Sukses</p>
-                <p class="text-2xl font-bold text-emerald-700">{{ number_format($stats['transaksi_sukses']) }}</p>
-            </div>
+            <p class="text-3xl font-bold text-emerald-700">{{ number_format($stats['transaksi_sukses']) }}</p>
         </div>
 
-        <div class="card-panel px-5 py-4 flex items-center gap-4">
-            <div class="w-10 h-10 rounded-xl bg-red-50 flex items-center justify-center flex-shrink-0">
-                <i class="fas fa-times-circle text-red-400"></i>
+        <div class="card-panel px-5 py-4">
+            <div class="flex items-center justify-between mb-3">
+                <div class="flex items-center gap-2">
+                    <div class="w-8 h-8 rounded-lg bg-red-50 flex items-center justify-center">
+                        <i class="fas fa-times-circle text-red-400 text-sm"></i>
+                    </div>
+                    <span class="text-sm text-gray-500">Gagal / Batal</span>
+                </div>
             </div>
-            <div>
-                <p class="text-xs text-gray-500">Gagal / Batal</p>
-                <p class="text-2xl font-bold text-red-500">{{ number_format($stats['transaksi_gagal']) }}</p>
-            </div>
+            <p class="text-3xl font-bold text-red-500">{{ number_format($stats['transaksi_gagal']) }}</p>
         </div>
 
     </div>
