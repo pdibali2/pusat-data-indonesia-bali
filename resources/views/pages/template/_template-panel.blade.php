@@ -14,6 +14,29 @@
      STYLES — diletakkan di atas agar tidak FOUC
 ══════════════════════════════════════════════════════════ --}}
 <style>
+    /* ── Mobile card accordion ── */
+    @media (max-width: 639px) {
+        #pivotTable { display: none !important; }
+        #mobileCardList { display: flex; flex-direction: column; gap: 0.75rem; }
+    }
+    @media (min-width: 640px) {
+        #mobileCardList { display: none !important; }
+    }
+
+    .meta-card { border: 1px solid #e5e7eb; border-radius: 0.75rem; overflow: hidden; }
+    .meta-card-header {
+        display: flex; align-items: center; justify-content: space-between;
+        padding: 0.75rem 1rem; background: #f9fafb; cursor: pointer;
+        gap: 0.5rem;
+    }
+    .meta-card-header:active { background: #f3f4f6; }
+    .meta-card-body { display: none; }
+    .meta-card-body.open { display: block; }
+    .meta-card-row {
+        display: flex; justify-content: space-between; align-items: center;
+        padding: 0.5rem 1rem; border-top: 1px solid #f3f4f6; font-size: 0.75rem;
+    }
+    .meta-card-row:nth-child(even) { background: #fafafa; }
     /* ── Card utama tidak boleh memotong scroll ── */
     .tp-panel-card {
         overflow: visible !important;
@@ -669,6 +692,9 @@
                             <thead id="pivotHead"></thead>
                             <tbody id="pivotBody"></tbody>
                         </table>
+
+                        {{-- Mobile card list — diisi JS, tersembunyi di desktop --}}
+                        <div id="mobileCardList" class="p-3"></div>
                     </div>
 
                 </div>
@@ -1297,6 +1323,7 @@ async function tampilkanData(page = 1) {
         }
 
         _renderTable(d);
+        _renderMobileCards(d);
 
     } catch (e) {
         loading.classList.add('hidden');
@@ -1673,6 +1700,115 @@ function _renderTable(d) {
                    ${p}</button>`
         ).join('');
     }
+}
+
+function _renderMobileCards(d) {
+    const container = document.getElementById('mobileCardList');
+    if (!container) return;
+
+    const cols = d.columns;
+    const rows = d.rows;
+
+    // Group per metadata (sama seperti _renderTable)
+    const grouped   = {};
+    const metaOrder = [];
+    rows.forEach(row => {
+        const key = String(row.metadata_id);
+        if (!grouped[key]) {
+            grouped[key] = { nama: row.nama, klasifikasi: row.klasifikasi, satuan: row.satuan, sumber: row.sumber, rows: [] };
+            metaOrder.push(key);
+        }
+        grouped[key].rows.push(row);
+    });
+
+    container.innerHTML = metaOrder.map((key, idx) => {
+        const group = grouped[key];
+
+        // Baris lokasi
+        const lokasiRows = group.rows.map(row => {
+            const level = _getLokasiLevel(row);
+            const levelNames = ['Provinsi','Kabupaten','Kecamatan','Desa'];
+            const locTitle = levelNames[level] ?? '';
+
+            // Nilai per kolom
+            const nilaiRows = cols.map(c => {
+                const val = row.values?.[c.label];
+                const fmt = (val !== null && val !== undefined && val !== '')
+                    ? parseFloat(val).toLocaleString('id-ID', { minimumFractionDigits:0, maximumFractionDigits:2 })
+                    : '—';
+                return `<div class="meta-card-row">
+                    <span class="text-gray-400">${_esc(c.label)}</span>
+                    <span class="font-mono font-medium text-gray-700">${fmt}</span>
+                </div>`;
+            }).join('');
+
+            const grafikUrl = `${TMPL_URLS.grafik}?metadata_id=${row.metadata_id}&location_id=${row.location_id ?? ''}`;
+
+            return `
+                <div class="border-t border-gray-100">
+                    {{-- Sub-header lokasi --}}
+                    <div class="flex items-center justify-between px-4 py-2 bg-gray-50 gap-2">
+                        <span class="text-xs font-semibold text-gray-600">
+                            ${_esc(row.lokasi ?? 'Semua Wilayah')}
+                            <span class="text-gray-400 font-normal ml-1">${_esc(locTitle)}</span>
+                        </span>
+                        <a href="${grafikUrl}" class="btn-grafik shrink-0">
+                            <i class="fas fa-chart-bar"></i> Grafik
+                        </a>
+                    </div>
+                    ${nilaiRows}
+                </div>`;
+        }).join('');
+
+        return `
+            <div class="meta-card">
+                {{-- Header card accordion --}}
+                <div class="meta-card-header" onclick="toggleMetaCard('mc-${idx}')">
+                    <div class="min-w-0 flex-1">
+                        <p class="text-xs font-bold text-gray-800 leading-tight">
+                            ${_esc(group.nama)}
+                        </p>
+                        ${group.klasifikasi
+                            ? `<p class="text-[10px] text-gray-400 mt-0.5">${_esc(group.klasifikasi)}</p>`
+                            : ''}
+                        <p class="text-[10px] text-gray-400 mt-0.5">
+                            Satuan: ${_esc(group.satuan ?? '-')}
+                        </p>
+                    </div>
+                    <div class="flex items-center gap-2 shrink-0">
+                        <button type="button"
+                                onclick="event.stopPropagation(); openMetadataModal(${group.rows[0]?.metadata_id})"
+                                class="text-blue-400 hover:text-sky-600 transition-colors">
+                            <i class="fas fa-info-circle text-xs"></i>
+                        </button>
+                        <i class="fas fa-chevron-down text-gray-400 text-xs transition-transform" id="mc-chevron-${idx}"></i>
+                    </div>
+                </div>
+
+                {{-- Body accordion --}}
+                <div class="meta-card-body" id="mc-${idx}">
+                    ${lokasiRows}
+
+                    {{-- Footer: sumber --}}
+                    ${group.sumber ? `
+                    <div class="px-4 py-2.5 border-t border-gray-100 bg-gray-50">
+                        <p class="text-[10px] text-gray-400">
+                            <span class="font-medium text-gray-500">Sumber:</span>
+                            ${_esc(group.sumber)}
+                        </p>
+                    </div>` : ''}
+                </div>
+            </div>`;
+    }).join('');
+}
+
+function toggleMetaCard(id) {
+    const body    = document.getElementById(id);
+    const chevron = document.getElementById(id.replace('mc-', 'mc-chevron-'));
+    if (!body) return;
+    const isOpen = body.classList.contains('open');
+    body.classList.toggle('open', !isOpen);
+    if (chevron) chevron.style.transform = isOpen ? '' : 'rotate(180deg)';
 }
 
 // ─── Export CSV ───────────────────────────────────────────────
