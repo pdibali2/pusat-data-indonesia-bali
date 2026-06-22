@@ -27,7 +27,7 @@ return new class extends Migration
             
             $table->integer('time_id');
 
-            $table->decimal('number_value', 10, 2)->nullable();
+            $table->decimal('number_value', 30, 2)->nullable();
 
             $table->integer('status')->default(1);
 

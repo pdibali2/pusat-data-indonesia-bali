@@ -205,11 +205,11 @@ class LandingController extends Controller
             return response()->json([]);
         }
 
+        $isLimited = $this->isLimitedUser();
+
         $results = Metadata::where('status', 2)
-            // Hanya metadata yang benar-benar punya data
             ->whereHas('data', function ($query) {
-                $query->where('status', 1)
-                    ->where('location_id', 0);
+                $query->where('status', 1)->where('location_id', 0);
             })
             ->where('nama', 'like', "%{$q}%")
             ->when($klasifikasi, function ($query) use ($klasifikasi) {
@@ -221,18 +221,22 @@ class LandingController extends Controller
             ->select('metadata_id', 'nama', 'klasifikasi_id', 'satuan_data', 'frekuensi_penerbitan', 'tahun_mulai_data')
             ->limit(50)
             ->get();
-        
+
+        $freeLimit = 3;
 
         return response()->json(
-            $results->map(fn($item) => [
-                'metadata_id'          => $item->metadata_id,
-                'nama'                 => $item->nama,
-                'klasifikasi'          => $item->klasifikasi?->nama_klasifikasi,
-                'klasifikasi_slug'       => Str::slug($item->klasifikasi?->nama_klasifikasi),
-                'satuan_data'          => $item->satuan_data,
-                'frekuensi_penerbitan' => $item->frekuensi_penerbitan,
-                'tahun_mulai_data'     => $item->tahun_mulai_data,
-            ])
+            $results->map(function ($item, $index) use ($isLimited, $freeLimit) {
+                return [
+                    'metadata_id'          => $item->metadata_id,
+                    'nama'                 => $item->nama,
+                    'klasifikasi'          => $item->klasifikasi?->nama_klasifikasi,
+                    'klasifikasi_slug'     => Str::slug($item->klasifikasi?->nama_klasifikasi),
+                    'satuan_data'          => $item->satuan_data,
+                    'frekuensi_penerbitan' => $item->frekuensi_penerbitan,
+                    'tahun_mulai_data'     => $item->tahun_mulai_data,
+                    'is_locked'            => $isLimited && ($index + 1) > $freeLimit,
+                ];
+            })
         );
     }
 
@@ -301,20 +305,17 @@ class LandingController extends Controller
 
         $metadataList = $query->paginate($perPage)->withQueryString();
 
-        // ── Freemium: hitung batas 30% dari TOTAL keseluruhan ──────────────────
-        // Pakai total query yang sama (tanpa paginate) agar konsisten lintas halaman
-        $totalAll = (clone $query)->count(); // total setelah filter diterapkan
-        // Kalau tidak ada filter aktif, pakai total semua metadata aktif
-        $totalForLimit = Metadata::where('status', 2)->count();
+        // ── Freemium: 3 metadata_id GLOBAL pertama (konsisten lintas search/filter) ──
         $freeLimit = 3;
 
-        // Index global item pertama di halaman ini (1-based)
-        $pageStartIndex = ($metadataList->currentPage() - 1) * $perPage + 1;
+        $freeIds = Metadata::where('status', 2)
+            ->whereHas('data', fn($q) => $q->where('status', 1)->where('location_id', 0))
+            ->orderBy('date_inputed', 'desc')
+            ->orderBy('metadata_id', 'desc')
+            ->limit($freeLimit)
+            ->pluck('metadata_id')
+            ->all();
 
-        // Berapa item di halaman ini yang masih dalam zona free?
-        // freeCountOnPage = max(0, min(perPage, freeLimit - pageStartIndex + 1))
-        $freeCountOnPage = max(0, min($perPage, $freeLimit - $pageStartIndex + 1));
-        
         // ── Hitung rentang tahun aktual per metadata (batch, 1 query) ──────────
         $metadataIds = $metadataList->pluck('metadata_id')->all();
 
@@ -353,10 +354,10 @@ class LandingController extends Controller
             'totalMetadata',
             'totalKlasifikasi',
             'totalProdusen',
-            'freeLimit',         // ← baru
-            'freeCountOnPage',   // ← baru
-            'yearRanges',        // ← baru
-            'isLimited',         // ← baru
+            'freeLimit',
+            'freeIds',       // ← ganti freeCountOnPage dengan ini
+            'yearRanges',
+            'isLimited',
         ));
     }
 
@@ -366,8 +367,25 @@ class LandingController extends Controller
         $metadata = Metadata::with(['klasifikasi', 'produsen'])
             ->where('status', 2)
             ->findOrFail($metadataId);
-    
-        // ── 2. Hitung rentang tahun dari data aktual ─────────────────────────
+
+        // ── 2. Gate: cek apakah user boleh akses metadata ini ───────────────
+        if ($this->isLimitedUser()) {
+            $freeIds = Metadata::where('status', 2)
+                ->whereHas('data', fn($q) => $q->where('status', 1)->where('location_id', 0))
+                ->orderBy('date_inputed', 'desc')
+                ->orderBy('metadata_id', 'desc')
+                ->limit(3)
+                ->pluck('metadata_id')
+                ->all();
+
+            if (!in_array($metadataId, $freeIds)) {
+                return redirect()->route('langganan')
+                    ->with('info', 'Akses data ini memerlukan langganan aktif.');
+            }
+        }
+        // ── end gate ─────────────────────────────────────────────────────────
+
+        // ── 3. Hitung rentang tahun dari data aktual ─────────────────────────
         $yearRange = DB::table('data')
             ->join('time', 'data.time_id', '=', 'time.time_id')
             ->where('data.metadata_id', $metadataId)
@@ -379,9 +397,8 @@ class LandingController extends Controller
 
         $yearStart = $yearRange?->min_year ?? (now()->year - 5);
         $yearEnd   = $yearRange?->max_year ?? (now()->year - 1);
-    
-        // ── 3. Ambil data dalam rentang ──────────────────────────────────────
-        //    Join ke tabel `time` untuk filter tahun
+
+        // ── 4. Ambil data dalam rentang ──────────────────────────────────────
         $rawData = Data::with(['time', 'location', 'rujukan.produsen'])
             ->where('metadata_id', $metadataId)
             ->where('status', 1)
@@ -390,38 +407,29 @@ class LandingController extends Controller
                 $q->whereBetween('year', [$yearStart, $yearEnd])
             )
             ->get();
-    
-        // ── 4. Bentuk baris tabel & series chart ─────────────────────────────
-        //
-        //    Strategi pengelompokan:
-        //    - Jika ada kolom `period` / `label` di tabel time  → pakai itu
-        //    - Kalau tidak, pakai "year" saja
-        //    - Urutkan ascending lalu ambil nilai pertama per periode
-        //    (sesuaikan groupBy-key dengan struktur model Time Anda)
-    
+
+        // ── 5. Bentuk baris tabel & series chart ─────────────────────────────
         $grouped = $rawData
             ->sortBy(fn($d) => $d->time?->year)
-            ->groupBy(fn($d) => $d->time?->year);  // group per year
-    
-        $tableRows   = [];   // untuk blade tabel
-        $chartLabels = [];   // label sumbu-X
-        $chartValues = [];   // nilai numeric
-    
+            ->groupBy(fn($d) => $d->time?->year);
+
+        $tableRows   = [];
+        $chartLabels = [];
+        $chartValues = [];
+
         foreach ($grouped as $year => $items) {
-            // Ambil nilai pertama yang tidak null pada year itu
             $val = $items
                 ->pluck('number_value')
                 ->filter(fn($v) => !is_null($v))
                 ->first();
-    
+
             $period = (string) $year;
-    
+
             $tableRows[]   = ['period' => $period, 'value' => $val, 'year' => $year];
             $chartLabels[] = $period;
             $chartValues[] = $val !== null ? (float) $val : null;
         }
-    
-        // Pastikan ada semua year (isi null kalau tidak ada data)
+
         $yearsWithData = array_column($tableRows, 'year');
         for ($y = $yearStart; $y <= $yearEnd; $y++) {
             if (!in_array($y, $yearsWithData)) {
@@ -430,18 +438,15 @@ class LandingController extends Controller
                 $chartValues[] = null;
             }
         }
-    
-        // Sort ulang ascending
+
         usort($tableRows, fn($a, $b) => $a['year'] <=> $b['year']);
         array_multisort(array_column($tableRows, 'year'), SORT_ASC, $tableRows);
-    
-        // Rebuild labels & values sesuai urutan akhir
+
         $chartLabels = array_column($tableRows, 'period');
         $chartValues = array_map(fn($r) => $r['value'] !== null ? (float)$r['value'] : null, $tableRows);
-    
-        // Wrap ke Collection biar bisa pakai ->pluck(), ->max(), dll. di blade
+
         $tableRows = collect($tableRows);
-    
+
         $firstData = $rawData->first();
         $rujukan   = $firstData?->rujukan;
 

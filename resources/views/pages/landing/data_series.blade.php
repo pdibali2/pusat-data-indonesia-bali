@@ -9,7 +9,6 @@
     <link href="https://cdn.jsdelivr.net/npm/tom-select@2.3.1/dist/css/tom-select.css" rel="stylesheet"/>
     <meta name="csrf-token" content="{{ csrf_token() }}"/>
     @vite(['resources/css/app.css', 'resources/js/app.ts'])
-
     <script src="https://cdn.jsdelivr.net/npm/tom-select@2.3.1/dist/js/tom-select.complete.min.js"></script>
 </head>
 <body class="bg-[#f8fafc] text-gray-900 antialiased">
@@ -18,15 +17,12 @@
 
     {{-- ── Page Header ──────────────────────────────────────────────────────── --}}
     <div class="bg-[#001734] pt-24 pb-10 relative overflow-hidden">
-        {{-- grid bg --}}
         <div class="absolute inset-0 opacity-10" aria-hidden="true">
             <svg class="w-full h-full" xmlns="http://www.w3.org/2000/svg">
                 <rect width="100%" height="100%" fill="url(#ds-grid)"/>
             </svg>
         </div>
-
         <div class="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            {{-- Breadcrumb --}}
             <nav class="flex items-center gap-2 text-xs text-white/40 mb-6" aria-label="Breadcrumb">
                 <a href="{{ route('landing') }}" class="hover:text-[#F7C100] transition-colors">Beranda</a>
                 <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
@@ -34,7 +30,6 @@
                 </svg>
                 <span class="text-white/70">Data Series</span>
             </nav>
-
             <div class="flex flex-col lg:flex-row lg:items-end lg:justify-between gap-6">
                 <div>
                     <h1 class="text-3xl sm:text-4xl font-black font-poppins text-white leading-tight mb-2">
@@ -137,7 +132,6 @@
                 @endif
             </div>
         </form>
-        
 
         {{-- ── Result info ──────────────────────────────────────────────── --}}
         <div class="flex items-center justify-between mb-6">
@@ -158,37 +152,36 @@
             </div>
         @else
 
-            {{-- ── Freemium banner (guest only, hanya tampil jika ada data terkunci di halaman ini) ── --}}
-            
-                @if($isLimited && $freeCountOnPage < $metadataList->count())
+            {{-- ── Freemium banner ── --}}
+            @if($isLimited)
+                @php
+                    $freeOnThisPage   = $metadataList->filter(fn($m) => in_array($m->metadata_id, $freeIds))->count();
+                    $lockedOnThisPage = $metadataList->count() - $freeOnThisPage;
+                @endphp
+                @if($lockedOnThisPage > 0)
                     <div class="mb-6 flex items-center gap-3 px-4 py-3 rounded-xl bg-amber-50 border border-amber-200">
                         <svg class="w-4 h-4 text-amber-500 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/>
                         </svg>
                         <p class="text-xs text-amber-700">
-                            Anda melihat <strong>{{ $freeCountOnPage }} dari {{ $metadataList->count() }}</strong> data di halaman ini secara gratis.
+                            Anda melihat <strong>{{ $freeOnThisPage }} dari {{ $metadataList->count() }}</strong> data di halaman ini secara gratis.
                             <a href="{{ route('langganan') }}" class="font-bold underline hover:text-amber-900 transition-colors">Berlangganan</a> untuk akses penuh ke semua data.
                         </p>
                     </div>
                 @endif
-            
+            @endif
 
             {{-- ── Grid + List wrapper ──────────────────────────────────────── --}}
             <div x-data="{ view: localStorage.getItem('ds_view') || 'grid' }"
                  x-init="window.addEventListener('storage', () => { view = localStorage.getItem('ds_view') || 'grid'; })">
 
-                {{-- ──────────────────────────────────────────────────────────── --}}
-                {{-- GRID VIEW                                                    --}}
-                {{-- ──────────────────────────────────────────────────────────── --}}
+                {{-- ── GRID VIEW ── --}}
                 <div x-show="view === 'grid'" class="relative">
-
                     <div class="grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
                         @foreach($metadataList as $i => $meta)
                             @php
-                                // Locked jika guest DAN item ini melewati batas free di halaman ini
-                                $isLocked = $isLimited && ($i + 1) > $freeCountOnPage;
+                                $isLocked = $isLimited && !in_array($meta->metadata_id, $freeIds);
 
-                                // ── Sparkline (hanya hitung untuk card yang tidak terkunci) ──
                                 $range     = $yearRanges[$meta->metadata_id] ?? null;
                                 $startYear = $range ? (int) explode('-', $range)[0] : (now()->year - 5);
                                 $lastYear  = $range ? (int) explode('-', $range)[1] : (now()->year - 1);
@@ -235,10 +228,8 @@
                             @endphp
 
                             @if(!$isLocked)
-                                {{-- ── FREE card ─────────────────────────────────────────── --}}
+                                {{-- FREE card --}}
                                 <div class="group bg-white rounded-2xl border border-gray-100 shadow-sm hover:shadow-xl hover:-translate-y-1 transition-all duration-300 overflow-hidden">
-
-                                    {{-- Sparkline header --}}
                                     <div class="relative px-5 pt-5 pb-2 h-36 overflow-hidden" style="background:#0B2A52;">
                                         <span class="absolute top-3 right-4 text-xs font-semibold" style="color:rgba(247,0,0,0.7);">
                                             {{ $meta->satuan_data }}
@@ -269,19 +260,15 @@
                                                         {{ $trend === 'up' ? 'bg-blue-500/20 text-blue-300' : 'bg-red-500/20 text-red-300' }}">
                                                 <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
                                                     @if($trend === 'up')
-                                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5"
-                                                            d="M13 7l5 5m0 0l-5 5m5-5H6"/>
+                                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M13 7l5 5m0 0l-5 5m5-5H6"/>
                                                     @else
-                                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5"
-                                                            d="M13 17l5-5m0 0l-5-5m5 5H6"/>
+                                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M13 17l5-5m0 0l-5-5m5 5H6"/>
                                                     @endif
                                                 </svg>
                                                 {{ $trend === 'up' ? '+' : '-' }}{{ $pct }}%
                                             </div>
                                         @endif
                                     </div>
-
-                                    {{-- Card body --}}
                                     <div class="p-5">
                                         <div class="flex items-start justify-between gap-2 mb-3">
                                             <h3 class="text-sm font-bold text-stikom leading-snug line-clamp-2 group-hover:text-stikom-accent transition-colors duration-200">
@@ -321,19 +308,15 @@
                                 </div>
 
                             @else
-                                {{-- ── LOCKED card (Grid) ─────────────────────────────────────────── --}}
+                                {{-- LOCKED card (Grid) --}}
                                 <div class="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
-                                    {{-- Sparkline header (blurred untuk locked) --}}
                                     <div class="relative px-5 pt-5 pb-2 h-36 overflow-hidden" style="background:#0B2A52;">
-                                        {{-- Konten sparkline yang di-blur --}}
                                         <div class="absolute inset-0 px-5 pt-5 pb-2" style="filter: blur(4px);">
                                             <svg viewBox="0 0 300 90" class="w-full h-20 mt-1" preserveAspectRatio="none" aria-hidden="true">
-                                                {{-- Grid lines --}}
                                                 @foreach([25, 50, 75] as $gy)
                                                     <line x1="0" y1="{{ $gy }}" x2="300" y2="{{ $gy }}"
                                                         stroke="white" stroke-opacity="0.06" stroke-width="1"/>
                                                 @endforeach
-                                                {{-- Garis merah (bukan kuning) --}}
                                                 <polyline points="0,60 60,45 120,55 180,38 240,50 300,42"
                                                         fill="none" stroke="#E63946" stroke-width="2.2"
                                                         stroke-linecap="round" stroke-linejoin="round"/>
@@ -345,9 +328,7 @@
                                                 @endforeach
                                             </div>
                                         </div>
-                                        {{-- Overlay gelap di atas blur --}}
-                                        <div class="absolute inset-0 bg-[#0B2A52]/70 backdrop-blur-none"></div>
-                                        {{-- Ikon kunci di tengah --}}
+                                        <div class="absolute inset-0 bg-[#0B2A52]/70"></div>
                                         <div class="absolute inset-0 flex items-center justify-center">
                                             <div class="flex flex-col items-center gap-1.5 opacity-60">
                                                 <svg class="w-7 h-7 text-[#F7C100]" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
@@ -358,8 +339,6 @@
                                             </div>
                                         </div>
                                     </div>
-
-                                    {{-- Card body (tidak blur, tampil info asli) --}}
                                     <div class="p-5">
                                         <div class="flex items-start justify-between gap-2 mb-3">
                                             <h3 class="text-sm font-bold text-stikom leading-snug line-clamp-2">
@@ -391,22 +370,18 @@
 
                         @endforeach
                     </div>
-
                 </div>{{-- /grid --}}
 
-                {{-- ──────────────────────────────────────────────────────────── --}}
-                {{-- LIST VIEW                                                    --}}
-                {{-- ──────────────────────────────────────────────────────────── --}}
+                {{-- ── LIST VIEW ── --}}
                 <div x-show="view === 'list'" class="relative space-y-3">
-
                     @foreach($metadataList as $i => $meta)
                         @php
-                            $isLocked        = auth()->guest() && ($i + 1) > $freeCountOnPage;
+                            $isLocked        = $isLimited && !in_array($meta->metadata_id, $freeIds);
                             $namaKlasifikasi = $meta->klasifikasi?->nama_klasifikasi ?? $meta->klasifikasi ?? '—';
                         @endphp
 
                         @if(!$isLocked)
-                            {{-- ── FREE list row ──────────────────────────────────────── --}}
+                            {{-- FREE list row --}}
                             <div class="group bg-white rounded-2xl border border-gray-100 shadow-sm hover:shadow-md hover:border-[#F7C100]/30 transition-all duration-200 overflow-hidden">
                                 <div class="flex items-center gap-4 p-4 sm:p-5">
                                     <div class="w-12 h-12 rounded-xl bg-[#001734] flex items-center justify-center flex-shrink-0 group-hover:bg-[#F7C100] transition-colors duration-300">
@@ -445,19 +420,15 @@
                             </div>
 
                         @else
-                            {{-- ── LOCKED list row (tidak blur) ─────────────────────────────────── --}}
+                            {{-- LOCKED list row --}}
                             <div class="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
                                 <div class="flex items-center gap-4 p-4 sm:p-5">
-
-                                    {{-- Icon --}}
                                     <div class="w-12 h-12 rounded-xl bg-[#001734] flex items-center justify-center flex-shrink-0">
                                         <svg class="w-6 h-6 text-[#F7C100]" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
                                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                                                 d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/>
                                         </svg>
                                     </div>
-
-                                    {{-- Info metadata (tampil asli) --}}
                                     <div class="flex-1 min-w-0">
                                         <div class="flex items-start gap-3 flex-wrap">
                                             <h3 class="text-sm font-bold text-[#001734] line-clamp-1">
@@ -476,8 +447,6 @@
                                             </div>
                                         </div>
                                     </div>
-
-                                    {{-- Tombol Langganan --}}
                                     <div class="flex items-center gap-2 shrink-0">
                                         <a href="{{ route('langganan') }}"
                                         class="flex items-center gap-1.5 px-4 py-2 rounded-xl bg-[#001734] text-stikom-accent hover:text-black text-xs font-bold hover:bg-[#F7C100] transition-colors duration-200">
@@ -493,19 +462,13 @@
                         @endif
 
                     @endforeach
-
                 </div>{{-- /list --}}
 
             </div>{{-- /x-data view wrapper --}}
 
-            {{-- ── Pagination ──────────────────────────────────────────────────── --}}
-            {{--
-                Guest di halaman 1 dengan paywall aktif: sembunyikan pagination
-                agar user tidak bisa loncat ke halaman 2 (semua terkunci di sana).
-                Di semua kondisi lain (login, atau halaman berikutnya): tampilkan.
-            --}}
+            {{-- ── Pagination ── --}}
             @php
-                $showPagination = !$isLimited || $metadataList->currentPage() > 1 || $freeCountOnPage >= $metadataList->count();
+                $showPagination = !$isLimited || $metadataList->currentPage() > 1 || ($freeOnThisPage ?? $metadataList->count()) >= $metadataList->count();
             @endphp
 
             @if($metadataList->hasPages() && $showPagination)
@@ -517,7 +480,6 @@
                     </p>
 
                     <nav class="flex items-center gap-1 order-1 sm:order-2" aria-label="Paginasi">
-
                         @if($metadataList->onFirstPage())
                             <span class="w-9 h-9 flex items-center justify-center rounded-xl text-gray-300 cursor-not-allowed" aria-disabled="true">
                                 <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
@@ -582,7 +544,6 @@
                                 </svg>
                             </span>
                         @endif
-
                     </nav>
 
                     <div class="flex items-center gap-2 order-3 text-sm text-gray-500">
@@ -624,20 +585,17 @@
         const searchInput = document.getElementById('search-input');
         const clearBtn    = document.getElementById('clear-search');
 
-        // Debounce search
         let debounceTimer;
         searchInput?.addEventListener('input', () => {
             clearTimeout(debounceTimer);
             debounceTimer = setTimeout(() => form.submit(), 600);
         });
 
-        // Clear search
         clearBtn?.addEventListener('click', () => {
             searchInput.value = '';
             form.submit();
         });
 
-        // TomSelect klasifikasi — auto-submit on change
         if (document.getElementById('select-klasifikasi')) {
             new TomSelect('#select-klasifikasi', {
                 allowEmptyOption: true,
@@ -647,7 +605,6 @@
         }
     });
 
-    // Back to top
     (function () {
         const btn = document.getElementById('back-to-top');
         window.addEventListener('scroll', () => {
