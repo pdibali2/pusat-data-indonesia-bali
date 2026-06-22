@@ -328,7 +328,7 @@
                             </tbody>
                         </table>
                     </div>
-                    <div class="space-y-4 md:hidden">
+                    <div class="space-y-4 p-5 md:hidden">
                         @foreach($tableRows as $row)
                         <div class="bg-white rounded-xl border p-5">
                             <div class="text-slate-500 text-xs uppercase">

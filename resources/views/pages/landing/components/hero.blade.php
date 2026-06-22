@@ -136,7 +136,7 @@
         </div>
 
         {{-- ─── Klasifikasi tags ────────────────────────────────────── --}}
-        <div class="relative z-10 flex flex-wrap justify-center gap-1.5 sm:gap-2 mb-9 sm:mb-12 sm:px-0">
+        <div class="relative z-10 flex flex-wrap justify-center gap-1.5 sm:gap-2 mb-9 sm:mb-12 px-5">
             @foreach($klasifikasiAktif as $k)
                 <a href="{{ route('klasifikasi.show', ['klasifikasi' => \Illuminate\Support\Str::slug($k->nama_klasifikasi)]) }}"
                    class="px-3 py-1 bg-white/8 border border-white/15 text-white/65 text-[12px] font-medium
