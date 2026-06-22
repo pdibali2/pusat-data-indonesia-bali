@@ -277,67 +277,97 @@
             </div>
 
             {{-- Data Table --}}
-            <div class="bg-white border border-slate-200 rounded overflow-hidden shadow-sm fade-up d3">
-                <div class="flex items-center justify-between px-6 py-4 border-b border-slate-100 bg-slate-50 flex-wrap gap-3">
-                    <div class="section-label">
-                        <span class="text-xs font-800 uppercase tracking-widest text-slate-700">
-                            Data Periode {{ $yearStart }}–{{ $yearEnd }}
+            <div class="grid grid-cols-1 gap-3">
+                <div class="bg-white border border-slate-200 rounded overflow-hidden shadow-sm fade-up d3">
+                    <div class="flex items-center justify-between px-6 py-4 border-b border-slate-100 bg-slate-50 flex-wrap gap-3">
+                        <div class="section-label">
+                            <span class="text-xs font-800 uppercase tracking-widest text-slate-700">
+                                Data Periode {{ $yearStart }}–{{ $yearEnd }}
+                            </span>
+                        </div>
+                        <span class="inline-flex items-center gap-1.5 text-xs text-slate-400 border border-slate-200 bg-white px-3 py-1 rounded-sm">
+                            <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"/></svg>
+                            Sumber: {{ $rujukan?->produsen?->nama_produsen ?? $metadata->produsen?->nama_produsen ?? 'Tidak diketahui' }}
                         </span>
                     </div>
-                    <span class="inline-flex items-center gap-1.5 text-xs text-slate-400 border border-slate-200 bg-white px-3 py-1 rounded-sm">
-                        <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"/></svg>
-                        Sumber: {{ $rujukan?->produsen?->nama_produsen ?? $metadata->produsen?->nama_produsen ?? 'Tidak diketahui' }}
-                    </span>
-                </div>
-
-                <div class="overflow-x-auto">
-                    <table class="w-full text-sm">
-                        <thead>
-                            <tr class="bg-[#0d1a35]">
-                                <th class="text-left px-6 py-3 text-xs font-700 uppercase tracking-widest text-slate-300">Indikator</th>
-                                <th class="text-left px-6 py-3 text-xs font-700 uppercase tracking-widest text-slate-300">Periode</th>
-                                <th class="text-right px-6 py-3 text-xs font-700 uppercase tracking-widest text-yellow-400">{{ $metadata->satuan_data }}</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            @forelse($tableRows as $row)
-                            <tr class="data-row border-b border-slate-100 last:border-b-0">
-                                <td class="px-6 py-4 text-slate-700 font-500">{{ $metadata->nama }}</td>
-                                <td class="px-6 py-4">
+                    <div class="hidden md:block">
+                        <table class="w-full text-sm">
+                            <thead>
+                                <tr class="bg-[#0d1a35]">
+                                    <th class="text-left px-6 py-3 text-xs font-700 uppercase tracking-widest text-slate-300">Nama Data</th>
+                                    <th class="text-left px-6 py-3 text-xs font-700 uppercase tracking-widest text-slate-300">Periode</th>
+                                    <th class="text-right px-6 py-3 text-xs font-700 uppercase tracking-widest text-yellow-400">{{ $metadata->satuan_data }}</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @forelse($tableRows as $row)
+                                <tr class="data-row border-b border-slate-100 last:border-b-0">
+                                    <td class="px-6 py-4 text-slate-700 font-500">{{ $metadata->nama }}</td>
+                                    <td class="px-6 py-4">
+                                        <span class="period-chip">
+                                            <svg class="w-2.5 h-2.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
+                                            {{ $row['period'] }}
+                                        </span>
+                                    </td>
+                                    <td class="px-6 py-4 text-right font-700 font-mono text-slate-800 tabular-nums">
+                                        @if(!is_null($row['value']))
+                                            {{ number_format((float)$row['value'], $dec, ',', '.') }}
+                                        @else
+                                            <span class="text-slate-300 font-400">—</span>
+                                        @endif
+                                    </td>
+                                </tr>
+                                @empty
+                                <tr>
+                                    <td colspan="3" class="px-6 py-12 text-center">
+                                        <svg class="w-10 h-10 mx-auto mb-3 opacity-25 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.4" d="M9.172 16.172a4 4 0 015.656 0M9 10h.01M15 10h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                                        <p class="text-slate-400 text-sm">Data untuk periode {{ $yearStart }}–{{ $yearEnd }} belum tersedia.</p>
+                                    </td>
+                                </tr>
+                                @endforelse
+                            </tbody>
+                        </table>
+                    </div>
+                    <div class="space-y-4 md:hidden">
+                        @foreach($tableRows as $row)
+                        <div class="bg-white rounded-xl border p-5">
+                            <div class="text-slate-500 text-xs uppercase">
+                                Nama Data
+                            </div>
+                            <div class="font-semibold text-slate-700">
+                                {{ $metadata->nama }}
+                            </div>
+                            <div class="mt-4 flex justify-between">
+                                <div>
+                                    <div class="text-xs text-slate-400">
+                                        Periode
+                                    </div>
                                     <span class="period-chip">
-                                        <svg class="w-2.5 h-2.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
                                         {{ $row['period'] }}
                                     </span>
-                                </td>
-                                <td class="px-6 py-4 text-right font-700 font-mono text-slate-800 tabular-nums">
-                                    @if(!is_null($row['value']))
+                                </div>
+                                <div class="text-right">
+                                    <div class="text-xs text-slate-400">
+                                        {{ $metadata->satuan_data }}
+                                    </div>
+                                    <div class="font-bold font-mono text-lg">
                                         {{ number_format((float)$row['value'], $dec, ',', '.') }}
-                                    @else
-                                        <span class="text-slate-300 font-400">—</span>
-                                    @endif
-                                </td>
-                            </tr>
-                            @empty
-                            <tr>
-                                <td colspan="3" class="px-6 py-12 text-center">
-                                    <svg class="w-10 h-10 mx-auto mb-3 opacity-25 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.4" d="M9.172 16.172a4 4 0 015.656 0M9 10h.01M15 10h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
-                                    <p class="text-slate-400 text-sm">Data untuk periode {{ $yearStart }}–{{ $yearEnd }} belum tersedia.</p>
-                                </td>
-                            </tr>
-                            @endforelse
-                        </tbody>
-                    </table>
-                </div>
-
-                <div class="flex items-center justify-between px-6 py-3.5 border-t border-slate-100 bg-slate-50 flex-wrap gap-3">
-                    <span class="text-xs text-slate-400">
-                        Menampilkan {{ count($tableRows) }} baris · Data lengkap tersedia untuk pelanggan
-                    </span>
-                    <button onclick="showGate()"
-                            class="inline-flex items-center gap-1.5 text-xs font-700 text-blue-600 hover:text-blue-800 transition-colors uppercase tracking-wider">
-                        <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/></svg>
-                        Akses Data Lengkap →
-                    </button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        @endforeach
+                    </div>
+                    <div class="flex items-center justify-between px-6 py-3.5 border-t border-slate-100 bg-slate-50 flex-wrap gap-3">
+                        <span class="text-xs text-slate-400">
+                            Menampilkan {{ count($tableRows) }} baris · Data lengkap tersedia untuk pelanggan
+                        </span>
+                        <button onclick="showGate()"
+                                class="inline-flex items-center gap-1.5 text-xs font-700 text-blue-600 hover:text-blue-800 transition-colors uppercase tracking-wider">
+                            <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/></svg>
+                            Akses Data Lengkap →
+                        </button>
+                    </div>
                 </div>
             </div>
 
