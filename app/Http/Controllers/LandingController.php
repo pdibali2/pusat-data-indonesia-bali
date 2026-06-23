@@ -207,9 +207,20 @@ class LandingController extends Controller
 
         $isLimited = $this->isLimitedUser();
 
+        // Ambil 3 metadata_id global pertama yang boleh diakses gratis
+        $freeLimit = 3;
+        $freeIds = Metadata::where('status', 2)
+            ->whereHas('data', fn($q) => $q->where('status', 1)->where('location_id', 0))
+            ->orderBy('date_inputed', 'desc')
+            ->orderBy('metadata_id', 'desc')
+            ->limit($freeLimit)
+            ->pluck('metadata_id')
+            ->all();
+
         $results = Metadata::where('status', 2)
             ->whereHas('data', function ($query) {
-                $query->where('status', 1)->where('location_id', 0);
+                $query->where('status', 1)
+                    ->where('location_id', 0);
             })
             ->where('nama', 'like', "%{$q}%")
             ->when($klasifikasi, function ($query) use ($klasifikasi) {
@@ -222,21 +233,17 @@ class LandingController extends Controller
             ->limit(50)
             ->get();
 
-        $freeLimit = 3;
-
         return response()->json(
-            $results->map(function ($item, $index) use ($isLimited, $freeLimit) {
-                return [
-                    'metadata_id'          => $item->metadata_id,
-                    'nama'                 => $item->nama,
-                    'klasifikasi'          => $item->klasifikasi?->nama_klasifikasi,
-                    'klasifikasi_slug'     => Str::slug($item->klasifikasi?->nama_klasifikasi),
-                    'satuan_data'          => $item->satuan_data,
-                    'frekuensi_penerbitan' => $item->frekuensi_penerbitan,
-                    'tahun_mulai_data'     => $item->tahun_mulai_data,
-                    'is_locked'            => $isLimited && ($index + 1) > $freeLimit,
-                ];
-            })
+            $results->map(fn($item) => [
+                'metadata_id'          => $item->metadata_id,
+                'nama'                 => $item->nama,
+                'klasifikasi'          => $item->klasifikasi?->nama_klasifikasi,
+                'klasifikasi_slug'     => Str::slug($item->klasifikasi?->nama_klasifikasi),
+                'satuan_data'          => $item->satuan_data,
+                'frekuensi_penerbitan' => $item->frekuensi_penerbitan,
+                'tahun_mulai_data'     => $item->tahun_mulai_data,
+                'is_locked'            => $isLimited && !in_array($item->metadata_id, $freeIds),
+            ])
         );
     }
 

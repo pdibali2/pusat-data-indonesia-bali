@@ -115,20 +115,55 @@
                     </template>
 
                     <template x-for="item in suggestions" :key="item.metadata_id">
-                        <a :href="`/statistik/${item.metadata_id}`"
-                           class="flex items-center gap-3 sm:gap-4 px-4 sm:px-5 py-3 hover:bg-stikom-accent/8
-                                  border-b border-gray-50 last:border-0 transition-colors cursor-pointer
-                                  border-l-2 border-l-transparent hover:border-l-stikom-accent min-h-[44px]"
-                           role="option">
-                            <div class="w-8 h-8 bg-stikom flex items-center justify-center shrink-0">
-                                <svg class="w-4 h-4 text-stikom-accent" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
-                                </svg>
+                        <a :href="item.is_locked ? '{{ route('langganan') }}' : `/statistik/${item.metadata_id}`"
+                        class="flex items-center gap-3 sm:gap-4 px-4 sm:px-5 py-3
+                                border-b border-gray-50 last:border-0 transition-colors cursor-pointer
+                                border-l-2 border-l-transparent min-h-[44px]"
+                        :class="item.is_locked
+                            ? 'hover:bg-amber-50 hover:border-l-amber-400'
+                            : 'hover:bg-stikom-accent/8 hover:border-l-stikom-accent'"
+                        role="option">
+
+                            {{-- Icon kiri --}}
+                            <div class="w-8 h-8 flex items-center justify-center shrink-0 transition-colors duration-200"
+                                :class="item.is_locked ? 'bg-amber-100' : 'bg-stikom'">
+                                {{-- Free: icon dokumen --}}
+                                <template x-if="!item.is_locked">
+                                    <svg class="w-4 h-4 text-stikom-accent" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                            d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
+                                    </svg>
+                                </template>
+                                {{-- Locked: icon gembok --}}
+                                <template x-if="item.is_locked">
+                                    <svg class="w-4 h-4 text-amber-500" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                            d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/>
+                                    </svg>
+                                </template>
                             </div>
-                            <div class="flex flex-col min-w-0 w-full">
-                                <div class="text-sm font-semibold text-gray-800 truncate" x-text="item.nama"></div>
+
+                            {{-- Teks --}}
+                            <div class="flex flex-col min-w-0 flex-1">
+                                <div class="text-sm font-semibold truncate"
+                                    :class="item.is_locked ? 'text-gray-500' : 'text-gray-800'"
+                                    x-text="item.nama"></div>
                                 <div class="text-xs text-gray-400 leading-normal truncate" x-text="item.klasifikasi"></div>
                             </div>
+
+                            {{-- Badge premium (kanan) --}}
+                            <template x-if="item.is_locked">
+                                <span class="shrink-0 inline-flex items-center gap-1 px-2 py-0.5
+                                            bg-amber-100 border border-amber-300 text-amber-600
+                                            text-[10px] font-bold uppercase tracking-wide rounded-sm">
+                                    <svg class="w-2.5 h-2.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5"
+                                            d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/>
+                                    </svg>
+                                    Premium
+                                </span>
+                            </template>
+
                         </a>
                     </template>
                 </div>

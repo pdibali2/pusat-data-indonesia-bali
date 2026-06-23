@@ -215,16 +215,45 @@
 
     {{-- ── Logout ── --}}
     <div class="p-4 border-t border-white/10">
-        <form action="/logout" method="POST">
+        <form action="{{ url('/logout') }}" method="POST" id="logoutForm">
             @csrf
-            <button type="submit"
-                    class="w-full flex items-center justify-center gap-2 text-[11px] font-semibold
-                           text-white bg-red-500/80 hover:bg-red-500 border border-red-400/30
-                           hover:border-red-400/55 py-2 rounded-lg transition-colors">
+
+            <button
+                type="submit"
+                id="logoutBtn"
+                class="w-full flex items-center justify-center gap-2 text-[11px] font-semibold
+                    text-white bg-red-500/80 hover:bg-red-500 border border-red-400/30
+                    hover:border-red-400/55 py-2 rounded-lg transition-colors
+                    disabled:opacity-60 disabled:cursor-not-allowed"
+            >
                 <i class="fa-solid fa-arrow-right-from-bracket rotate-180"></i>
-                Logout
+                <span>Logout</span>
             </button>
         </form>
     </div>
+
+    <script>
+    document.addEventListener('DOMContentLoaded', function () {
+        const form = document.getElementById('logoutForm');
+        const btn = document.getElementById('logoutBtn');
+
+        if (!form || !btn) return;
+
+        form.addEventListener('submit', function () {
+
+            // Cegah double submit
+            if (btn.disabled) {
+                return false;
+            }
+
+            btn.disabled = true;
+
+            btn.innerHTML = `
+                <i class="fa-solid fa-spinner fa-spin"></i>
+                <span>Logging out...</span>
+            `;
+        });
+    });
+    </script>
 
 </aside>
