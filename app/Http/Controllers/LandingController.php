@@ -329,7 +329,7 @@ class LandingController extends Controller
      */
     private function getFreeIds(): array
     {
-        // ── Coba ambil per rujukan dulu ──────────────────────────────────
+        // Tambahkan kolom order ke SELECT agar compatible dengan DISTINCT
         $rows = DB::table('metadata')
             ->join('data', 'metadata.metadata_id', '=', 'data.metadata_id')
             ->where('metadata.status', 2)
@@ -338,9 +338,9 @@ class LandingController extends Controller
             ->whereNotNull('data.rujukan_id')
             ->orderBy('metadata.date_inputed', 'desc')
             ->orderBy('metadata.metadata_id', 'desc')
-            ->select('metadata.metadata_id', 'data.rujukan_id')
-            ->distinct()
-            ->get();
+            ->select('metadata.metadata_id', 'data.rujukan_id', 'metadata.date_inputed') // ← tambah date_inputed
+            ->get()
+            ->unique('metadata_id'); // ← ganti distinct() dengan unique() di collection
 
         $freeIds         = [];
         $countPerRujukan = [];
@@ -356,8 +356,7 @@ class LandingController extends Controller
 
         $freeIds = array_unique($freeIds);
 
-        // ── Fallback: kalau kurang dari 3, tambal dari metadata aktif global ──
-        // Ini juga cover metadata yang sama sekali tidak punya rujukan_id
+        // Fallback kalau kurang dari 3
         if (count($freeIds) < 3) {
             $extra = Metadata::where('status', 2)
                 ->whereHas('data', fn($q) => $q->where('status', 1)->where('location_id', 0))

@@ -88,7 +88,7 @@
                                     </div>
                                 @endif
                             </td>
-                            <td class="px-4 py-3 font-medium text-gray-700">{{ $rujukan->nama_rujukan }}</td>
+                            <td class="px-4 py-3 font-medium text-gray-700">{{ $rujukan->nama_rujukan }} <span class="text-xs text-gray-300">({{ $rujukan->rujukan_id }})</span></td>
                             <td class="px-4 py-3 text-gray-400">{{ $rujukan->produsen->nama_produsen ?? '-' }}</td>
                             <td class="px-4 py-3">
                                 @if ($rujukan->link_rujukan)

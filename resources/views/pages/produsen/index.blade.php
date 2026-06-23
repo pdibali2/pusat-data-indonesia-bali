@@ -61,7 +61,7 @@
                     @foreach ($produsen as $i => $p)
                         <tr class="hover:bg-white/5 transition text-gray-300">
                             <td class="px-4 py-3 text-gray-500">{{ $produsen->firstItem() + $i }}</td>
-                            <td class="px-4 py-3 font-medium text-gray-600">{{ $p->nama_produsen }}</td>
+                            <td class="px-4 py-3 font-medium text-gray-600">{{ $p->nama_produsen }} <span class="text-xs text-gray-300">({{ $p->produsen_id }})</span></td>
                             <td class="px-4 py-3 text-gray-400">{{ $p->nama_contact_person ?? '-' }}</td>
                             <td class="px-4 py-3 text-gray-400">{{ $p->kontak ?? '-' }}</td>
                             <td class="px-4 py-3 text-gray-400">{{ $p->email ?? '-' }}</td>
