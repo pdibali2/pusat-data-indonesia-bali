@@ -215,7 +215,10 @@
 
     {{-- ── Logout ── --}}
     <div class="p-4 border-t border-white/10">
-        <form action="{{ url('/logout') }}" method="POST" id="logoutForm">
+        <p class="text-white/30 text-xs">
+            &copy; {{ date('Y') }} Pusat Data Indonesia Bali.
+        </p>
+        {{-- <form action="{{ url('/logout') }}" method="POST" id="logoutForm">
             @csrf
 
             <button
@@ -229,7 +232,7 @@
                 <i class="fa-solid fa-arrow-right-from-bracket rotate-180"></i>
                 <span>Logout</span>
             </button>
-        </form>
+        </form> --}}
     </div>
 
     <script>

@@ -47,16 +47,46 @@
         @auth
             @php $user = Auth::user(); @endphp
 
-            {{-- Full pill on desktop, avatar only on mobile --}}
-            <div class="flex items-center gap-2 cursor-default group">
-                <div class="w-8 h-8 rounded-full flex items-center justify-center
-                             text-white text-[10px] font-bold tracking-wide shrink-0
-                             bg-gradient-to-br from-sky-500 to-sky-700">
-                    {{ strtoupper(substr($user->name ?? '', 0, 2)) }}
-                </div>
-                <div class="hidden sm:block leading-tight">
-                    <p class="text-xs font-semibold text-slate-800 max-w-28 truncate">{{ $user->name ?? '' }}</p>
-                    <p class="text-[10px] text-slate-400">{{ optional($user->group)->title }}</p>
+            <div x-data="{ open: false }" class="relative">
+                <button type="button"
+                        @click="open = !open"
+                        @click.outside="open = false"
+                        class="flex items-center gap-2 rounded-xl px-3 py-2 text-left transition-colors hover:bg-slate-100"
+                        aria-haspopup="menu"
+                        :aria-expanded="open.toString()">
+                    <div class="w-8 h-8 rounded-full flex items-center justify-center
+                                 text-white text-[10px] font-bold tracking-wide shrink-0
+                                 bg-gradient-to-br from-sky-500 to-sky-700">
+                        {{ strtoupper(substr($user->name ?? '', 0, 2)) }}
+                    </div>
+                    <div class="hidden sm:block leading-tight">
+                        <p class="text-xs font-semibold text-slate-800 max-w-28 truncate">{{ $user->name ?? '' }}</p>
+                        <p class="text-[10px] text-slate-400">{{ optional($user->group)->title }}</p>
+                    </div>
+                    <i class="fas fa-chevron-down text-slate-400 text-xs hidden sm:block"></i>
+                </button>
+
+                <div x-show="open" x-transition
+                     style="display: none;"
+                     class="absolute right-0 z-50 mt-2 w-52 overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-xl">
+                    <a href="{{ route('profile.edit') }}"
+                       @click="open = false"
+                       class="block px-4 py-3 text-sm text-slate-700 hover:bg-slate-100">
+                        Edit Profil
+                    </a>
+                    <a href="{{ route('user-password.edit') }}"
+                       @click="open = false"
+                       class="block px-4 py-3 text-sm text-slate-700 hover:bg-slate-100">
+                        Ubah Password
+                    </a>
+                    <div class="border-t border-slate-200"></div>
+                    <form action="{{ url('/logout') }}" method="POST">
+                        @csrf
+                        <button type="submit"
+                                class="w-full text-left px-4 py-3 text-sm text-red-700 hover:bg-rose-50">
+                            Logout
+                        </button>
+                    </form>
                 </div>
             </div>
         @else

@@ -40,6 +40,8 @@ use App\Http\Controllers\AnomalyControlController;
 
     Route::post('/logout',[AuthController::class, 'logout']);
 
+    require __DIR__.'/settings.php';
+
     Route::get('/statistik/{metadataId}', [LandingController::class, 'dataShow'])
         ->name('landing.data.show')
         ->whereNumber('metadataId');
