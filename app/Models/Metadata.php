@@ -36,6 +36,8 @@ class Metadata extends Model
         'tipe_group',
         'group_by',
         'status',
+        'is_free',                 // ← tambah
+        'tahun_data_tersedia',     // ← tambah
         'date_inputed',
         'user_id',
     ];
@@ -52,6 +54,7 @@ class Metadata extends Model
         'produsen_id'         => 'integer',
         'group_by'            => 'integer',
         'user_id'             => 'integer',
+        'is_free'             => 'boolean',
     ];
 
     // ── RELASI ────────────────────────────────────────────────
@@ -152,13 +155,14 @@ class Metadata extends Model
         return $min ? (int) $min : null;
     }
 
-    /**
-     * Rentang tahun seluruh data yang tersedia.
-     * Contoh: "2021-2025", atau "2021" jika hanya satu tahun.
-     * Akses via: $metadata->tahun_data_tersedia
-     */
     public function getTahunDataTersediaAttribute(): ?string
     {
+        // Kalau kolom sudah terisi, pakai itu
+        if (!empty($this->attributes['tahun_data_tersedia'])) {
+            return $this->attributes['tahun_data_tersedia'];
+        }
+
+        // Fallback: hitung dari data (untuk data lama yang belum diisi)
         $result = DB::table('data')
             ->join('time', 'data.time_id', '=', 'time.time_id')
             ->where('data.metadata_id', $this->metadata_id)
@@ -167,9 +171,7 @@ class Metadata extends Model
             ->selectRaw('MIN(time.year) as min_year, MAX(time.year) as max_year')
             ->first();
 
-        if (! $result || ! $result->min_year) {
-            return null;
-        }
+        if (!$result || !$result->min_year) return null;
 
         return $result->min_year === $result->max_year
             ? (string) $result->min_year

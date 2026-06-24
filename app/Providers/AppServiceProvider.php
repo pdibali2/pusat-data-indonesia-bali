@@ -16,6 +16,7 @@ use App\Services\AuditTrailService;
 use App\Services\AnomalyDetectionService;
 use App\Services\WorkflowService;
 use Illuminate\Support\Facades\View;
+use Illuminate\Pagination\Paginator;
 
 class AppServiceProvider extends ServiceProvider
 {
@@ -79,6 +80,8 @@ class AppServiceProvider extends ServiceProvider
         });
 
         $this->configureDefaults();
+
+        Paginator::defaultView('vendor.pagination.custom');
     }
 
     /**

@@ -56,21 +56,19 @@ class LandingController extends Controller
         $jumlahProdusen = ProdusenData::count();
 
         // Produk unggulan: hanya metadata yang benar-benar punya data
+        // Produk unggulan: hanya metadata yang is_free = 1
         $produkUnggulan = Metadata::query()
             ->where('status', 2)
-
-            // hanya metadata yang memiliki data aktif
+            ->where('is_free', 1)  // ← ganti ini
             ->whereHas('data', function ($q) {
                 $q->where('status', 1)->where('location_id', 0);
             })
-
             ->with([
                 'klasifikasi',
                 'data' => function ($q) {
                     $q->where('status', 1)->where('location_id', 0)->with('location')->limit(1);
                 }
             ])
-
             ->orderBy('date_inputed', 'desc')
             ->orderBy('metadata_id', 'desc')
             ->limit(3)
@@ -173,21 +171,31 @@ class LandingController extends Controller
 
         abort_if(is_null($nama), 404);
 
-        $metadataList = Metadata::with('klasifikasi')
+        $isLimited = $this->isLimitedUser();
+        $freeIds   = $this->getFreeIds();
+
+        $query = Metadata::with('klasifikasi')
             ->where('status', 2)
-            ->whereHas('data', fn($q) => $q->where('status', 1)->where('location_id', 0))  // ← tambahan
+            ->whereHas('data', fn($q) => $q->where('status', 1)->where('location_id', 0))
             ->whereHas('klasifikasi', function ($q) use ($nama) {
                 $q->where('nama_klasifikasi', $nama);
-            })
-            ->orderBy('nama')
-            ->paginate(10);
+            });
 
-            $freeLimit       = 3;
-            $pageStartIndex  = ($metadataList->currentPage() - 1) * 10 + 1;
-            $freeCountOnPage = max(0, min(10, $freeLimit - $pageStartIndex + 1));
-            $isLimited = $this->isLimitedUser();
+        // Free di atas jika limited
+        if ($isLimited && !empty($freeIds)) {
+            $ids = implode(',', array_map('intval', $freeIds));
+            $query->orderByRaw("FIELD(metadata_id, {$ids}) = 0 ASC")
+                ->orderByRaw("FIELD(metadata_id, {$ids}) ASC");
+        }
 
-        return view('pages.landing.klasifikasi.show', compact('nama', 'metadataList', 'freeLimit', 'freeCountOnPage', 'isLimited'));
+        $query->orderBy('nama');
+
+        // Tidak ada limit — kalau subscriber bisa akses semua
+        $metadataList = $query->paginate(10);
+
+        return view('pages.landing.klasifikasi.show', compact(
+            'nama', 'metadataList', 'freeIds', 'isLimited'
+        ));
     }
 
     // ─────────────────────────────────────────────────────────────────────────
@@ -220,12 +228,14 @@ class LandingController extends Controller
                 $query->where('status', 1)->where('location_id', 0);
             })
             ->where(function ($qb) use ($keywords, $q) {
-                // Match exact phrase dulu
-                $qb->where('nama', 'like', "%{$q}%");
-                // Atau mengandung salah satu kata
-                foreach ($keywords as $kw) {
-                    $qb->orWhere('nama', 'like', "%{$kw}%");
-                }
+                // Coba exact phrase dulu
+                $qb->where('nama', 'like', "%{$q}%")
+                ->orWhere(function ($inner) use ($keywords) {
+                    // Fallback: semua kata harus ada (AND, bukan OR)
+                    foreach ($keywords as $kw) {
+                        $inner->where('nama', 'like', "%{$kw}%");
+                    }
+                });
             })
             ->when($klasifikasi, function ($query) use ($klasifikasi) {
                 $query->whereHas('klasifikasi', fn($q) =>
@@ -283,10 +293,6 @@ class LandingController extends Controller
         // Sort descending by score, ambil 50 teratas
         $sorted = $scored->sortByDesc('_score')->take(50)->values();
 
-        // ── 3 teratas hasil search selalu free di dropdown ───────────────
-        $topThreeIds      = $sorted->take(3)->pluck('metadata_id')->all();
-        $effectiveFreeIds = array_unique(array_merge($freeIds, $topThreeIds));
-
         return response()->json(
             $sorted->map(fn($item) => [
                 'metadata_id'          => $item->metadata_id,
@@ -296,9 +302,197 @@ class LandingController extends Controller
                 'satuan_data'          => $item->satuan_data,
                 'frekuensi_penerbitan' => $item->frekuensi_penerbitan,
                 'tahun_mulai_data'     => $item->tahun_mulai_data,
-                'is_locked'            => $isLimited && !in_array($item->metadata_id, $effectiveFreeIds),
+                'is_locked'            => $isLimited && !in_array($item->metadata_id, $freeIds), // pakai $freeIds murni
             ])
         );
+    }
+
+    public function autocomplete(Request $request)
+    {
+        $q = trim($request->input('q', ''));
+
+        if (strlen($q) < 2) {
+            return response()->json([]);
+        }
+
+        $keywords = collect(explode(' ', $q))
+            ->map(fn($k) => trim(strtolower($k)))
+            ->filter(fn($k) => strlen($k) >= 2)
+            ->values();
+
+        $results = Metadata::where('status', 2)
+            ->whereHas('data', fn($query) =>
+                $query->where('status', 1)->where('location_id', 0)
+            )
+            ->where(function ($qb) use ($q, $keywords) {
+                $qb->where('nama', 'like', "%{$q}%")
+                ->orWhere(function ($inner) use ($keywords) {
+                    foreach ($keywords as $kw) {
+                        $inner->where('nama', 'like', "%{$kw}%");
+                    }
+                })
+                ->orWhere('konsep',      'like', "%{$q}%")
+                ->orWhere('definisi',    'like', "%{$q}%")
+                ->orWhere('satuan_data', 'like', "%{$q}%")
+                ->orWhere('tag',         'like', "%{$q}%");
+            })
+            ->select('metadata_id', 'nama', 'klasifikasi_id', 'konsep', 'definisi', 'satuan_data', 'tag')
+            ->with('klasifikasi:klasifikasi_id,nama_klasifikasi')
+            ->limit(80)
+            ->get();
+
+        $qLower = strtolower($q);
+
+        $scored = $results->map(function ($item) use ($q, $qLower, $keywords) {
+            $nama  = strtolower($item->nama);
+            $score = 0;
+
+            if ($nama === $qLower)               $score += 1000;
+            if (str_starts_with($nama, $qLower)) $score += 500;
+            if (str_contains($nama, $qLower))    $score += 300;
+
+            $allMatch = $keywords->every(fn($kw) => str_contains($nama, $kw));
+            if ($allMatch) $score += 200;
+
+            $matchCount = $keywords->filter(fn($kw) => str_contains($nama, $kw))->count();
+            $score += $matchCount * 50;
+
+            similar_text($qLower, $nama, $similarity);
+            $score += (int) $similarity;
+            $score -= (int) (strlen($nama) / 10);
+
+            // Deteksi "ditemukan di" field mana
+            $foundIn = null;
+            if (!str_contains($nama, $qLower) && !$allMatch) {
+                if ($item->konsep   && str_contains(strtolower($item->konsep),      $qLower)) $foundIn = 'konsep';
+                elseif ($item->definisi  && str_contains(strtolower($item->definisi),   $qLower)) $foundIn = 'definisi';
+                elseif ($item->satuan_data && str_contains(strtolower($item->satuan_data), $qLower)) $foundIn = 'satuan data';
+                elseif ($item->tag   && str_contains(strtolower($item->tag),         $qLower)) $foundIn = 'tag';
+            }
+
+            $item->_score    = $score;
+            $item->_found_in = $foundIn;
+            return $item;
+        });
+
+        $sorted = $scored->sortByDesc('_score')->take(8)->values();
+
+        return response()->json(
+            $sorted->map(fn($item) => [
+                'label'      => $item->nama,
+                'klasifikasi'=> $item->klasifikasi?->nama_klasifikasi,
+                'found_in'   => $item->_found_in,   // null kalau match di nama
+                'q'          => $item->nama,
+            ])
+        );
+    }
+
+    public function searchResults(Request $request)
+    {
+        $q = trim($request->input('q', ''));
+
+        $isLimited = $this->isLimitedUser();
+        $freeIds   = $this->getFreeIds();
+
+        // Section atas: rekomendasi data gratis (sama seperti data-series)
+        // max 6 item, max 3 dari rujukan yang sama
+        $rekomendasiGratis = $this->getFreeRecommendations(1, 6, 3);
+
+        if (strlen($q) < 2) {
+            return view('pages.landing.search', [
+                'q'                 => $q,
+                'sorted'            => collect(),
+                'freeIds'           => $freeIds,
+                'isLimited'         => $isLimited,
+                'totalFound'        => 0,
+                'rekomendasiGratis' => $rekomendasiGratis,
+            ]);
+        }
+
+        $keywords = collect(explode(' ', $q))
+            ->map(fn($k) => trim(strtolower($k)))
+            ->filter(fn($k) => strlen($k) >= 2)
+            ->values();
+
+        $results = Metadata::where('status', 2)
+            ->whereHas('data', fn($query) =>
+                $query->where('status', 1)->where('location_id', 0)
+            )
+            ->where(function ($qb) use ($q, $keywords) {
+                $qb->where('nama', 'like', "%{$q}%")
+                ->orWhere(function ($inner) use ($keywords) {
+                    foreach ($keywords as $kw) {
+                        $inner->where('nama', 'like', "%{$kw}%");
+                    }
+                })
+                ->orWhere('konsep',      'like', "%{$q}%")
+                ->orWhere('definisi',    'like', "%{$q}%")
+                ->orWhere('satuan_data', 'like', "%{$q}%")
+                ->orWhere('tag',         'like', "%{$q}%");
+            })
+            ->with('klasifikasi:klasifikasi_id,nama_klasifikasi')
+            ->select('metadata_id', 'nama', 'klasifikasi_id', 'satuan_data',
+                    'frekuensi_penerbitan', 'tahun_mulai_data', 'is_free',
+                    'konsep', 'definisi', 'tag')
+            ->limit(200)
+            ->get();
+
+        $qLower = strtolower($q);
+
+        $scored = $results->map(function ($item) use ($q, $qLower, $keywords, $freeIds, $isLimited) {
+            $nama  = strtolower($item->nama);
+            $score = 0;
+
+            if ($nama === $qLower)               $score += 1000;
+            if (str_starts_with($nama, $qLower)) $score += 500;
+            if (str_contains($nama, $qLower))    $score += 300;
+
+            $allMatch = $keywords->every(fn($kw) => str_contains($nama, $kw));
+            if ($allMatch) $score += 200;
+
+            $matchCount = $keywords->filter(fn($kw) => str_contains($nama, $kw))->count();
+            $score += $matchCount * 50;
+
+            similar_text($qLower, $nama, $similarity);
+            $score += (int) $similarity;
+            $score -= (int) (strlen($nama) / 10);
+
+            if ($item->is_free) $score += 30;
+
+            // is_locked: murni berdasarkan is_free, tanpa paksa topThree
+            $item->is_locked = $isLimited && !in_array($item->metadata_id, $freeIds);
+            $item->_score    = $score;
+            return $item;
+        });
+        
+        $sorted = $scored->sortBy([
+            ['is_locked', 'asc'], 
+            ['_score', 'desc'],     
+        ])->values();
+        $totalFound = $sorted->count();
+
+        // Manual pagination dari Collection
+        $perPage     = 10;
+        $currentPage = (int) $request->input('page', 1);
+        $currentPage = max(1, $currentPage);
+        $offset      = ($currentPage - 1) * $perPage;
+
+        $paginated = new \Illuminate\Pagination\LengthAwarePaginator(
+            $sorted->slice($offset, $perPage)->values(),
+            $totalFound,
+            $perPage,
+            $currentPage,
+            ['path' => $request->url(), 'query' => $request->query()]
+        );
+
+        return view('pages.landing.search', [
+            'q'                 => $q,
+            'sorted'            => $paginated,
+            'isLimited'         => $isLimited,
+            'freeIds'           => $freeIds,
+            'totalFound'        => $totalFound,
+            'rekomendasiGratis' => $rekomendasiGratis,
+        ]);
     }
 
     private function isLimitedUser(): bool
@@ -325,52 +519,56 @@ class LandingController extends Controller
     }
 
     /**
-     * 3 metadata_id pertama per rujukan (order: date_inputed desc).
+     * Semua metadata_id yang ditandai is_free = 1.
      */
     private function getFreeIds(): array
     {
-        // Tambahkan kolom order ke SELECT agar compatible dengan DISTINCT
-        $rows = DB::table('metadata')
-            ->join('data', 'metadata.metadata_id', '=', 'data.metadata_id')
-            ->where('metadata.status', 2)
-            ->where('data.status', 1)
-            ->where('data.location_id', 0)
-            ->whereNotNull('data.rujukan_id')
-            ->orderBy('metadata.date_inputed', 'desc')
-            ->orderBy('metadata.metadata_id', 'desc')
-            ->select('metadata.metadata_id', 'data.rujukan_id', 'metadata.date_inputed') // ← tambah date_inputed
-            ->get()
-            ->unique('metadata_id'); // ← ganti distinct() dengan unique() di collection
+        return Metadata::where('status', 2)
+            ->where('is_free', 1)
+            ->pluck('metadata_id')
+            ->all();
+    }
 
-        $freeIds         = [];
-        $countPerRujukan = [];
+    /**
+     * Rekomendasi data gratis: minimal 3, maksimal 6 item.
+     * Maksimal 3 item boleh berasal dari rujukan (sumber) yang sama.
+     */
+    private function getFreeRecommendations(int $min = 3, int $max = 6, int $maxPerSource = 3)
+    {
+        $pool = Metadata::with([
+                'klasifikasi',
+                'data' => fn($q) => $q->where('status', 1)
+                    ->where('location_id', 0)
+                    ->with('location', 'rujukan.produsen')
+                    ->limit(1),
+            ])
+            ->where('status', 2)
+            ->where('is_free', 1)
+            ->whereHas('data', fn($q) => $q->where('status', 1)->where('location_id', 0))
+            ->orderBy('date_inputed', 'desc')
+            ->orderBy('metadata_id', 'desc')
+            ->get();
 
-        foreach ($rows as $row) {
-            $rid = $row->rujukan_id;
-            $countPerRujukan[$rid] = $countPerRujukan[$rid] ?? 0;
-            if ($countPerRujukan[$rid] < 3) {
-                $freeIds[] = $row->metadata_id;
-                $countPerRujukan[$rid]++;
+        $perSource = [];
+        $selected  = collect();
+
+        foreach ($pool as $m) {
+            if ($selected->count() >= $max) {
+                break;
             }
+
+            $sourceKey = $m->data->first()?->rujukan_id ?? 'meta-' . $m->metadata_id;
+            $perSource[$sourceKey] ??= 0;
+
+            if ($perSource[$sourceKey] >= $maxPerSource) {
+                continue;
+            }
+
+            $perSource[$sourceKey]++;
+            $selected->push($m);
         }
 
-        $freeIds = array_unique($freeIds);
-
-        // Fallback kalau kurang dari 3
-        if (count($freeIds) < 3) {
-            $extra = Metadata::where('status', 2)
-                ->whereHas('data', fn($q) => $q->where('status', 1)->where('location_id', 0))
-                ->whereNotIn('metadata_id', $freeIds)
-                ->orderBy('date_inputed', 'desc')
-                ->orderBy('metadata_id', 'desc')
-                ->limit(3 - count($freeIds))
-                ->pluck('metadata_id')
-                ->all();
-
-            $freeIds = array_unique(array_merge($freeIds, $extra));
-        }
-
-        return $freeIds;
+        return $selected->count() >= $min ? $selected : collect();
     }
 
     public function dataSeries(Request $request)
@@ -381,13 +579,21 @@ class LandingController extends Controller
         $freeIds   = $this->getFreeIds();
         $isLimited = $this->isLimitedUser();
 
-        // Base query
+        // ── Rekomendasi data gratis: min 3, max 6, max 3 per sumber sama ──
+        $rekomendasiGratis = $isLimited ? $this->getFreeRecommendations(3, 6, 3) : collect();
+        $rekomendasiIds    = $rekomendasiGratis->pluck('metadata_id')->all();
+
+        // Base query — "Semua Data" (exclude yang sudah masuk rekomendasi)
         $query = Metadata::with([
             'klasifikasi',
             'data' => fn($q) => $q->where('status', 1)->where('location_id', 0)->with('location')->limit(1),
         ])
         ->where('status', 2)
         ->whereHas('data', fn($q) => $q->where('status', 1)->where('location_id', 0));
+
+        if (!empty($rekomendasiIds)) {
+            $query->whereNotIn('metadata_id', $rekomendasiIds);
+        }
 
         if ($q = trim($request->input('q', ''))) {
             $query->where(function ($qb) use ($q) {
@@ -411,29 +617,22 @@ class LandingController extends Controller
             $query->where('tipe_data', $tipe);
         }
 
-        // Sort: kalau limited → free selalu di atas, locked di bawah
-        // Kalau tidak limited → pakai sort pilihan user
-        if ($isLimited) {
-            // FIELD(metadata_id, id1, id2, ...) → free dapat urutan terkecil (= teratas)
-            if (!empty($freeIds)) {
-                $ids      = implode(',', array_map('intval', $freeIds));
-                $query->orderByRaw("FIELD(metadata_id, {$ids}) = 0 ASC") // 0 = tidak ada di list → bawah
-                    ->orderByRaw("FIELD(metadata_id, {$ids}) ASC");    // urutan dalam list free
-            }
-            // Setelah free, sort terbaru
-            $query->orderBy('date_inputed', 'desc')->orderBy('metadata_id', 'desc');
-        } else {
-            match ($request->input('sort', 'terbaru')) {
-                'az'    => $query->orderBy('nama', 'asc'),
-                'za'    => $query->orderBy('nama', 'desc'),
-                default => $query->orderBy('date_inputed', 'desc')->orderBy('metadata_id', 'desc'),
-            };
-        }
+        // "Semua Data": premium dulu, gratis ditaruh paling belakang
+        match ($request->input('sort', 'terbaru')) {
+            'az'    => $query->orderByRaw('metadata.is_free ASC')->orderBy('nama', 'asc'),
+            'za'    => $query->orderByRaw('metadata.is_free ASC')->orderBy('nama', 'desc'),
+            default => $query->orderByRaw('metadata.is_free ASC')
+                            ->orderBy('date_inputed', 'desc')
+                            ->orderBy('metadata_id', 'desc'),
+        };
 
         $metadataList = $query->paginate($perPage)->withQueryString();
 
-        // Year ranges (batch)
-        $metadataIds = $metadataList->pluck('metadata_id')->all();
+        // Year ranges (batch) — gabungkan id "Semua Data" + id rekomendasi
+        $metadataIds = array_merge(
+            $metadataList->pluck('metadata_id')->all(),
+            $rekomendasiIds
+        );
 
         $yearRanges = DB::table('data')
             ->join('time', 'data.time_id', '=', 'time.time_id')
@@ -472,6 +671,7 @@ class LandingController extends Controller
             'freeIds',
             'yearRanges',
             'isLimited',
+            'rekomendasiGratis',
         ));
     }
 

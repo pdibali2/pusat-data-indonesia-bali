@@ -25,46 +25,48 @@ class MetadataController extends Controller
     public function index(Request $request)
     {
         $query = Metadata::with(['produsen', 'klasifikasi'])
-                  ->where('status', self::STATUS_ACTIVE)
-                  ->leftJoinSub(
-                      \Illuminate\Support\Facades\DB::table('data')
-                          ->join('time', 'data.time_id', '=', 'time.time_id')
-                          ->where('data.status', 1)
-                          ->whereNotNull('data.number_value')
-                          ->selectRaw('data.metadata_id, MAX(time.year) as max_year')
-                          ->groupBy('data.metadata_id'),
-                      'data_avail',
-                      'data_avail.metadata_id',
-                      '=',
-                      'metadata.metadata_id'
-                  )
-                  ->select('metadata.*');
+                ->where('status', self::STATUS_ACTIVE)
+                ->leftJoinSub(
+                    \Illuminate\Support\Facades\DB::table('data')
+                        ->join('time', 'data.time_id', '=', 'time.time_id')
+                        ->where('data.status', 1)
+                        ->whereNotNull('data.number_value')
+                        ->selectRaw('data.metadata_id, MAX(time.year) as max_year')
+                        ->groupBy('data.metadata_id'),
+                    'data_avail',
+                    'data_avail.metadata_id',
+                    '=',
+                    'metadata.metadata_id'
+                )
+                ->select('metadata.*');
 
-        // Search global
         if ($request->filled('search')) {
             $s = $request->search;
             $query->where(fn($q) =>
                 $q->where('nama',  'like', "%$s%")
-                  ->orWhere('alias', 'like', "%$s%")
-                  ->orWhere('tag',   'like', "%$s%")
+                ->orWhere('alias', 'like', "%$s%")
+                ->orWhere('tag',   'like', "%$s%")
             );
         }
 
-        // Filter kolom header tabel
         if ($request->filled('filter_nama'))        { $query->where('nama', 'like', '%'.$request->filter_nama.'%'); }
-        if ($request->filled('filter_klasifikasi')) {
-            $query->where('klasifikasi_id', $request->filter_klasifikasi);
-        }
+        if ($request->filled('filter_klasifikasi')) { $query->where('klasifikasi_id', $request->filter_klasifikasi); }
         if ($request->filled('filter_tipe_data'))   { $query->where('tipe_data', $request->filter_tipe_data); }
         if ($request->filled('filter_satuan'))      { $query->where('satuan_data', 'like', '%'.$request->filter_satuan.'%'); }
         if ($request->filled('filter_frekuensi'))   { $query->where('frekuensi_penerbitan', $request->filter_frekuensi); }
         if ($request->filled('filter_produsen_id')) { $query->where('produsen_id', $request->filter_produsen_id); }
 
-        $data = $query->orderByRaw('data_avail.max_year IS NULL, data_avail.max_year DESC')
-              ->orderBy('metadata_id', 'desc')
-              ->paginate(15)->withQueryString();
+        // ── Filter Akses (is_free) ──────────────────────────────────────
+        if ($request->filled('filter_akses')) {
+            $query->where('is_free', $request->filter_akses === 'gratis' ? 1 : 0);
+        }
 
-        // Data dropdown filter
+        $data = $query
+            ->orderByRaw('metadata.is_free DESC')           // free di atas
+            ->orderByRaw('data_avail.max_year IS NULL, data_avail.max_year DESC')
+            ->orderBy('metadata.metadata_id', 'desc')
+            ->paginate(15)->withQueryString();
+
         $klasifikasiList = Klasifikasi::orderBy('nama_klasifikasi')
             ->get(['klasifikasi_id', 'nama_klasifikasi']);
 
@@ -882,5 +884,22 @@ class MetadataController extends Controller
             'tag'                      => $metadata->tag,
             'date_inputed'             => $metadata->date_inputed,
         ]);
+    }
+
+    public function toggleFree(Request $request, Metadata $metadata)
+    {
+        $metadata->update(['is_free' => !$metadata->is_free]);
+
+        $label = $metadata->is_free ? 'Gratis' : 'Premium';
+
+        if ($request->wantsJson()) {
+            return response()->json([
+                'success' => true,
+                'is_free' => $metadata->is_free,
+                'message' => "Metadata '{$metadata->nama}' sekarang berstatus {$label}.",
+            ]);
+        }
+
+        return back()->with('success', "Metadata '{$metadata->nama}' sekarang berstatus {$label}.");
     }
 }

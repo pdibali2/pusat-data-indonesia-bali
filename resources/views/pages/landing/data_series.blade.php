@@ -133,7 +133,151 @@
             </div>
         </form>
 
+        {{-- ── Rekomendasi Data Gratis (CTA produk untuk pelanggan baru) ──────
+             Tampil hanya untuk user yang dibatasi (belum berlangganan),
+             maksimal 6 data, masing-masing dari rujukan/sumber berbeda. ── --}}
+        @if($isLimited && $rekomendasiGratis->isNotEmpty())
+            <div class="mb-10">
+                <div class="flex items-end justify-between gap-4 mb-4">
+                    <div>
+                        <h2 class="text-lg font-bold text-[#001734] flex items-center gap-2">
+                            Rekomendasi Data Gratis
+                        </h2>
+                    </div>
+                </div>
+
+                <div class="grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
+                    @foreach($rekomendasiGratis as $meta)
+                        @php
+                            $range     = $yearRanges[$meta->metadata_id] ?? null;
+                            $startYear = $range ? (int) explode('-', $range)[0] : (now()->year - 5);
+                            $lastYear  = $range ? (int) explode('-', $range)[1] : (now()->year - 1);
+                            $years     = range($startYear, $lastYear);
+
+                            $dataPoints = $meta->data()
+                                ->where('data.status', 1)
+                                ->join('time', 'data.time_id', '=', 'time.time_id')
+                                ->whereBetween('time.year', [$startYear, $lastYear])
+                                ->groupBy('time.year')
+                                ->orderBy('time.year')
+                                ->selectRaw('time.year, SUM(data.number_value) as nilai')
+                                ->pluck('nilai', 'year');
+
+                            $vals = collect($years)
+                                ->map(fn($y) => isset($dataPoints[$y]) ? (float) $dataPoints[$y] : null)
+                                ->filter()->values();
+
+                            $minV = $vals->min() ?: 0;
+                            $maxV = $vals->max() ?: 1;
+                            $n    = $vals->count();
+
+                            $pts = $vals->map(function ($v, $idx) use ($n, $minV, $maxV) {
+                                $x = ($idx / max($n - 1, 1)) * 300;
+                                $y = 84 - (($v - $minV) / max($maxV - $minV, 1)) * 72;
+                                return [round($x, 1), round($y, 1)];
+                            });
+
+                            $polyLine = $pts->map(fn($p) => "{$p[0]},{$p[1]}")->implode(' ');
+
+                            $firstVal = $vals->first() ?: 1;
+                            $lastVal  = $vals->last()  ?: 1;
+                            $diff     = $lastVal - $firstVal;
+                            $pct      = round(abs($diff / max(abs($firstVal), 1)) * 100, 1);
+                            $trend    = $diff >= 0 ? 'up' : 'down';
+                            $lastPt   = $pts->last();
+
+                            $namaKlasifikasi = $meta->klasifikasi?->nama_klasifikasi ?? '—';
+                            $wilayah = $meta->data->where('location_id', 0)->first()?->location?->nama_wilayah;
+                        @endphp
+
+                        <div class="group bg-white rounded-2xl border border-gray-100 shadow-sm hover:shadow-xl hover:-translate-y-1 transition-all duration-300 overflow-hidden">
+                            <div class="relative px-5 pt-5 pb-2 h-36 overflow-hidden" style="background:#0B2A52;">
+                                <span class="absolute top-3 left-4 px-2 py-0.5 rounded-full bg-[#F7C100] text-[#001734] text-[10px] font-extrabold tracking-wide z-10">
+                                    GRATIS
+                                </span>
+                                <span class="absolute top-3 right-4 text-xs font-semibold" style="color:rgba(247,0,0,0.7);">
+                                    {{ $meta->satuan_data }}
+                                </span>
+                                <svg viewBox="0 0 300 90" class="w-full h-20 mt-1" preserveAspectRatio="none" aria-hidden="true">
+                                    @foreach([25, 50, 75] as $gy)
+                                        <line x1="0" y1="{{ $gy }}" x2="300" y2="{{ $gy }}"
+                                            stroke="white" stroke-opacity="0.06" stroke-width="1"/>
+                                    @endforeach
+                                    @if($n >= 2)
+                                        <polyline points="{{ $polyLine }}" fill="none" stroke="#E63946"
+                                                stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/>
+                                        @if($lastPt)
+                                            <circle cx="{{ $lastPt[0] }}" cy="{{ $lastPt[1] }}" r="3.5" fill="#E63946"/>
+                                        @endif
+                                    @else
+                                        <text x="150" y="48" text-anchor="middle"
+                                            font-size="11" fill="rgba(255,255,255,0.30)">Belum ada data</text>
+                                    @endif
+                                </svg>
+                                <div class="flex justify-between px-0.5 mt-1">
+                                    @foreach($years as $y)
+                                        <span class="text-white/35" style="font-size:10px;">{{ $y }}</span>
+                                    @endforeach
+                                </div>
+                                @if($n >= 2)
+                                    <div class="absolute bottom-3 right-4 flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-bold
+                                                {{ $trend === 'up' ? 'bg-blue-500/20 text-blue-300' : 'bg-red-500/20 text-red-300' }}">
+                                        <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                                            @if($trend === 'up')
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M13 7l5 5m0 0l-5 5m5-5H6"/>
+                                            @else
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M13 17l5-5m0 0l-5-5m5 5H6"/>
+                                            @endif
+                                        </svg>
+                                        {{ $trend === 'up' ? '+' : '-' }}{{ $pct }}%
+                                    </div>
+                                @endif
+                            </div>
+                            <div class="p-5">
+                                <div class="flex items-start justify-between gap-2 mb-3">
+                                    <h3 class="text-sm font-bold text-stikom leading-snug line-clamp-2 group-hover:text-stikom-accent transition-colors duration-200">
+                                        {{ $meta->nama }}
+                                    </h3>
+                                    <span class="shrink-0 px-2 py-0.5 rounded-full bg-stikom-red/20 text-stikom-red text-xs font-semibold">
+                                        {{ $meta->frekuensi_penerbitan }}
+                                    </span>
+                                </div>
+                                <div class="flex items-center gap-2 mb-3">
+                                    <span class="px-2 py-0.5 rounded-full bg-stikom-red/20 text-stikom-red text-xs font-semibold max-w-[140px] truncate">
+                                        {{ $namaKlasifikasi }}
+                                    </span>
+                                    <span class="text-gray-400 text-xs whitespace-nowrap">sejak {{ $startYear }}</span>
+                                </div>
+                                @if($wilayah)
+                                    <div class="flex items-center gap-1 mb-3">
+                                        <svg class="w-3 h-3 text-gray-400 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                                d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"/>
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"/>
+                                        </svg>
+                                        <span class="text-xs text-gray-400 truncate">{{ $wilayah }}</span>
+                                    </div>
+                                @endif
+                                <div class="border-t border-gray-50 pt-4">
+                                    <a href="{{ route('landing.data.show', $meta->metadata_id) }}"
+                                    class="flex items-center gap-1 text-xs font-bold text-stikom hover:text-stikom-accent transition-colors">
+                                        Lihat Detail
+                                        <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/>
+                                        </svg>
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
+                    @endforeach
+                </div>
+            </div>
+        @endif
+
         {{-- ── Result info ──────────────────────────────────────────────── --}}
+        <div class="flex items-center gap-2 mb-3">
+            <h2 class="text-lg font-bold text-[#001734]">Semua Data</h2>
+        </div>
         <div class="flex items-center justify-between mb-6">
             <p class="text-sm text-gray-500">
                 Menampilkan
@@ -151,25 +295,6 @@
                 <h3 class="text-xl font-bold text-gray-300 mb-2">Belum ada data yang tersedia</h3>
             </div>
         @else
-
-            {{-- ── Freemium banner ── --}}
-            @if($isLimited)
-                @php
-                    $freeOnThisPage   = $metadataList->filter(fn($m) => in_array($m->metadata_id, $freeIds))->count();
-                    $lockedOnThisPage = $metadataList->count() - $freeOnThisPage;
-                @endphp
-                @if($lockedOnThisPage > 0)
-                    <div class="mb-6 flex items-start gap-3 px-4 py-3 rounded-xl bg-amber-50 border border-amber-200">
-                        <svg class="w-4 h-4 text-amber-500 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/>
-                        </svg>
-                        <p class="text-xs text-amber-700 leading-relaxed">
-                            Anda dapat mengakses <strong>3 data gratis per sumber rujukan</strong> — data gratis ditampilkan di urutan atas.
-                            <a href="{{ route('langganan') }}" class="font-bold underline hover:text-amber-900 transition-colors">Berlangganan</a> untuk akses penuh ke semua data.
-                        </p>
-                    </div>
-                @endif
-            @endif
 
             {{-- ── Grid + List wrapper ──────────────────────────────────────── --}}
             <div x-data="{ view: localStorage.getItem('ds_view') || 'grid' }"
@@ -467,11 +592,7 @@
             </div>{{-- /x-data view wrapper --}}
 
             {{-- ── Pagination ── --}}
-            @php
-                $showPagination = !$isLimited || $metadataList->currentPage() > 1 || ($freeOnThisPage ?? $metadataList->count()) >= $metadataList->count();
-            @endphp
-
-            @if($metadataList->hasPages() && $showPagination)
+            @if($metadataList->hasPages())
                 <div class="mt-10 flex flex-col sm:flex-row items-center justify-between gap-4">
 
                     <p class="text-sm text-gray-500 order-2 sm:order-1">
@@ -480,19 +601,15 @@
                     </p>
 
                     <nav class="flex items-center gap-1 order-1 sm:order-2" aria-label="Paginasi">
+
                         @if($metadataList->onFirstPage())
-                            <span class="w-9 h-9 flex items-center justify-center rounded-xl text-gray-300 cursor-not-allowed" aria-disabled="true">
-                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/>
-                                </svg>
+                            <span class="w-9 h-9 flex items-center justify-center rounded-xl text-gray-300 cursor-not-allowed">
+                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/></svg>
                             </span>
                         @else
-                            <a href="{{ $metadataList->previousPageUrl() }}&{{ http_build_query(request()->except('page')) }}"
-                               class="w-9 h-9 flex items-center justify-center rounded-xl border border-gray-200 text-gray-500 hover:border-[#001734] hover:text-[#001734] transition-colors"
-                               aria-label="Halaman sebelumnya">
-                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/>
-                                </svg>
+                            <a href="{{ $metadataList->previousPageUrl() }}"
+                            class="w-9 h-9 flex items-center justify-center rounded-xl border border-gray-200 text-gray-500 hover:border-[#001734] hover:text-[#001734] transition-colors">
+                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/></svg>
                             </a>
                         @endif
 
@@ -505,8 +622,8 @@
                         @endphp
 
                         @if($start > 1)
-                            <a href="{{ $metadataList->url(1) }}&{{ http_build_query(request()->except('page')) }}"
-                               class="w-9 h-9 flex items-center justify-center rounded-xl border border-gray-200 text-sm text-gray-600 hover:border-[#001734] hover:text-[#001734] transition-colors">1</a>
+                            <a href="{{ $metadataList->url(1) }}"
+                            class="w-9 h-9 flex items-center justify-center rounded-xl border border-gray-200 text-sm text-gray-600 hover:border-[#001734] hover:text-[#001734] transition-colors">1</a>
                             @if($start > 2)
                                 <span class="w-9 h-9 flex items-center justify-center text-gray-400 text-sm">…</span>
                             @endif
@@ -514,10 +631,10 @@
 
                         @for($p = $start; $p <= $end; $p++)
                             @if($p === $current)
-                                <span class="w-9 h-9 flex items-center justify-center rounded-xl bg-[#001734] text-white text-sm font-bold" aria-current="page">{{ $p }}</span>
+                                <span class="w-9 h-9 flex items-center justify-center rounded-xl bg-[#001734] text-white text-sm font-bold">{{ $p }}</span>
                             @else
-                                <a href="{{ $metadataList->url($p) }}&{{ http_build_query(request()->except('page')) }}"
-                                   class="w-9 h-9 flex items-center justify-center rounded-xl border border-gray-200 text-sm text-gray-600 hover:border-[#001734] hover:text-[#001734] transition-colors">{{ $p }}</a>
+                                <a href="{{ $metadataList->url($p) }}"
+                                class="w-9 h-9 flex items-center justify-center rounded-xl border border-gray-200 text-sm text-gray-600 hover:border-[#001734] hover:text-[#001734] transition-colors">{{ $p }}</a>
                             @endif
                         @endfor
 
@@ -525,36 +642,29 @@
                             @if($end < $last - 1)
                                 <span class="w-9 h-9 flex items-center justify-center text-gray-400 text-sm">…</span>
                             @endif
-                            <a href="{{ $metadataList->url($last) }}&{{ http_build_query(request()->except('page')) }}"
-                               class="w-9 h-9 flex items-center justify-center rounded-xl border border-gray-200 text-sm text-gray-600 hover:border-[#001734] hover:text-[#001734] transition-colors">{{ $last }}</a>
+                            <a href="{{ $metadataList->url($last) }}"
+                            class="w-9 h-9 flex items-center justify-center rounded-xl border border-gray-200 text-sm text-gray-600 hover:border-[#001734] hover:text-[#001734] transition-colors">{{ $last }}</a>
                         @endif
 
                         @if($metadataList->hasMorePages())
-                            <a href="{{ $metadataList->nextPageUrl() }}&{{ http_build_query(request()->except('page')) }}"
-                               class="w-9 h-9 flex items-center justify-center rounded-xl border border-gray-200 text-gray-500 hover:border-[#001734] hover:text-[#001734] transition-colors"
-                               aria-label="Halaman berikutnya">
-                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/>
-                                </svg>
+                            <a href="{{ $metadataList->nextPageUrl() }}"
+                            class="w-9 h-9 flex items-center justify-center rounded-xl border border-gray-200 text-gray-500 hover:border-[#001734] hover:text-[#001734] transition-colors">
+                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg>
                             </a>
                         @else
-                            <span class="w-9 h-9 flex items-center justify-center rounded-xl text-gray-300 cursor-not-allowed" aria-disabled="true">
-                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/>
-                                </svg>
+                            <span class="w-9 h-9 flex items-center justify-center rounded-xl text-gray-300 cursor-not-allowed">
+                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg>
                             </span>
                         @endif
+
                     </nav>
 
                     <div class="flex items-center gap-2 order-3 text-sm text-gray-500">
                         <span>Tampilkan</span>
                         <select onchange="window.location.href = '{{ route('landing.data.series') }}?' + new URLSearchParams({...Object.fromEntries(new URLSearchParams(window.location.search)), per_page: this.value, page: 1}).toString()"
-                                class="px-3 py-1.5 rounded-xl border border-gray-200 text-sm text-gray-700 outline-none focus:border-[#001734] bg-white cursor-pointer"
-                                aria-label="Jumlah per halaman">
+                                class="px-3 py-1.5 rounded-xl border border-gray-200 text-sm text-gray-700 outline-none focus:border-[#001734] bg-white cursor-pointer">
                             @foreach([12, 24, 48] as $pp)
-                                <option value="{{ $pp }}" {{ request('per_page', 12) == $pp ? 'selected' : '' }}>
-                                    {{ $pp }}
-                                </option>
+                                <option value="{{ $pp }}" {{ request('per_page', 12) == $pp ? 'selected' : '' }}>{{ $pp }}</option>
                             @endforeach
                         </select>
                         <span>per halaman</span>

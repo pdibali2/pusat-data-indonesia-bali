@@ -62,6 +62,9 @@ use App\Http\Controllers\AnomalyControlController;
 
     Route::get('/', [LandingController::class, 'index'])->name('landing');
     Route::get('/search-metadata', [LandingController::class, 'searchMetadata'])->name('search_metadata');
+    Route::get('/autocomplete',    [LandingController::class, 'autocomplete'])->name('autocomplete');
+    Route::get('/search',       [LandingController::class, 'searchResults'])->name('search');
+
     Route::get('/langganan', [LandingController::class, 'langganan'])->name('langganan');
     Route::get('/klasifikasi', [LandingController::class, 'klasifikasiIndex'])
         ->name('klasifikasi.index');
@@ -281,15 +284,16 @@ Route::middleware(['is.login', 'is.pengelola', 'is.customer'])->group(function (
     Route::get('/metadata/export/count', [MetadataController::class, 'exportCount'])->name('metadata.export.count');
     Route::get('/metadata/export',       [MetadataController::class, 'export'])->name('metadata.export');
     Route::get('/metadata/template',     [MetadataController::class, 'exportTemplate'])->name('metadata.template');
-
+    
     // ── Import Excel ──────────────────────────────────────────
     Route::post('/metadata/import/preview', [MetadataImportController::class, 'preview'])->name('metadata.import.preview');
     Route::post('/metadata/import/store',   [MetadataImportController::class, 'store'])->name('metadata.import.store');
-
+    
     // ── Bulk Approve ───────────────────────────────────────────
     Route::post('/metadata/bulk-approve',     [MetadataController::class, 'bulkApprove'])->name('metadata.bulk_approve');
     Route::post('/metadata/bulk-approve-all', [MetadataController::class, 'bulkApproveAll'])->name('metadata.bulk_approve_all');
-
+    Route::post('/metadata/{metadata}/toggle-free', [MetadataController::class, 'toggleFree'])->name('metadata.toggle_free');
+    
     // ── Wildcard /{metadata} — paling bawah ──────────────────
     Route::post('/metadata/{metadata}/approve',    [MetadataController::class, 'approve'])->name('metadata.approve');
     Route::post('/metadata/{metadata}/reject',     [MetadataController::class, 'reject'])->name('metadata.reject');

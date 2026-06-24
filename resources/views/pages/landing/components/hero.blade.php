@@ -114,57 +114,36 @@
                         </div>
                     </template>
 
-                    <template x-for="item in suggestions" :key="item.metadata_id">
-                        <a :href="item.is_locked ? '{{ route('langganan') }}' : `/statistik/${item.metadata_id}`"
-                        class="flex items-center gap-3 sm:gap-4 px-4 sm:px-5 py-3
-                                border-b border-gray-50 last:border-0 transition-colors cursor-pointer
-                                border-l-2 border-l-transparent min-h-[44px]"
-                        :class="item.is_locked
-                            ? 'hover:bg-amber-50 hover:border-l-amber-400'
-                            : 'hover:bg-stikom-accent/8 hover:border-l-stikom-accent'"
-                        role="option">
+                    <template x-for="(item, index) in suggestions" :key="index">
+                        <button
+                            @click="selectSuggestion(item)"
+                            class="w-full flex items-center gap-3 px-4 sm:px-5 py-3
+                                border-b border-gray-50 last:border-0 transition-colors
+                                hover:bg-stikom-accent/8 text-left min-h-[44px]"
+                            role="option">
 
-                            {{-- Icon kiri --}}
-                            <div class="w-8 h-8 flex items-center justify-center shrink-0 transition-colors duration-200"
-                                :class="item.is_locked ? 'bg-amber-100' : 'bg-stikom'">
-                                {{-- Free: icon dokumen --}}
-                                <template x-if="!item.is_locked">
-                                    <svg class="w-4 h-4 text-stikom-accent" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                            d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
-                                    </svg>
-                                </template>
-                                {{-- Locked: icon gembok --}}
-                                <template x-if="item.is_locked">
-                                    <svg class="w-4 h-4 text-amber-500" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                            d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/>
-                                    </svg>
-                                </template>
-                            </div>
+                            {{-- Search icon --}}
+                            <svg class="w-4 h-4 text-gray-300 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                    d="M21 21l-4.35-4.35M17 11A6 6 0 1 1 5 11a6 6 0 0 1 12 0z"/>
+                            </svg>
 
-                            {{-- Teks --}}
-                            <div class="flex flex-col min-w-0 flex-1">
-                                <div class="text-sm font-semibold truncate"
-                                    :class="item.is_locked ? 'text-gray-500' : 'text-gray-800'"
-                                    x-text="item.nama"></div>
-                                <div class="text-xs text-gray-400 leading-normal truncate" x-text="item.klasifikasi"></div>
-                            </div>
-
-                            {{-- Badge premium (kanan) --}}
-                            <template x-if="item.is_locked">
-                                <span class="shrink-0 inline-flex items-center gap-1 px-2 py-0.5
-                                            bg-amber-100 border border-amber-300 text-amber-600
-                                            text-[10px] font-bold uppercase tracking-wide rounded-sm">
-                                    <svg class="w-2.5 h-2.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5"
-                                            d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/>
-                                    </svg>
-                                    Premium
+                            {{-- Label --}}
+                            <div class="flex flex-col min-w-0 flex-1 text-left">
+                                <span class="text-sm text-gray-800 truncate" x-text="item.label"></span>
+                                <span class="text-xs truncate"
+                                    :class="item.found_in ? 'text-stikom-accent/80' : 'text-gray-400'"
+                                    x-text="item.found_in
+                                        ? 'ditemukan di: ' + item.found_in + ' · ' + (item.klasifikasi ?? '')
+                                        : (item.klasifikasi ?? '')">
                                 </span>
-                            </template>
+                            </div>
 
-                        </a>
+                            {{-- Arrow --}}
+                            <svg class="w-3.5 h-3.5 text-gray-300 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7l5 5m0 0l-5 5m5-5H6"/>
+                            </svg>
+                        </button>
                     </template>
                 </div>
             </div>
@@ -210,38 +189,48 @@
 </section>
 
 <script>
-function heroSearch() {
-    return {
-        query: '',
-        suggestions: [],
-        showSuggestions: false,
-        loading: false,
-        async search() {
-            if (this.query.length < 2) {
-                this.suggestions = [];
+    function heroSearch() {
+        return {
+            query: '',
+            suggestions: [],
+            showSuggestions: false,
+            loading: false,
+
+            async search() {
+                if (this.query.length < 2) {
+                    this.suggestions = [];
+                    this.showSuggestions = false;
+                    return;
+                }
+                this.loading = true;
+                try {
+                    const res = await fetch(`/autocomplete?q=${encodeURIComponent(this.query)}`);
+                    this.suggestions = await res.json();
+                    this.showSuggestions = true;
+                } catch(e) {
+                    this.suggestions = [];
+                    this.showSuggestions = true;
+                } finally {
+                    this.loading = false;
+                }
+            },
+
+            selectSuggestion(item) {
+                this.query = item.label;
                 this.showSuggestions = false;
-                return;
+                window.location.href = `/search?q=${encodeURIComponent(item.q)}`;
+            },
+
+            goToSearch() {
+                const q = this.query.trim();
+                if (!q) return;
+                this.showSuggestions = false;
+                window.location.href = `/search?q=${encodeURIComponent(q)}`;
+            },
+
+            close() {
+                this.showSuggestions = false;
             }
-            this.loading = true;
-            try {
-                const res = await fetch(`{{ route('search_metadata') }}?q=${encodeURIComponent(this.query)}`);
-                this.suggestions = await res.json();
-                this.showSuggestions = true;
-            } catch(e) {
-                this.suggestions = [];
-                this.showSuggestions = true;
-            } finally {
-                this.loading = false;
-            }
-        },
-        goToSearch() {
-            if (!this.query.trim()) return;
-            if (this.suggestions.length > 0) {
-                const first = this.suggestions[0];
-                window.location.href = `/klasifikasi/${first.klasifikasi_slug}`;
-            }
-        },
-        close() { this.showSuggestions = false; }
+        }
     }
-}
 </script>
