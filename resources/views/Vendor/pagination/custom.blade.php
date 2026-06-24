@@ -1,7 +1,6 @@
 @if ($paginator->hasPages())
     <nav class="flex flex-col sm:flex-row items-center justify-between gap-4 mt-8" aria-label="Pagination">
 
-        {{-- Info halaman --}}
         <p class="text-sm text-gray-500 order-2 sm:order-1">
             Halaman
             <span class="font-bold text-[#001734]">{{ $paginator->currentPage() }}</span>
