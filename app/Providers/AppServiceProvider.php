@@ -81,7 +81,7 @@ class AppServiceProvider extends ServiceProvider
 
         $this->configureDefaults();
 
-        Paginator::defaultView('Vendor.pagination.custom');
+        Paginator::defaultView('vendor.pagination.custom');
     }
 
     /**

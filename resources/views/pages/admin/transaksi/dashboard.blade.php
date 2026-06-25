@@ -16,7 +16,7 @@
     </div>
 
     {{-- Statistik Utama --}}
-    <div class="grid grid-cols-1 gap-3">
+    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
 
         <div class="card-panel px-5 py-4">
             <div class="flex items-center justify-between mb-3">
