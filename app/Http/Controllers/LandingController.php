@@ -400,9 +400,21 @@ class LandingController extends Controller
         $isLimited = $this->isLimitedUser();
         $freeIds   = $this->getFreeIds();
 
-        // Section atas: rekomendasi data gratis (sama seperti data-series)
-        // max 6 item, max 3 dari rujukan yang sama
-        $rekomendasiGratis = $this->getFreeRecommendations(1, 6, 3);
+        // ── Rekomendasi gratis: paginate 10/hal, param page_gratis ──
+        $rekomendasiGratis = Metadata::with([
+            'klasifikasi',
+            'data' => fn($q) => $q->where('status', 1)
+                ->where('location_id', 0)
+                ->with('rujukan.produsen')
+                ->limit(1),
+        ])
+        ->where('status', 2)
+        ->where('is_free', 1)
+        ->whereHas('data', fn($q) => $q->where('status', 1)->where('location_id', 0))
+        ->orderBy('date_inputed', 'desc')
+        ->orderBy('metadata_id', 'desc')
+        ->paginate(10, ['*'], 'page_gratis')   // ← param name beda
+        ->withQueryString();
 
         if (strlen($q) < 2) {
             return view('pages.landing.search', [
@@ -545,7 +557,7 @@ class LandingController extends Controller
      * Rekomendasi data gratis: minimal 3, maksimal 6 item.
      * Maksimal 3 item boleh berasal dari rujukan (sumber) yang sama.
      */
-    private function getFreeRecommendations(int $min = 3, int $max = 6, int $maxPerSource = 3)
+    private function getFreeRecommendations(int $min = 3, int $max = 20, int $maxPerSource = 20)
     {
         $pool = Metadata::with([
                 'klasifikasi',

@@ -160,7 +160,7 @@
 
             {{-- ═══ SECTION: Data yang Bisa Diakses ════════════ --}}
             @if($rekomendasiGratis->isNotEmpty())
-                <div class="mb-8" x-data="{ open: false }">
+                <div class="mb-8" x-data="{ open: {{ request('page_gratis', 1) > 1 ? 'true' : 'false' }} }">
 
                     {{-- Accordion Header --}}
                     <button
@@ -174,7 +174,7 @@
                                     Data yang Bisa Diakses
                                 </span>
                                 <span class="text-[11px] text-gray-400 font-body">
-                                    {{ $rekomendasiGratis->count() }} data tidak berbayar tersedia
+                                    {{ $rekomendasiGratis->total() }} data tidak berbayar tersedia
                                 </span>
                             </div>
                         </div>
@@ -206,6 +206,65 @@
                         @endforeach
                     </div>
                 </div>
+
+                {{-- Pagination rekomendasiGratis --}}
+                @if($rekomendasiGratis->hasPages())
+                    <div class="mt-6 flex flex-col sm:flex-row items-center justify-between gap-4">
+                        <p class="text-sm text-gray-500 order-2 sm:order-1">
+                            Halaman <span class="font-bold text-stikom-red">{{ $rekomendasiGratis->currentPage() }}</span>
+                            dari <span class="font-bold text-stikom-red">{{ $rekomendasiGratis->lastPage() }}</span>
+                        </p>
+                        <nav class="flex items-center gap-1 order-1 sm:order-2">
+                            @if($rekomendasiGratis->onFirstPage())
+                                <span class="w-9 h-9 flex items-center justify-center text-gray-300 cursor-not-allowed">
+                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/></svg>
+                                </span>
+                            @else
+                                <a href="{{ $rekomendasiGratis->previousPageUrl() }}"
+                                class="w-9 h-9 flex items-center justify-center border border-gray-200 text-gray-500 hover:border-stikom-red hover:text-stikom-red transition-colors">
+                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/></svg>
+                                </a>
+                            @endif
+
+                            @php
+                                $gWindow  = 2;
+                                $gCurrent = $rekomendasiGratis->currentPage();
+                                $gLast    = $rekomendasiGratis->lastPage();
+                                $gStart   = max(1, $gCurrent - $gWindow);
+                                $gEnd     = min($gLast, $gCurrent + $gWindow);
+                            @endphp
+
+                            @if($gStart > 1)
+                                <a href="{{ $rekomendasiGratis->url(1) }}" class="w-9 h-9 flex items-center justify-center border border-gray-200 text-sm text-gray-600 hover:border-stikom-red hover:text-stikom-red transition-colors">1</a>
+                                @if($gStart > 2)<span class="w-9 h-9 flex items-center justify-center text-gray-400 text-sm">…</span>@endif
+                            @endif
+
+                            @for($p = $gStart; $p <= $gEnd; $p++)
+                                @if($p === $gCurrent)
+                                    <span class="w-9 h-9 flex items-center justify-center bg-stikom-red text-white text-sm font-bold">{{ $p }}</span>
+                                @else
+                                    <a href="{{ $rekomendasiGratis->url($p) }}" class="w-9 h-9 flex items-center justify-center border border-gray-200 text-sm text-gray-600 hover:border-stikom-red hover:text-stikom-red transition-colors">{{ $p }}</a>
+                                @endif
+                            @endfor
+
+                            @if($gEnd < $gLast)
+                                @if($gEnd < $gLast - 1)<span class="w-9 h-9 flex items-center justify-center text-gray-400 text-sm">…</span>@endif
+                                <a href="{{ $rekomendasiGratis->url($gLast) }}" class="w-9 h-9 flex items-center justify-center border border-gray-200 text-sm text-gray-600 hover:border-stikom-red hover:text-stikom-red transition-colors">{{ $gLast }}</a>
+                            @endif
+
+                            @if($rekomendasiGratis->hasMorePages())
+                                <a href="{{ $rekomendasiGratis->nextPageUrl() }}"
+                                class="w-9 h-9 flex items-center justify-center border border-gray-200 text-gray-500 hover:border-stikom-red hover:text-stikom-red transition-colors">
+                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg>
+                                </a>
+                            @else
+                                <span class="w-9 h-9 flex items-center justify-center text-gray-300 cursor-not-allowed">
+                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg>
+                                </span>
+                            @endif
+                        </nav>
+                    </div>
+                @endif
 
                 <div class="border-t border-gray-100 mb-8"></div>
             @endif
