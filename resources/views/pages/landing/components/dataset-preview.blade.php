@@ -144,6 +144,22 @@
                             </div>
                         @endif
 
+                        @php
+                            $firstData   = $meta->data->where('location_id', 0)->first();
+                            $namaProdusen = $firstData?->rujukan?->produsen?->nama_produsen
+                                            ?? $meta->produsen?->nama_produsen
+                                            ?? $meta->produsen?->nama
+                                            ?? null;
+                        @endphp
+                        @if($namaProdusen)
+                            <div class="flex items-center gap-1 mb-3">
+                                <svg class="w-3 h-3 text-gray-400 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"/>
+                                </svg>
+                                <span class="text-xs text-gray-400 truncate">{{ $namaProdusen }}</span>
+                            </div>
+                        @endif
+
                         <div class="border-t border-gray-50 pt-4">
                             <a href="{{ route('landing.data.show', $meta->metadata_id) }}"
                                class="flex items-center gap-1 text-xs font-bold text-stikom hover:text-stikom-accent transition-colors">
@@ -170,13 +186,13 @@
 
         {{-- CTA bawah --}}
         <div class="text-center mt-12 fade-up">
-            <a href="{{ route('langganan') }}"
+            <a href="{{ route('landing.data.series') }}"
                class="inline-flex items-center gap-2 px-7 py-3.5 bg-stikom-accent text-black hover:text-white font-black text-sm hover:bg-yellow-600 transition-all duration-200 shadow-lg hover:scale-105">
                 <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5"
                           d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z"/>
                 </svg>
-                Berlangganan untuk Akses Penuh
+                Lihat Semua Dataset
             </a>
         </div>
     </div>

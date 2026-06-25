@@ -66,7 +66,7 @@ class LandingController extends Controller
             ->with([
                 'klasifikasi',
                 'data' => function ($q) {
-                    $q->where('status', 1)->where('location_id', 0)->with('location')->limit(1);
+                    $q->where('status', 1)->where('location_id', 0)->with('location', 'rujukan.produsen')->limit(1);
                 }
             ])
             ->orderBy('date_inputed', 'desc')
@@ -174,7 +174,12 @@ class LandingController extends Controller
         $isLimited = $this->isLimitedUser();
         $freeIds   = $this->getFreeIds();
 
-        $query = Metadata::with('klasifikasi')
+        $query = Metadata::with(['klasifikasi', 'produsen', 'data' => function ($q) {
+                $q->where('status', 1)
+                ->where('location_id', 0)
+                ->with('rujukan.produsen')
+                ->limit(1);
+            },])
             ->where('status', 2)
             ->whereHas('data', fn($q) => $q->where('status', 1)->where('location_id', 0))
             ->whereHas('klasifikasi', function ($q) use ($nama) {
@@ -242,9 +247,9 @@ class LandingController extends Controller
                     $q->where('nama_klasifikasi', $klasifikasi)
                 );
             })
-            ->with('klasifikasi')
-            ->select('metadata_id', 'nama', 'klasifikasi_id', 'satuan_data', 'frekuensi_penerbitan', 'tahun_mulai_data')
-            ->limit(100) // ambil lebih banyak dulu, nanti di-score & dipotong
+            ->with(['klasifikasi', 'produsen'])
+            ->select('metadata_id', 'nama', 'klasifikasi_id', 'produsen_id', 'satuan_data', 'frekuensi_penerbitan', 'tahun_mulai_data')
+            ->limit(100)
             ->get();
 
         // ── Scoring: hitung kemiripan tiap hasil dengan keyword ─────────
@@ -303,6 +308,7 @@ class LandingController extends Controller
                 'frekuensi_penerbitan' => $item->frekuensi_penerbitan,
                 'tahun_mulai_data'     => $item->tahun_mulai_data,
                 'is_locked'            => $isLimited && !in_array($item->metadata_id, $freeIds), // pakai $freeIds murni
+                'produsen'             => $item->produsen?->nama ?? $item->produsen?->nama_produsen,
             ])
         );
     }
@@ -430,7 +436,13 @@ class LandingController extends Controller
                 ->orWhere('satuan_data', 'like', "%{$q}%")
                 ->orWhere('tag',         'like', "%{$q}%");
             })
-            ->with('klasifikasi:klasifikasi_id,nama_klasifikasi')
+            ->with([
+            'klasifikasi:klasifikasi_id,nama_klasifikasi',
+                'data' => fn($q) => $q->where('status', 1)
+                    ->where('location_id', 0)
+                    ->with('rujukan.produsen')
+                    ->limit(1),
+            ])
             ->select('metadata_id', 'nama', 'klasifikasi_id', 'satuan_data',
                     'frekuensi_penerbitan', 'tahun_mulai_data', 'is_free',
                     'konsep', 'definisi', 'tag')
@@ -586,7 +598,13 @@ class LandingController extends Controller
         // Base query — "Semua Data" (exclude yang sudah masuk rekomendasi)
         $query = Metadata::with([
             'klasifikasi',
-            'data' => fn($q) => $q->where('status', 1)->where('location_id', 0)->with('location')->limit(1),
+            'produsen',
+            'data' => function ($q) {           
+                $q->where('status', 1)
+                ->where('location_id', 0)
+                ->with('rujukan.produsen')
+                ->limit(1);
+            },
         ])
         ->where('status', 2)
         ->whereHas('data', fn($q) => $q->where('status', 1)->where('location_id', 0));

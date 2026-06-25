@@ -174,7 +174,7 @@
                                     Data yang Bisa Diakses
                                 </span>
                                 <span class="text-[11px] text-gray-400 font-body">
-                                    {{ $rekomendasiGratis->count() }} data gratis tersedia
+                                    {{ $rekomendasiGratis->count() }} data tidak berbayar tersedia
                                 </span>
                             </div>
                         </div>
@@ -183,7 +183,7 @@
                         <div class="flex items-center gap-1.5 px-3 py-1.5 bg-white border border-red-200
                                     text-xs font-bold text-red-500 group-hover:border-stikom-red
                                     group-hover:text-stikom-red transition-colors shrink-0">
-                            <span x-text="open ? 'Tutup' : 'Lihat Data Gratis'"></span>
+                            <span x-text="open ? 'Tutup' : 'Lihat Data Tidak Berbayar'"></span>
                             <svg class="w-3.5 h-3.5 transition-transform duration-200"
                                 :class="open ? 'rotate-180' : ''"
                                 fill="none" stroke="currentColor" viewBox="0 0 24 24">

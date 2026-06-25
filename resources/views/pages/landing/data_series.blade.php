@@ -141,7 +141,7 @@
                 <div class="flex items-end justify-between gap-4 mb-4">
                     <div>
                         <h2 class="text-lg font-bold text-[#001734] flex items-center gap-2">
-                            Rekomendasi Data Gratis
+                            Rekomendasi Data Tidak Berbayar
                         </h2>
                     </div>
                 </div>
@@ -193,7 +193,7 @@
                         <div class="group bg-white rounded-2xl border border-gray-100 shadow-sm hover:shadow-xl hover:-translate-y-1 transition-all duration-300 overflow-hidden">
                             <div class="relative px-5 pt-5 pb-2 h-36 overflow-hidden" style="background:#0B2A52;">
                                 <span class="absolute top-3 left-4 px-2 py-0.5 rounded-full bg-[#F7C100] text-[#001734] text-[10px] font-extrabold tracking-wide z-10">
-                                    GRATIS
+                                    Tidak Berbayar
                                 </span>
                                 <span class="absolute top-3 right-4 text-xs font-semibold" style="color:rgba(247,0,0,0.7);">
                                     {{ $meta->satuan_data }}
@@ -256,6 +256,19 @@
                                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"/>
                                         </svg>
                                         <span class="text-xs text-gray-400 truncate">{{ $wilayah }}</span>
+                                    </div>
+                                @endif
+                                @php
+                                    $firstData    = $meta->data->where('location_id', 0)->first();
+                                    $namaProdusen = $firstData?->rujukan?->produsen?->nama_produsen
+                                                    ?? $meta->produsen?->nama_produsen
+                                                    ?? $meta->produsen?->nama
+                                                    ?? null;
+                                @endphp
+                                @if($namaProdusen)
+                                    <div class="flex items-center gap-1 mb-2">
+                                        <svg class="w-3 h-3 text-gray-400 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"/></svg>
+                                        <span class="text-xs text-gray-400 truncate">{{ $namaProdusen }}</span>
                                     </div>
                                 @endif
                                 <div class="border-t border-gray-50 pt-4">
@@ -420,6 +433,19 @@
                                                 <span class="text-xs text-gray-400 truncate">{{ $wilayah }}</span>
                                             </div>
                                         @endif
+                                        @php
+                                            $firstData    = $meta->data->where('location_id', 0)->first();
+                                            $namaProdusen = $firstData?->rujukan?->produsen?->nama_produsen
+                                                            ?? $meta->produsen?->nama_produsen
+                                                            ?? $meta->produsen?->nama
+                                                            ?? null;
+                                        @endphp
+                                        @if($namaProdusen)
+                                            <div class="flex items-center gap-1 mb-3">
+                                                <svg class="w-3 h-3 text-gray-400 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"/></svg>
+                                                <span class="text-xs text-gray-400 truncate">{{ $namaProdusen }}</span>
+                                            </div>
+                                        @endif
                                         <div class="border-t border-gray-50 pt-4">
                                             <a href="{{ route('landing.data.show', $meta->metadata_id) }}"
                                             class="flex items-center gap-1 text-xs font-bold text-stikom hover:text-stikom-accent transition-colors">
@@ -479,6 +505,19 @@
                                             </span>
                                             <span class="text-gray-400 text-xs whitespace-nowrap">sejak {{ isset($yearRanges[$meta->metadata_id]) ? explode('-', $yearRanges[$meta->metadata_id])[0] : ($meta->tahun_mulai_data ?? '—') }}</span>
                                         </div>
+                                        @php
+                                            $firstData    = $meta->data->where('location_id', 0)->first();
+                                            $namaProdusen = $firstData?->rujukan?->produsen?->nama_produsen
+                                                            ?? $meta->produsen?->nama_produsen
+                                                            ?? $meta->produsen?->nama
+                                                            ?? null;
+                                        @endphp
+                                        @if($namaProdusen)
+                                            <div class="flex items-center gap-1 mb-2">
+                                                <svg class="w-3 h-3 text-gray-400 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"/></svg>
+                                                <span class="text-xs text-gray-400 truncate">{{ $namaProdusen }}</span>
+                                            </div>
+                                        @endif
                                         <div class="border-t border-gray-50 pt-4">
                                             <a href="{{ route('langganan') }}"
                                             class="flex items-center gap-1.5 px-4 py-2 rounded-xl bg-[#001734] text-stikom-accent hover:text-black text-xs font-bold hover:bg-[#F7C100] transition-colors duration-200 w-fit">
@@ -529,6 +568,10 @@
                                                 <span class="text-gray-400 text-xs">{{ $meta->satuan_data }}</span>
                                                 <span class="text-gray-300 text-xs">·</span>
                                                 <span class="text-gray-400 text-xs">sejak {{ isset($yearRanges[$meta->metadata_id]) ? explode('-', $yearRanges[$meta->metadata_id])[0] : ($meta->tahun_mulai_data ?? '—') }}</span>
+                                                @if($meta->produsen?->nama_produsen)
+                                                    <span class="text-gray-300 text-xs">·</span>
+                                                    <span class="text-gray-400 text-xs">{{ $meta->produsen->nama_produsen }}</span>
+                                                @endif
                                             </div>
                                         </div>
                                     </div>
@@ -569,6 +612,10 @@
                                                 <span class="text-gray-400 text-xs">{{ $meta->satuan_data }}</span>
                                                 <span class="text-gray-300 text-xs">·</span>
                                                 <span class="text-gray-400 text-xs">sejak {{ isset($yearRanges[$meta->metadata_id]) ? explode('-', $yearRanges[$meta->metadata_id])[0] : ($meta->tahun_mulai_data ?? '—') }}</span>
+                                                @if($meta->produsen?->nama_produsen)
+                                                    <span class="text-gray-300 text-xs">·</span>
+                                                    <span class="text-gray-400 text-xs">{{ $meta->produsen->nama_produsen }}</span>
+                                                @endif
                                             </div>
                                         </div>
                                     </div>
