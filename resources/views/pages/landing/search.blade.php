@@ -158,124 +158,13 @@
 
             @else
 
-            {{-- ═══ SECTION: Data yang Bisa Diakses ════════════ --}}
-            @if($rekomendasiGratis->isNotEmpty())
-                <div class="mb-8" x-data="{ open: {{ request('page_gratis', 1) > 1 ? 'true' : 'false' }} }">
-
-                    {{-- Accordion Header --}}
-                    <button
-                        @click="open = !open"
-                        class="w-full flex items-center justify-between gap-3 mb-0 group">
-
-                        <div class="flex items-center gap-3">
-                            <div class="w-0.5 h-7 bg-stikom-red shrink-0"></div>
-                            <div class="text-left">
-                                <span class="text-[10px] font-bold text-stikom-red uppercase tracking-[.12em] font-display block">
-                                    Data yang Bisa Diakses
-                                </span>
-                                <span class="text-[11px] text-gray-400 font-body">
-                                    {{ $rekomendasiGratis->total() }} data tidak berbayar tersedia
-                                </span>
-                            </div>
-                        </div>
-
-                        {{-- Toggle icon --}}
-                        <div class="flex items-center gap-1.5 px-3 py-1.5 bg-white border border-red-200
-                                    text-xs font-bold text-red-500 group-hover:border-stikom-red
-                                    group-hover:text-stikom-red transition-colors shrink-0">
-                            <span x-text="open ? 'Tutup' : 'Lihat Data Tidak Berbayar'"></span>
-                            <svg class="w-3.5 h-3.5 transition-transform duration-200"
-                                :class="open ? 'rotate-180' : ''"
-                                fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M19 9l-7 7-7-7"/>
-                            </svg>
-                        </div>
-                    </button>
-
-                    {{-- Accordion Body --}}
-                    <div x-show="open"
-                        x-transition:enter="transition ease-out duration-200"
-                        x-transition:enter-start="opacity-0 -translate-y-2"
-                        x-transition:enter-end="opacity-100 translate-y-0"
-                        x-transition:leave="transition ease-in duration-150"
-                        x-transition:leave-start="opacity-100 translate-y-0"
-                        x-transition:leave-end="opacity-0 -translate-y-2"
-                        class="mt-3 space-y-2">
-                        @foreach($rekomendasiGratis as $meta)
-                            @include('pages.landing.klasifikasi._card', ['meta' => $meta])
-                        @endforeach
-                    </div>
-                </div>
-
-                {{-- Pagination rekomendasiGratis --}}
-                @if($rekomendasiGratis->hasPages())
-                    <div class="mt-6 flex flex-col sm:flex-row items-center justify-between gap-4">
-                        <p class="text-sm text-gray-500 order-2 sm:order-1">
-                            Halaman <span class="font-bold text-stikom-red">{{ $rekomendasiGratis->currentPage() }}</span>
-                            dari <span class="font-bold text-stikom-red">{{ $rekomendasiGratis->lastPage() }}</span>
-                        </p>
-                        <nav class="flex items-center gap-1 order-1 sm:order-2">
-                            @if($rekomendasiGratis->onFirstPage())
-                                <span class="w-9 h-9 flex items-center justify-center text-gray-300 cursor-not-allowed">
-                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/></svg>
-                                </span>
-                            @else
-                                <a href="{{ $rekomendasiGratis->previousPageUrl() }}"
-                                class="w-9 h-9 flex items-center justify-center border border-gray-200 text-gray-500 hover:border-stikom-red hover:text-stikom-red transition-colors">
-                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/></svg>
-                                </a>
-                            @endif
-
-                            @php
-                                $gWindow  = 2;
-                                $gCurrent = $rekomendasiGratis->currentPage();
-                                $gLast    = $rekomendasiGratis->lastPage();
-                                $gStart   = max(1, $gCurrent - $gWindow);
-                                $gEnd     = min($gLast, $gCurrent + $gWindow);
-                            @endphp
-
-                            @if($gStart > 1)
-                                <a href="{{ $rekomendasiGratis->url(1) }}" class="w-9 h-9 flex items-center justify-center border border-gray-200 text-sm text-gray-600 hover:border-stikom-red hover:text-stikom-red transition-colors">1</a>
-                                @if($gStart > 2)<span class="w-9 h-9 flex items-center justify-center text-gray-400 text-sm">…</span>@endif
-                            @endif
-
-                            @for($p = $gStart; $p <= $gEnd; $p++)
-                                @if($p === $gCurrent)
-                                    <span class="w-9 h-9 flex items-center justify-center bg-stikom-red text-white text-sm font-bold">{{ $p }}</span>
-                                @else
-                                    <a href="{{ $rekomendasiGratis->url($p) }}" class="w-9 h-9 flex items-center justify-center border border-gray-200 text-sm text-gray-600 hover:border-stikom-red hover:text-stikom-red transition-colors">{{ $p }}</a>
-                                @endif
-                            @endfor
-
-                            @if($gEnd < $gLast)
-                                @if($gEnd < $gLast - 1)<span class="w-9 h-9 flex items-center justify-center text-gray-400 text-sm">…</span>@endif
-                                <a href="{{ $rekomendasiGratis->url($gLast) }}" class="w-9 h-9 flex items-center justify-center border border-gray-200 text-sm text-gray-600 hover:border-stikom-red hover:text-stikom-red transition-colors">{{ $gLast }}</a>
-                            @endif
-
-                            @if($rekomendasiGratis->hasMorePages())
-                                <a href="{{ $rekomendasiGratis->nextPageUrl() }}"
-                                class="w-9 h-9 flex items-center justify-center border border-gray-200 text-gray-500 hover:border-stikom-red hover:text-stikom-red transition-colors">
-                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg>
-                                </a>
-                            @else
-                                <span class="w-9 h-9 flex items-center justify-center text-gray-300 cursor-not-allowed">
-                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg>
-                                </span>
-                            @endif
-                        </nav>
-                    </div>
-                @endif
-
-                <div class="border-t border-gray-100 mb-8"></div>
-            @endif
-
                 {{-- Section label --}}
                 <div class="flex items-center gap-3 mb-5">
                     <div class="w-0.5 h-7 bg-stikom-blue shrink-0"></div>
                     <span class="text-[10px] font-bold text-stikom-blue uppercase tracking-[.12em] font-display">Daftar Hasil</span>
                 </div>
 
-                {{-- Cards --}}
+                {{-- Cards: gratis (is_locked=false) di atas, berbayar di bawah --}}
                 <div class="space-y-2">
                     @foreach($sorted as $meta)
                         @if(!$meta->is_locked)
@@ -299,7 +188,7 @@
                             Berlangganan untuk membuka semua data yang terkunci.
                         </p>
                         <a href="{{ route('langganan') }}"
-                           class="px-6 py-3 bg-stikom-accent text-black font-black text-sm hover:bg-yellow-500 transition-colors">
+                        class="px-6 py-3 bg-stikom-accent text-black font-black text-sm hover:bg-yellow-500 transition-colors">
                             Berlangganan Sekarang
                         </a>
                     </div>

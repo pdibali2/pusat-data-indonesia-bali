@@ -280,6 +280,8 @@ Route::middleware(['is.login', 'is.pengelola', 'is.customer'])->group(function (
     Route::post('/metadata',            [MetadataController::class, 'store'])->name('metadata.store');
     Route::get( '/metadata/check-nama', [MetadataController::class, 'checkNama'])->name('metadata.check_nama');
     Route::get( '/metadata/approval',   [MetadataController::class, 'approval'])->name('metadata.approval');
+    Route::get('metadata/{id}/coverage', [MetadataController::class, 'coverageData'])
+        ->name('metadata.coverage');
 
     Route::get('/metadata/export/count', [MetadataController::class, 'exportCount'])->name('metadata.export.count');
     Route::get('/metadata/export',       [MetadataController::class, 'export'])->name('metadata.export');
@@ -293,6 +295,10 @@ Route::middleware(['is.login', 'is.pengelola', 'is.customer'])->group(function (
     Route::post('/metadata/bulk-approve',     [MetadataController::class, 'bulkApprove'])->name('metadata.bulk_approve');
     Route::post('/metadata/bulk-approve-all', [MetadataController::class, 'bulkApproveAll'])->name('metadata.bulk_approve_all');
     Route::post('/metadata/{metadata}/toggle-free', [MetadataController::class, 'toggleFree'])->name('metadata.toggle_free');
+
+    // ── Edit / Update ─────────────────────────────────────────
+    Route::get( '/metadata/{metadata}/edit', [MetadataController::class, 'edit'])->name('metadata.edit');
+    Route::put( '/metadata/{metadata}',      [MetadataController::class, 'update'])->name('metadata.update');
     
     // ── Wildcard /{metadata} — paling bawah ──────────────────
     Route::post('/metadata/{metadata}/approve',    [MetadataController::class, 'approve'])->name('metadata.approve');

@@ -400,30 +400,13 @@ class LandingController extends Controller
         $isLimited = $this->isLimitedUser();
         $freeIds   = $this->getFreeIds();
 
-        // ── Rekomendasi gratis: paginate 10/hal, param page_gratis ──
-        $rekomendasiGratis = Metadata::with([
-            'klasifikasi',
-            'data' => fn($q) => $q->where('status', 1)
-                ->where('location_id', 0)
-                ->with('rujukan.produsen')
-                ->limit(1),
-        ])
-        ->where('status', 2)
-        ->where('is_free', 1)
-        ->whereHas('data', fn($q) => $q->where('status', 1)->where('location_id', 0))
-        ->orderBy('date_inputed', 'desc')
-        ->orderBy('metadata_id', 'desc')
-        ->paginate(10, ['*'], 'page_gratis')   // ← param name beda
-        ->withQueryString();
-
         if (strlen($q) < 2) {
             return view('pages.landing.search', [
-                'q'                 => $q,
-                'sorted'            => collect(),
-                'freeIds'           => $freeIds,
-                'isLimited'         => $isLimited,
-                'totalFound'        => 0,
-                'rekomendasiGratis' => $rekomendasiGratis,
+                'q'          => $q,
+                'sorted'     => collect(),
+                'freeIds'    => $freeIds,
+                'isLimited'  => $isLimited,
+                'totalFound' => 0,
             ]);
         }
 
@@ -490,15 +473,14 @@ class LandingController extends Controller
         });
         
         $sorted = $scored->sortBy([
-            ['is_locked', 'asc'], 
-            ['_score', 'desc'],     
+            ['is_locked', 'asc'],   
+            ['_score', 'desc'],
         ])->values();
+
         $totalFound = $sorted->count();
 
-        // Manual pagination dari Collection
         $perPage     = 10;
-        $currentPage = (int) $request->input('page', 1);
-        $currentPage = max(1, $currentPage);
+        $currentPage = max(1, (int) $request->input('page', 1));
         $offset      = ($currentPage - 1) * $perPage;
 
         $paginated = new \Illuminate\Pagination\LengthAwarePaginator(
@@ -510,12 +492,11 @@ class LandingController extends Controller
         );
 
         return view('pages.landing.search', [
-            'q'                 => $q,
-            'sorted'            => $paginated,
-            'isLimited'         => $isLimited,
-            'freeIds'           => $freeIds,
-            'totalFound'        => $totalFound,
-            'rekomendasiGratis' => $rekomendasiGratis,
+            'q'          => $q,
+            'sorted'     => $paginated,
+            'isLimited'  => $isLimited,
+            'freeIds'    => $freeIds,
+            'totalFound' => $totalFound,
         ]);
     }
 

@@ -506,15 +506,100 @@ class DataController extends Controller
     // APPROVAL — diperbarui pakai WorkflowService
     // ═══════════════════════════════════════════════════════════
 
+    // ── Helper: terapkan semua filter approval (dipakai approval() & bulkApprove()) ──
+    private function applyApprovalFilters($query, Request $request)
+    {
+        if ($request->filled('metadata_id')) {
+            $query->where('metadata_id', $request->metadata_id);
+        }
+        if ($request->filled('filter_lokasi')) {
+            $v = $request->filter_lokasi;
+            $query->whereHas('location', fn($q) => $q->where('nama_wilayah', 'like', "%{$v}%"));
+        }
+        if ($request->filled('filter_tahun')) {
+            $query->whereHas('time', fn($q) => $q->where('year', $request->filter_tahun));
+        }
+        if ($request->filled('filter_nilai_min')) {
+            $query->where('number_value', '>=', $request->filter_nilai_min);
+        }
+        if ($request->filled('filter_nilai_max')) {
+            $query->where('number_value', '<=', $request->filter_nilai_max);
+        }
+        if ($request->filled('filter_user')) {
+            $v = $request->filter_user;
+            $query->whereHas('user', fn($q) => $q->where('name', 'like', "%{$v}%"));
+        }
+        if ($request->filled('filter_tanggal_dari')) {
+            $query->whereDate('date_inputed', '>=', $request->filter_tanggal_dari);
+        }
+        if ($request->filled('filter_tanggal_sampai')) {
+            $query->whereDate('date_inputed', '<=', $request->filter_tanggal_sampai);
+        }
+
+        if ($request->filled('filter_granularitas')) {
+            $g = $request->filter_granularitas;
+            $query->whereHas('time', function ($q) use ($g, $request) {
+                switch ($g) {
+                    case 'dekade':
+                        $q->where('day', 0)->where('month', 0)->where('quarter', 0)
+                        ->where('semester', 0)->where('year', 0);
+                        if ($request->filled('filter_dekade')) {
+                            $q->where('decade', $request->filter_dekade);
+                        }
+                        break;
+
+                    case 'tahunan':
+                        $q->where('day', 0)->where('month', 0)->where('quarter', 0)
+                        ->where('semester', 0)->where('year', '!=', 0);
+                        break;
+
+                    case 'semester':
+                        $q->where('day', 0)->where('month', 0)->where('quarter', 0)
+                        ->where('semester', '!=', 0);
+                        if ($request->filled('filter_sub_periode')) {
+                            $q->where('semester', $request->filter_sub_periode);
+                        }
+                        break;
+
+                    case 'quarter':
+                        $q->where('day', 0)->where('month', 0)->where('quarter', '!=', 0);
+                        if ($request->filled('filter_sub_periode')) {
+                            $q->where('quarter', $request->filter_sub_periode);
+                        }
+                        break;
+
+                    case 'bulanan':
+                        $q->where('day', 0)->where('month', '!=', 0);
+                        if ($request->filled('filter_sub_periode')) {
+                            $q->where('month', $request->filter_sub_periode);
+                        }
+                        break;
+
+                    case 'tanggal':
+                        $q->where('day', '!=', 0);
+                        break;
+                }
+            });
+        }
+
+        if ($request->filled('filter_tanggal_lengkap')) {
+            $date = \Carbon\Carbon::parse($request->filter_tanggal_lengkap);
+            $query->whereHas('time', fn($q) => $q
+                ->where('year', $date->year)
+                ->where('month', $date->month)
+                ->where('day', $date->day));
+        }
+
+        return $query;
+    }
+
     public function approval(Request $request)
     {
         $status = $request->input('status', 0);
         $query  = Data::with(['metadata', 'location', 'time', 'user', 'latestAnomaly'])
             ->where('status', $status);
 
-        if ($request->filled('metadata_id')) {
-            $query->where('metadata_id', $request->metadata_id);
-        }
+        $this->applyApprovalFilters($query, $request);
 
         $data          = $query->orderBy('date_inputed', 'desc')->paginate(20)->withQueryString();
         $metadataList  = Metadata::select('metadata_id', 'nama')->orderBy('nama')->get();
@@ -530,9 +615,7 @@ class DataController extends Controller
     public function bulkApprove(Request $request)
     {
         $query = Data::where('status', Data::STATUS_PENDING);
-        if ($request->filled('metadata_id')) {
-            $query->where('metadata_id', $request->metadata_id);
-        }
+        $this->applyApprovalFilters($query, $request);
 
         $dataItems = $query->get();
         $count     = 0;
@@ -543,7 +626,12 @@ class DataController extends Controller
         }
 
         return redirect()
-            ->route('data.approval', $request->only('metadata_id'))
+            ->route('data.approval', $request->only([
+                'metadata_id', 'filter_lokasi', 'filter_tahun', 'filter_granularitas',
+                'filter_sub_periode', 'filter_dekade', 'filter_tanggal_lengkap',
+                'filter_nilai_min', 'filter_nilai_max', 'filter_user',
+                'filter_tanggal_dari', 'filter_tanggal_sampai',
+            ]))
             ->with('success', "{$count} data berhasil disetujui.");
     }
 

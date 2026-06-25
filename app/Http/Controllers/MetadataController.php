@@ -93,6 +93,36 @@ class MetadataController extends Controller
         ));
     }
 
+    public function coverageData(int $id)
+    {
+        $metadata = Metadata::where('metadata_id', $id)
+            ->where('status', self::STATUS_ACTIVE)
+            ->firstOrFail(['metadata_id', 'nama']);
+
+        $locations = \Illuminate\Support\Facades\DB::table('data')
+            ->join('location', 'data.location_id', '=', 'location.location_id')
+            ->join('time', 'data.time_id', '=', 'time.time_id')
+            ->where('data.metadata_id', $id)
+            ->where('data.status', 1)  // include "Negara Indonesia"
+            ->whereNotNull('data.number_value')
+            ->groupBy('location.location_id', 'location.nama_wilayah')
+            ->selectRaw('
+                location.location_id,
+                location.nama_wilayah,
+                COUNT(data.id)      AS jumlah_data,
+                MIN(time.year)      AS tahun_min,
+                MAX(time.year)      AS tahun_max
+            ')
+            ->orderBy('location.location_id')
+            ->get();
+
+        return response()->json([
+            'metadata_id' => $metadata->metadata_id,
+            'nama'        => $metadata->nama,
+            'locations'   => $locations,
+        ]);
+    }
+
     public function exportCount(Request $request)
     {
         $query = Metadata::where('status', self::STATUS_ACTIVE);
@@ -773,6 +803,79 @@ class MetadataController extends Controller
 
         return redirect()->route('metadata.index')
             ->with('success', 'Metadata berhasil ditambahkan dan menunggu persetujuan admin.');
+    }
+
+    public function edit(Metadata $metadata)
+    {
+        $metadataList    = Metadata::where('status', self::STATUS_ACTIVE)
+            ->where('metadata_id', '!=', $metadata->metadata_id) // tidak boleh jadi induk dirinya sendiri
+            ->orderBy('nama')->get();
+        $produsen        = ProdusenData::all();
+        $klasifikasiList = Klasifikasi::orderBy('nama_klasifikasi')->get();
+
+        return view('pages.metadata.edit', compact('metadata', 'metadataList', 'produsen', 'klasifikasiList'));
+    }
+
+    public function update(Request $request, Metadata $metadata)
+    {
+        $request->validate([
+            'nama'                  => ['required', 'max:100', Rule::unique('metadata', 'nama')->ignore($metadata->metadata_id, 'metadata_id')],
+            'alias'                 => 'nullable|max:100',
+            'konsep'                => 'required',
+            'definisi'              => 'required',
+            'klasifikasi_id'        => 'required|exists:klasifikasi,klasifikasi_id',
+            'asumsi'                => 'nullable',
+            'metodologi'            => 'required|max:100',
+            'penjelasan_metodologi' => 'required',
+            'tipe_data'             => 'required|max:50',
+            'satuan_data'           => 'required|max:50',
+            'tahun_mulai_data'      => 'required|max:50',
+            'frekuensi_penerbitan'  => 'required|max:50',
+            'tahun_pertama_rilis'   => 'nullable|integer|min:1900|max:2100',
+            'bulan_pertama_rilis'   => 'nullable|integer|between:1,12',
+            'tanggal_rilis'         => 'nullable|integer|between:1,31',
+            'flag_desimal'          => 'required|integer',
+            'tag'                   => 'required|max:255',
+            'produsen_id'           => 'required|exists:produsen_data,produsen_id',
+            'tipe_group'            => 'required|integer',
+            'group_by'              => [
+                'nullable',
+                Rule::requiredIf($request->tipe_group == 1),
+                Rule::exists('metadata', 'metadata_id')->where('status', self::STATUS_ACTIVE),
+                // cegah memilih dirinya sendiri sebagai induk
+                function ($attribute, $value, $fail) use ($metadata) {
+                    if ($value == $metadata->metadata_id) {
+                        $fail('Metadata tidak boleh menjadi induk dari dirinya sendiri.');
+                    }
+                },
+            ],
+        ]);
+
+        $metadata->update([
+            'nama'                   => $request->nama,
+            'alias'                  => $request->alias,
+            'konsep'                 => $request->konsep,
+            'definisi'               => $request->definisi,
+            'klasifikasi_id'         => $request->klasifikasi_id,
+            'asumsi'                 => $request->filled('asumsi') ? $request->asumsi : null,
+            'metodologi'             => $request->metodologi,
+            'penjelasan_metodologi'  => $request->penjelasan_metodologi,
+            'tipe_data'              => $request->tipe_data,
+            'satuan_data'            => $request->satuan_data,
+            'tahun_mulai_data'       => $request->tahun_mulai_data,
+            'frekuensi_penerbitan'   => $request->frekuensi_penerbitan,
+            'tahun_pertama_rilis'    => $request->tahun_pertama_rilis,
+            'bulan_pertama_rilis'    => $request->bulan_pertama_rilis,
+            'tanggal_rilis'          => $request->tanggal_rilis,
+            'flag_desimal'           => $request->flag_desimal,
+            'tag'                    => $request->tag,
+            'produsen_id'            => $request->produsen_id,
+            'tipe_group'             => $request->tipe_group ?? 0,
+            'group_by'               => $request->tipe_group == 1 ? $request->group_by : null,
+        ]);
+
+        return redirect()->route('metadata.detail', $metadata->metadata_id)
+            ->with('success', "Metadata '{$metadata->nama}' berhasil diperbarui.");
     }
 
     public function checkNama(Request $request)

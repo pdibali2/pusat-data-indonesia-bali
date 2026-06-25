@@ -228,11 +228,28 @@
                         </td>
 
                         <td class="px-4 py-3 text-center">
-                            <a href="{{ route('metadata.detail', $item->metadata_id) }}"
-                               class="inline-flex items-center gap-1 px-2.5 py-1.5 text-xs font-semibold text-white rounded-md transition-colors shadow-sm btn-primary">
-                                <i class="fas fa-eye"></i> Detail
-                            </a>
+                            <div class="flex items-center justify-center gap-1.5">
+                                <a href="{{ route('metadata.detail', $item->metadata_id) }}"
+                                title="Lihat Detail"
+                                class="w-7 h-7 flex items-center justify-center rounded-md bg-sky-600 text-white hover:bg-sky-700 transition">
+                                    <i class="fas fa-eye text-xs"></i>
+                                </a>
+
+                                <button type="button"
+                                        onclick="openCoverage({{ $item->metadata_id }}, '{{ addslashes($item->nama) }}')"
+                                        title="Lihat Cakupan Wilayah"
+                                        class="w-7 h-7 flex items-center justify-center rounded-md bg-indigo-500 text-white hover:bg-indigo-600 transition">
+                                    <i class="fas fa-map-marker-alt text-xs"></i>
+                                </button>
+
+                                <a href="{{ route('metadata.edit', $item->metadata_id) }}"
+                                title="Edit Metadata"
+                                class="w-7 h-7 flex items-center justify-center rounded-md bg-amber-500 text-white hover:bg-amber-600 transition">
+                                    <i class="fas fa-edit text-xs"></i>
+                                </a>
+                            </div>
                         </td>
+                        
                     </tr>
                 @empty
                     <tr>
@@ -366,11 +383,178 @@
         </div>
     </div>
 </div>
+{{-- ── MODAL COVERAGE ─────────────────────────────────── --}}
+<div id="modal-coverage"
+     class="fixed inset-0 z-50 hidden items-center justify-center p-4"
+     onclick="if(event.target===this) closeCoverage()">
+
+    {{-- backdrop --}}
+    <div class="absolute inset-0 bg-black/60 backdrop-blur-sm"></div>
+
+    {{-- panel --}}
+    <div class="relative bg-stikom border border-white/10 rounded-xl shadow-2xl
+                w-full max-w-2xl max-h-[80vh] flex flex-col">
+
+        {{-- header --}}
+        <div class="flex items-center justify-between px-5 py-4 border-b border-white/10 shrink-0">
+            <div>
+                <p class="text-[10px] text-stikom-blue uppercase tracking-widest font-semibold mb-0.5">
+                    Cakupan Wilayah
+                </p>
+                <h3 id="modal-coverage-title" class="text-sm font-bold text-white leading-tight"></h3>
+            </div>
+            <button onclick="closeCoverage()"
+                    class="w-7 h-7 flex items-center justify-center rounded-lg
+                           bg-white/5 hover:bg-white/10 text-gray-400 hover:text-white transition">
+                <i class="fas fa-times text-xs"></i>
+            </button>
+        </div>
+
+        {{-- body --}}
+        <div class="flex-1 overflow-y-auto px-5 py-4">
+
+            {{-- loading --}}
+            <div id="modal-coverage-loading" class="flex items-center justify-center py-12 gap-3 text-gray-500">
+                <svg class="w-5 h-5 animate-spin" fill="none" viewBox="0 0 24 24">
+                    <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"/>
+                    <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z"/>
+                </svg>
+                <span class="text-sm">Memuat data...</span>
+            </div>
+
+            {{-- empty --}}
+            <div id="modal-coverage-empty" class="hidden text-center py-12">
+                <i class="fas fa-map-marker-slash text-3xl text-gray-600 mb-3"></i>
+                <p class="text-sm text-gray-500">Belum ada data wilayah untuk metadata ini.</p>
+            </div>
+
+            {{-- tabel --}}
+            <div id="modal-coverage-table" class="hidden">
+                <div class="flex items-center justify-between mb-3">
+                    <p id="modal-coverage-count" class="text-xs text-gray-500"></p>
+                    <input
+                        id="modal-coverage-search"
+                        type="text"
+                        placeholder="Filter wilayah..."
+                        oninput="filterCoverageTable(this.value)"
+                        class="text-xs bg-white/5 border border-white/10 text-gray-300
+                               placeholder-gray-600 px-3 py-1.5 rounded-lg outline-none
+                               focus:border-purple-400/50 w-44"/>
+                </div>
+
+                <table class="w-full text-xs">
+                    <thead>
+                        <tr class="border-b border-white/10 text-gray-500">
+                            <th class="text-left py-2 pr-3 font-semibold w-8">#</th>
+                            <th class="text-left py-2 pr-3 font-semibold">Nama Wilayah</th>
+                            <th class="text-center py-2 pr-3 font-semibold">Jml Data</th>
+                            <th class="text-center py-2 font-semibold">Rentang Tahun</th>
+                        </tr>
+                    </thead>
+                    <tbody id="modal-coverage-tbody" class="divide-y divide-white/5 text-gray-300">
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
 
 <style>
 /* Smooth toggle animation */
 #free-thumb-* { transition: left 0.25s cubic-bezier(.4,0,.2,1); }
 </style>
+
+
+<script>
+let _coverageRows = [];
+
+function openCoverage(metadataId, nama) {
+    const modal   = document.getElementById('modal-coverage');
+    const title   = document.getElementById('modal-coverage-title');
+    const loading = document.getElementById('modal-coverage-loading');
+    const empty   = document.getElementById('modal-coverage-empty');
+    const table   = document.getElementById('modal-coverage-table');
+    const search  = document.getElementById('modal-coverage-search');
+
+    title.textContent = nama;
+    search.value = '';
+    loading.classList.remove('hidden');
+    empty.classList.add('hidden');
+    table.classList.add('hidden');
+    modal.classList.remove('hidden');
+    modal.classList.add('flex');
+
+    fetch(`/metadata/${metadataId}/coverage`)
+        .then(r => r.json())
+        .then(data => {
+            loading.classList.add('hidden');
+            _coverageRows = data.locations;
+
+            if (!_coverageRows.length) {
+                empty.classList.remove('hidden');
+                return;
+            }
+
+            renderCoverageTable(_coverageRows);
+            table.classList.remove('hidden');
+        })
+        .catch(() => {
+            loading.classList.add('hidden');
+            empty.classList.remove('hidden');
+        });
+}
+
+function renderCoverageTable(rows) {
+    const tbody = document.getElementById('modal-coverage-tbody');
+    const count = document.getElementById('modal-coverage-count');
+
+    count.textContent = rows.length + ' wilayah ditemukan';
+
+    // level label helper
+    const levelLabel = (id) => {
+        id = String(id).padStart(10, '0');
+        if (id.slice(6) !== '0000')    return '<span class="px-1.5 py-0.5 rounded text-[10px] bg-green-500/10 text-green-400">Desa</span>';
+        if (id.slice(4, 7) !== '000')  return '<span class="px-1.5 py-0.5 rounded text-[10px] bg-blue-500/10 text-blue-400">Kecamatan</span>';
+        if (id.slice(2, 4) !== '00')   return '<span class="px-1.5 py-0.5 rounded text-[10px] bg-yellow-500/10 text-yellow-400">Kabupaten</span>';
+        return '<span class="px-1.5 py-0.5 rounded text-[10px] bg-purple-500/10 text-purple-400">Provinsi</span>';
+    };
+
+    tbody.innerHTML = rows.map((loc, i) => `
+        <tr class="hover:bg-white/5 transition">
+            <td class="py-2 pr-3 text-gray-600">${i + 1}</td>
+            <td class="py-2 pr-3 font-medium text-gray-200">${loc.nama_wilayah ?? '-'}</td>
+            <td class="py-2 pr-3 text-center">
+                <span class="px-2 py-0.5 bg-white/5 rounded font-mono">${loc.jumlah_data}</span>
+            </td>
+            <td class="py-2 text-center text-gray-400">
+                ${loc.tahun_min === loc.tahun_max
+                    ? loc.tahun_min
+                    : `${loc.tahun_min} – ${loc.tahun_max}`}
+            </td>
+        </tr>
+    `).join('');
+}
+
+function filterCoverageTable(q) {
+    const filtered = q.trim().length < 1
+        ? _coverageRows
+        : _coverageRows.filter(r =>
+            (r.nama_wilayah ?? '').toLowerCase().includes(q.toLowerCase()) ||
+            String(r.location_id).includes(q)
+          );
+    renderCoverageTable(filtered);
+}
+
+function closeCoverage() {
+    const modal = document.getElementById('modal-coverage');
+    modal.classList.add('hidden');
+    modal.classList.remove('flex');
+}
+
+document.addEventListener('keydown', e => {
+    if (e.key === 'Escape') closeCoverage();
+});
+</script>
 
 <script>
 const CSRF = '{{ csrf_token() }}';
