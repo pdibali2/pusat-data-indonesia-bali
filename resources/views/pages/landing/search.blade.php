@@ -146,14 +146,7 @@
                         </svg>
                     </div>
                     <p class="text-gray-400 text-base font-semibold mb-1">Tidak ada data ditemukan</p>
-                    <p class="text-gray-300 text-sm mb-6">Coba kata kunci yang berbeda atau lebih umum.</p>
-                    <a href="{{ route('klasifikasi.index') }}"
-                       class="inline-flex items-center gap-2 px-5 py-2.5 bg-stikom text-white text-sm font-bold hover:bg-stikom-red transition-colors">
-                        Jelajahi Klasifikasi
-                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7l5 5m0 0l-5 5m5-5H6"/>
-                        </svg>
-                    </a>
+                    <p class="text-gray-300 text-sm mb-6">Coba kata kunci yang berbeda.</p>
                 </div>
 
             @else
