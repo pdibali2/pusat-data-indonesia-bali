@@ -32,6 +32,24 @@ class RujukanSeeder extends Seeder
                 'created_at' => now(),
                 'updated_at' => now(),
             ],
+            [
+                'rujukan_id' => 3,
+                'nama_rujukan' => 'Statistik Indonesia',
+                'link_rujukan' => 'https://www.bps.go.id/id/publication/2021/02/26/938316574c78772f27e9b477/statistik-indonesia-2021.html',
+                'gambar_rujukan' => null,
+                'produsen_id' => 1000,
+                'created_at' => now(),
+                'updated_at' => now(),
+            ],
+            [
+                'rujukan_id' => 4,
+                'nama_rujukan' => 'Kajian Ekonomi dan Keuangan Syariah Indonesia',
+                'link_rujukan' => 'https://www.bi.go.id/id/publikasi/laporan/Documents/KEKSI__2025.pdf',
+                'gambar_rujukan' => null,
+                'produsen_id' => 1001,
+                'created_at' => now(),
+                'updated_at' => now(),
+            ],
         ];
 
         foreach ($data as $row) {

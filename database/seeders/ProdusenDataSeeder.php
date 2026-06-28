@@ -84,6 +84,8 @@ class ProdusenDataSeeder extends Seeder
             ['produsen_id'=>32,'nama_produsen'=>'Bagian Kesejahtraan Rakyat Kab. Gianyar','email'=>null,'nama_contact_person'=>null,'kontak'=>null,'alamat'=>null],
             ['produsen_id'=>85,'nama_produsen'=>'Rumah Sakit Umum Payangan','email'=>null,'nama_contact_person'=>null,'kontak'=>null,'alamat'=>null],
             ['produsen_id'=>1,'nama_produsen'=>'Badan Pusat Statistik Provinsi Bali','email'=>'pst5100@bps.go.id','nama_contact_person'=>'Badan Pusat Statistik Kabupaten Gianyar','kontak'=>'081-810-5100','alamat'=>'Jl. Raya Puputan (Renon) No 1 Denpasar 80226'],
+            ['produsen_id'=>1000,'nama_produsen'=>'Badan Pusat Statistik Indonesia','email'=>'bpshq@bps.go.id','nama_contact_person'=>'Badan Pusat Statistik (BPS) Indonesia','kontak'=>'(62-21) 3841195','alamat'=>'Jl. Dr. Sutomo 6-8, Jakarta 10710 Indonesia'],
+            ['produsen_id'=>1001,'nama_produsen'=>'Bank Indonesia','email'=>'bicara@bi.go.id','nama_contact_person'=>'Bank Indonesia Bicara','kontak'=>'131','alamat'=>'Jalan M.H. Thamrin No. 2, Jakarta 10350'],
             ['produsen_id'=>999,'nama_produsen'=>'NA','email'=>'-','nama_contact_person'=>'-','kontak'=>'-','alamat'=>'-'],
         ];
 
