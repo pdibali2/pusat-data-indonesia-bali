@@ -25,7 +25,10 @@
 
         {{-- ── Breadcrumb ── --}}
         <div class="flex items-center gap-1.5 text-xs text-slate-400">
-            <i class="fas fa-home text-[10px]"></i>
+            <a href="{{ route('landing') }}" class="flex items-center gap-1.5 text-slate-500 hover:text-sky-600 transition-colors">
+                <i class="fas fa-home text-[10px]"></i>
+                <span class="font-semibold">Beranda</span>
+            </a>
             <span>/</span>
             <span class="text-sky-600 font-semibold capitalize">
                 {{ ucfirst(request()->segment(1) ?? 'Dashboard') }}
@@ -35,13 +38,6 @@
 
     {{-- ── Right side ── --}}
     <div class="flex items-center gap-2 lg:gap-3">
-
-        {{-- Beranda link --}}
-        <a href="{{ route('landing') }}"
-           class="text-xs text-sky-600 font-semibold block hover:text-sky-800 transition-colors">
-            Beranda
-        </a>
-        <div class="w-px h-5 bg-slate-200 block"></div>
 
         {{-- User pill --}}
         @auth

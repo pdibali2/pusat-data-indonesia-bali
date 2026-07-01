@@ -525,6 +525,19 @@
         };
     }
 
+    // Hitung rentang skala Y sekali, dipakai konsisten untuk bar & line
+    function getYScaleMin() {
+        const valid = chartValues.filter(v => v !== null && v !== undefined);
+        if (valid.length === 0) return 0;
+
+        const dataMin = Math.min(...valid);
+        // Kalau semua nilai positif, mulai dari 0 (konsisten dgn bar chart)
+        // Kalau ada nilai negatif, beri sedikit ruang di bawah nilai terkecil
+        return dataMin >= 0 ? 0 : dataMin - Math.abs(dataMin) * 0.1;
+    }
+
+    const yScaleMin = getYScaleMin();
+
     function initChart(type) {
         const ctx = document.getElementById('mainChart').getContext('2d');
         if (mainChart) mainChart.destroy();
@@ -558,6 +571,7 @@
                         ticks: { color: TICK_COLOR, font: { size: 11, weight: '600' } },
                     },
                     y: {
+                        min: yScaleMin,
                         grid: { color: GRID_COLOR },
                         border: { dash: [4,4], color: 'transparent' },
                         ticks: { color: TICK_COLOR, font: { size: 11 }, callback: v => fmt(v) },

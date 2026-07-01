@@ -128,6 +128,70 @@ class LandingController extends Controller
         return view('pages.landing.langganan', compact('layanans'));
     }
 
+    public function bantuan()
+    {
+        $topics = [
+            [
+                'title' => 'Mencari Data',
+                'icon'  => '<svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-4.35-4.35M11 19a8 8 0 100-16 8 8 0 000 16z" /></svg>',
+                'intro' => 'Gunakan fitur pencarian untuk menemukan data statistik yang Anda butuhkan dengan cepat.',
+                'steps' => [
+                    'Klik kolom pencarian.',
+                    'Ketikkan kata kunci, misalnya nama topik data atau klasifikasi data.',
+                    'Pilih hasil pada daftar saran otomatis, atau tekan <b>Enter</b> untuk melihat semua hasil.',
+                ],
+                'tip' => 'Gunakan kata kunci yang spesifik agar hasil pencarian lebih akurat.',
+            ],
+            [
+                'title' => 'Melihat Detail Data',
+                'icon'  => '<svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M9 17v-2a4 4 0 014-4h4m0 0l-4-4m4 4l-4 4M3 7h4v4H3V7z" /></svg>',
+                'intro' => 'Setiap data memiliki halaman detail berisi tabel, grafik, dan metadata lengkap.',
+                'steps' => [
+                    'Buka menu <b>Data Series</b>.',
+                    'Klik data yang ingin dilihat untuk membuka halaman detail dari data yang dipilih.',
+                    'Tabel dan grafik akan menampilkan data berdasarkan rentang tahun yang tersedia.',
+                ],
+                'tip' => 'Beberapa data memerlukan langganan aktif untuk dapat diakses secara penuh.',
+            ],
+            [
+                'title' => 'Klasifikasi Data',
+                'icon'  => '<svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M4 6h16M4 12h16M4 18h7" /></svg>',
+                'intro' => 'Data dikelompokkan berdasarkan klasifikasi agar lebih mudah dijelajahi.',
+                'steps' => [
+                    'Buka menu <b>Klasifikasi</b> dari navigasi utama.',
+                    'Pilih salah satu klasifikasi untuk melihat daftar data di dalamnya.',
+                    'Pilih data yang ingin dilihat.',
+                ],
+                'tip' => null,
+            ],
+            [
+                'title' => 'Langganan & Akses Premium',
+                'icon'  => '<svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7" /></svg>',
+                'intro' => 'Sebagian data bersifat premium dan membutuhkan langganan aktif untuk diakses.',
+                'steps' => [
+                    'Buka menu <b>Langganan</b> untuk melihat paket yang tersedia.',
+                    'Pilih paket sesuai kebutuhan, lalu lakukan pembayaran.',
+                    'Setelah pembayaran berhasil, akses data premium akan otomatis terbuka.',
+                ],
+                'tip' => 'Anda bisa memeriksa status transaksi di halaman Riwayat Transaksi setelah login.',
+            ],
+            [
+                'title' => 'Akun & Login',
+                'icon'  => '<svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" /></svg>',
+                'intro' => 'Buat akun untuk mengakses fitur langganan dan menyimpan preferensi Anda.',
+                'steps' => [
+                    'Klik tombol <b>Daftar</b> pada navigasi untuk membuat akun baru.',
+                    'Isi formulir pendaftaran dan verifikasi email Anda melalui tautan yang dikirimkan.',
+                    'Setelah terverifikasi, login menggunakan email dan kata sandi Anda.',
+                    'Jika lupa kata sandi, gunakan fitur <b>Lupa Kata Sandi</b> di halaman login.',
+                ],
+                'tip' => 'Periksa folder spam jika email verifikasi tidak muncul di kotak masuk.',
+            ],
+        ];
+
+        return view('pages.landing.bantuan', compact('topics'));
+    }
+
     // ─────────────────────────────────────────────────────────────────────────
     // HALAMAN DAFTAR KLASIFIKASI
     // ─────────────────────────────────────────────────────────────────────────
@@ -141,14 +205,20 @@ class LandingController extends Controller
             ->groupBy(fn ($m) => $m->klasifikasi?->nama_klasifikasi)
             ->map(fn ($items) => $items->count());
 
-        $klasifikasiList = collect($this->allKlasifikasi)
-            ->map(function ($k) use ($counts) {
-                $slug = Str::slug($k);
+        $klasifikasiList = Klasifikasi::whereHas('metadata', function ($q) {
+                $q->where('status', 2)
+                  ->whereHas('data', fn($qd) => $qd->where('status', 1)->where('location_id', 0));
+            })
+            ->orderBy('nama_klasifikasi')
+            ->get(['nama_klasifikasi', 'icon'])
+            ->map(function ($item) use ($counts) {
+                $slug = Str::slug($item->nama_klasifikasi);
                 if (!$slug) return null;
                 return [
-                    'nama'  => $k,
+                    'nama'  => $item->nama_klasifikasi,
                     'slug'  => $slug,
-                    'total' => $counts->get($k, 0),
+                    'total' => $counts->get($item->nama_klasifikasi, 0),
+                    'icon'  => $item->icon,
                 ];
             })
             ->filter()
@@ -171,8 +241,49 @@ class LandingController extends Controller
 
         abort_if(is_null($nama), 404);
 
-        $isLimited = $this->isLimitedUser();
-        $freeIds   = $this->getFreeIds();
+        $isLimited   = $this->isLimitedUser();
+        $freeIds     = $this->getFreeIds();
+        $maxFreeBait = 2; // maksimal data gratis yang ditampilkan sebagai "pemancing"
+
+        // ── Data gratis yang benar-benar milik klasifikasi ini ──────────────
+        $freeIdsInKlasifikasi = [];
+        if ($isLimited && !empty($freeIds)) {
+            $freeIdsInKlasifikasi = Metadata::where('status', 2)
+                ->where('is_free', 1)
+                ->whereHas('data', fn($q) => $q->where('status', 1)->where('location_id', 0))
+                ->whereHas('klasifikasi', fn($q) => $q->where('nama_klasifikasi', $nama))
+                ->orderBy('nama')
+                ->pluck('metadata_id')
+                ->all();
+        }
+
+        $recommendedFree = collect();
+        $allowedFreeIds  = [];
+
+        if ($isLimited) {
+            if (!empty($freeIdsInKlasifikasi)) {
+                // Ada data gratis di klasifikasi ini → batasi maksimal $maxFreeBait sebagai pemancing
+                $allowedFreeIds = array_slice($freeIdsInKlasifikasi, 0, $maxFreeBait);
+            } elseif (!empty($freeIds)) {
+                // Tidak ada data gratis di klasifikasi ini → pinjam dari klasifikasi lain
+                $recommendedFree = Metadata::with([
+                        'klasifikasi',
+                        'data' => fn($q) => $q->where('status', 1)
+                            ->where('location_id', 0)
+                            ->with('rujukan.produsen')
+                            ->limit(1),
+                    ])
+                    ->where('status', 2)
+                    ->where('is_free', 1)
+                    ->whereIn('metadata_id', $freeIds)
+                    ->whereHas('data', fn($q) => $q->where('status', 1)->where('location_id', 0))
+                    ->inRandomOrder()
+                    ->limit($maxFreeBait)
+                    ->get();
+
+                $allowedFreeIds = $recommendedFree->pluck('metadata_id')->all();
+            }
+        }
 
         $query = Metadata::with(['klasifikasi', 'produsen', 'data' => function ($q) {
                 $q->where('status', 1)
@@ -186,20 +297,19 @@ class LandingController extends Controller
                 $q->where('nama_klasifikasi', $nama);
             });
 
-        // Free di atas jika limited
-        if ($isLimited && !empty($freeIds)) {
-            $ids = implode(',', array_map('intval', $freeIds));
+        // Pemancing (maks 2) ditaruh di atas jika limited
+        if ($isLimited && !empty($allowedFreeIds)) {
+            $ids = implode(',', array_map('intval', $allowedFreeIds));
             $query->orderByRaw("FIELD(metadata_id, {$ids}) = 0 ASC")
                 ->orderByRaw("FIELD(metadata_id, {$ids}) ASC");
         }
 
         $query->orderBy('nama');
 
-        // Tidak ada limit — kalau subscriber bisa akses semua
         $metadataList = $query->paginate(10);
 
         return view('pages.landing.klasifikasi.show', compact(
-            'nama', 'metadataList', 'freeIds', 'isLimited'
+            'nama', 'metadataList', 'freeIds', 'isLimited', 'allowedFreeIds', 'recommendedFree'
         ));
     }
 

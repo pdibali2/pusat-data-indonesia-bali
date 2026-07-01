@@ -3,7 +3,7 @@
 @section('title', 'Tambah Group')
 
 @section('content')
-<div class="max-w-lg space-y-4">
+<div class="page-layout max-w-lg mx-auto space-y-4">
 
     <div class="flex items-center gap-2 text-xs text-gray-500">
         <a href="{{ route('admin.groups.index') }}" class="hover:text-green-500 transition">Kelola Group</a>

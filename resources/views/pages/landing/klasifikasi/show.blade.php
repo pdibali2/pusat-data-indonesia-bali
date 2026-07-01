@@ -86,7 +86,7 @@
 
                 {{-- Freemium banner --}}
                 @if($isLimited)
-                    @php $lockedCount = $metadataList->filter(fn($m) => !in_array($m->metadata_id, $freeIds))->count(); @endphp
+                    @php $lockedCount = $metadataList->filter(fn($m) => !in_array($m->metadata_id, $allowedFreeIds ?? []))->count(); @endphp
                     @if($lockedCount > 0)
                         <div class="mb-6 flex items-start gap-3 px-4 py-3 bg-amber-50 border border-amber-200">
                             <svg class="w-4 h-4 text-amber-500 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -100,17 +100,30 @@
                     @endif
                 @endif
 
+                
                 <div class="flex items-center gap-3 mb-5">
                     <div class="w-0.5 h-7 bg-stikom-blue shrink-0"></div>
                     <span class="text-[10px] font-bold text-stikom-blue uppercase tracking-[.12em] font-display">Daftar Data</span>
                 </div>
 
+                {{-- Contoh Data Free --}}
+                @if($isLimited && $recommendedFree->isNotEmpty())
+                    <div class="mb-4">
+                        <div class="space-y-2">
+                            @foreach($recommendedFree as $meta)
+                                @php $namaProdusen = $meta->data->first()?->rujukan?->produsen?->nama_produsen; @endphp
+                                @include('pages.landing.klasifikasi._card', ['meta' => $meta, 'namaProdusen' => $namaProdusen])
+                            @endforeach
+                        </div>
+                    </div>
+                    <hr class="my-6 border-gray-200">
+                @endif
+
                 {{-- Container kartu (Alpine akan replace ini saat search) --}}
                 <div id="metadata-container" class="space-y-2">
                     @foreach($metadataList as $meta)
                         @php
-                            $isLocked = $isLimited && !in_array($meta->metadata_id, $freeIds);
-                            // Ambil produsen dari data->rujukan->produsen
+                            $isLocked = $isLimited && !in_array($meta->metadata_id, $allowedFreeIds ?? []);
                             $namaProdusen = $meta->data->first()?->rujukan?->produsen?->nama_produsen;
                         @endphp
 
@@ -193,7 +206,7 @@
 
                 {{-- Paywall CTA --}}
                 @if($isLimited)
-                    @php $lockedOnPage = $metadataList->filter(fn($m) => !in_array($m->metadata_id, $freeIds))->count(); @endphp
+                    @php $lockedOnPage = $metadataList->filter(fn($m) => !in_array($m->metadata_id, $allowedFreeIds ?? []))->count(); @endphp
                     @if($lockedOnPage > 0)
                         <div class="mt-6 bg-white border border-gray-100 border-l-4 border-l-stikom-blue shadow-lg p-8 text-center">
                             <div class="w-12 h-12 bg-stikom flex items-center justify-center mx-auto mb-4">

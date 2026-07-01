@@ -74,6 +74,7 @@
                     <tr class="bg-gray-50 text-gray-500 text-xs uppercase tracking-wider">
                         <th class="px-5 py-3 text-left font-medium">#</th>
                         <th class="px-5 py-3 text-left font-medium">Nama Klasifikasi</th>
+                        <th class="px-5 py-3 text-left font-medium">Ikon</th>
                         <th class="px-5 py-3 text-left font-medium">Status</th>
                         <th class="px-5 py-3 text-left font-medium">Dibuat</th>
                         <th class="px-5 py-3 text-center font-medium">Aksi</th>
@@ -87,6 +88,14 @@
                         </td>
                         <td class="px-5 py-3.5">
                             <span class="font-medium text-gray-800">{{ $item->nama_klasifikasi }}</span>
+                        </td>
+                        <td class="px-5 py-3.5">
+                            <div class="inline-flex items-center gap-2 px-2 py-1 rounded-full bg-slate-50 border border-gray-200 text-slate-600 text-xs">
+                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                                    {!! config('klasifikasi_icons.svg')[$item->icon] ?? config('klasifikasi_icons.svg')[config('klasifikasi_icons.default')] !!}
+                                </svg>
+                                <span>{{ $item->icon ?? 'default' }}</span>
+                            </div>
                         </td>
                         <td class="px-5 py-3.5">
                             @if ($item->status === 1)

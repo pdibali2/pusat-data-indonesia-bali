@@ -1,3 +1,12 @@
+@php
+$iconSvg = function (?string $key) {
+    $svgMap = config('klasifikasi_icons.svg', []);
+    $default = config('klasifikasi_icons.default', 'tag');
+    $iconPath = $svgMap[$key] ?? $svgMap[$default] ?? '';
+    return '<svg class="w-5 h-5 text-slate-700" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">' . $iconPath . '</svg>';
+};
+@endphp
+
 <!DOCTYPE html>
 <html lang="id" class="scroll-smooth">
 <head>
@@ -81,11 +90,7 @@
                         <div class="flex items-center gap-3 min-w-0">
                             {{-- Icon box --}}
                             <div class="w-9 h-9 bg-stikom/5 group-hover:bg-stikom flex items-center justify-center shrink-0 transition-colors duration-200">
-                                <svg class="w-4 h-4 text-stikom group-hover:text-stikom-blue transition-colors duration-200"
-                                     fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                          d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"/>
-                                </svg>
+                                {!! $iconSvg($item['icon'] ?? null) !!}
                             </div>
                             <span class="text-sm font-semibold text-gray-800 group-hover:text-stikom truncate transition-colors duration-200 font-body">
                                 {{ $item['nama'] }}

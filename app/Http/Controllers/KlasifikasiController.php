@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\Klasifikasi;
 use Illuminate\Http\Request;
+use Illuminate\Validation\Rule;
 
 class KlasifikasiController extends Controller
 {
@@ -35,13 +36,15 @@ class KlasifikasiController extends Controller
     {
         $request->validate([
             'nama_klasifikasi' => 'required|string|max:255|unique:klasifikasi,nama_klasifikasi',
+            'icon'             => ['nullable', 'string', Rule::in(array_keys(config('klasifikasi_icons.whitelist', [])))],
         ], [
             'nama_klasifikasi.required' => 'Nama klasifikasi wajib diisi.',
             'nama_klasifikasi.unique'   => 'Nama klasifikasi sudah terdaftar.',
             'nama_klasifikasi.max'      => 'Nama klasifikasi maksimal 255 karakter.',
+            'icon.in'                   => 'Ikon klasifikasi tidak valid.',
         ]);
 
-        Klasifikasi::create($request->only('nama_klasifikasi'));
+        Klasifikasi::create($request->only('nama_klasifikasi', 'icon'));
 
         return redirect()
             ->route('admin.klasifikasi.index')
@@ -66,13 +69,15 @@ class KlasifikasiController extends Controller
         $request->validate([
             'nama_klasifikasi' => 'required|string|max:255|unique:klasifikasi,nama_klasifikasi,' 
                                   . $klasifikasi->klasifikasi_id . ',klasifikasi_id',
+            'icon'             => ['nullable', 'string', Rule::in(array_keys(config('klasifikasi_icons.whitelist', [])))],
         ], [
             'nama_klasifikasi.required' => 'Nama klasifikasi wajib diisi.',
             'nama_klasifikasi.unique'   => 'Nama klasifikasi sudah terdaftar.',
             'nama_klasifikasi.max'      => 'Nama klasifikasi maksimal 255 karakter.',
+            'icon.in'                   => 'Ikon klasifikasi tidak valid.',
         ]);
 
-        $klasifikasi->update($request->only('nama_klasifikasi'));
+        $klasifikasi->update($request->only('nama_klasifikasi', 'icon'));
 
         return redirect()
             ->route('admin.klasifikasi.index')

@@ -66,6 +66,7 @@ use App\Http\Controllers\AnomalyControlController;
     Route::get('/search',       [LandingController::class, 'searchResults'])->name('search');
 
     Route::get('/langganan', [LandingController::class, 'langganan'])->name('langganan');
+    Route::get('/bantuan', [LandingController::class, 'bantuan'])->name('bantuan');
     Route::get('/klasifikasi', [LandingController::class, 'klasifikasiIndex'])
         ->name('klasifikasi.index');
     Route::get('/klasifikasi/{klasifikasi}', [LandingController::class, 'klasifikasiShow'])

@@ -47,10 +47,11 @@ $col2 = $allKlasifikasi->slice($half);
                 {{-- Klasifikasi mega-dropdown --}}
                 <div class="relative" x-data="{ open: false }" @mouseenter="open = true" @mouseleave="open = false">
                     <button
-                        class="flex items-center gap-1.5 px-4 py-5 text-sm font-semibold transition-all duration-200 border-b-4 border-transparent"
+                        class="flex items-center gap-1.5 px-4 py-5 text-sm font-semibold transition-all duration-200 border-b-4
+                            {{ request()->is('klasifikasi*') ? 'border-stikom-accent' : 'border-transparent' }}"
                         :class="scrolled
-                            ? 'text-stikom hover:text-stikom-accent hover:border-stikom-accent'
-                            : 'text-white/90 hover:text-white hover:border-stikom-accent/70'"
+                            ? '{{ request()->is('klasifikasi*') ? 'text-stikom-accent' : 'text-stikom' }} hover:text-stikom-accent hover:border-stikom-accent'
+                            : '{{ request()->is('klasifikasi*') ? 'text-white' : 'text-white/90' }} hover:text-white hover:border-stikom-accent/70'"
                         aria-haspopup="true" :aria-expanded="open"
                     >
                         Klasifikasi
@@ -101,11 +102,13 @@ $col2 = $allKlasifikasi->slice($half);
 
                 {{-- Produk dropdown --}}
                 <div class="relative" x-data="{ open: false }" @mouseenter="open = true" @mouseleave="open = false">
+                    @php $produkActive = request()->routeIs('landing.data.series') || request()->routeIs('data.index'); @endphp
                     <button
-                        class="flex items-center gap-1.5 px-4 py-5 text-sm font-semibold transition-all duration-200 border-b-4 border-transparent"
+                        class="flex items-center gap-1.5 px-4 py-5 text-sm font-semibold transition-all duration-200 border-b-4
+                            {{ $produkActive ? 'border-stikom-accent' : 'border-transparent' }}"
                         :class="scrolled
-                            ? 'text-stikom hover:text-stikom-accent hover:border-stikom-accent'
-                            : 'text-white/90 hover:text-white hover:border-stikom-accent/70'"
+                            ? '{{ $produkActive ? 'text-stikom-accent' : 'text-stikom' }} hover:text-stikom-accent hover:border-stikom-accent'
+                            : '{{ $produkActive ? 'text-white' : 'text-white/90' }} hover:text-white hover:border-stikom-accent/70'"
                         aria-haspopup="true" :aria-expanded="open"
                     >
                         Produk
@@ -144,12 +147,22 @@ $col2 = $allKlasifikasi->slice($half);
                     </div>
                 </div>
 
+                <a href="{{ route('bantuan') }}"
+                    class="px-4 py-5 text-sm font-semibold transition-all duration-200 border-b-4
+                            {{ request()->routeIs('bantuan') ? 'border-stikom-accent' : 'border-transparent' }}"
+                    :class="scrolled
+                        ? '{{ request()->routeIs('bantuan') ? 'text-stikom-accent' : 'text-stikom' }} hover:text-stikom-accent hover:border-stikom-accent'
+                        : '{{ request()->routeIs('bantuan') ? 'text-white' : 'text-white/90' }} hover:text-white hover:border-stikom-accent/70'">
+                        Bantuan
+                </a>
+
                 <a href="{{ route('langganan') }}"
-                   class="px-4 py-5 text-sm font-semibold transition-all duration-200 border-b-4 border-transparent"
-                   :class="scrolled
-                       ? 'text-stikom hover:text-stikom-accent hover:border-stikom-accent'
-                       : 'text-white/90 hover:text-white hover:border-stikom-accent/70'">
-                    Langganan
+                    class="px-4 py-5 text-sm font-semibold transition-all duration-200 border-b-4
+                            {{ request()->routeIs('langganan') ? 'border-stikom-accent' : 'border-transparent' }}"
+                    :class="scrolled
+                        ? '{{ request()->routeIs('langganan') ? 'text-stikom-accent' : 'text-stikom' }} hover:text-stikom-accent hover:border-stikom-accent'
+                        : '{{ request()->routeIs('langganan') ? 'text-white' : 'text-white/90' }} hover:text-white hover:border-stikom-accent/70'">
+                        Langganan
                 </a>
 
                 {{-- CTA Auth --}}
@@ -231,9 +244,20 @@ $col2 = $allKlasifikasi->slice($half);
                 </div>
             </div>
 
+            <a href="{{ route('bantuan') }}" @click="mobileOpen = false"
+                class="block px-4 py-3 text-sm font-semibold transition-colors border-l-2
+                        {{ request()->routeIs('bantuan')
+                            ? 'text-stikom-accent border-stikom-accent bg-stikom-accent/10'
+                            : 'text-stikom border-transparent hover:bg-stikom-accent/10 hover:text-stikom-accent hover:border-stikom-accent' }}">
+                    Bantuan
+            </a>
+
             <a href="{{ route('langganan') }}" @click="mobileOpen = false"
-               class="block px-4 py-3 text-sm font-semibold text-stikom hover:bg-stikom-accent/10 hover:text-stikom-accent border-l-2 border-transparent hover:border-stikom-accent transition-colors">
-                Langganan
+                class="block px-4 py-3 text-sm font-semibold transition-colors border-l-2
+                        {{ request()->routeIs('langganan')
+                            ? 'text-stikom-accent border-stikom-accent bg-stikom-accent/10'
+                            : 'text-stikom border-transparent hover:bg-stikom-accent/10 hover:text-stikom-accent hover:border-stikom-accent' }}">
+                    Langganan
             </a>
 
             <div class="pt-3 border-t border-gray-100">
