@@ -77,7 +77,7 @@
             @else
 
                 {{-- items-stretch agar semua card sama tinggi --}}
-                <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 gap-4 items-stretch">
+                <div class="flex flex-wrap gap-4 items-stretch justify-center">
 
                     @foreach($layanans as $layanan)
 
@@ -93,7 +93,9 @@
 
                         @if($layanan->is_popular)
                             {{-- ── FEATURED CARD ─────────────────────────── --}}
-                            <div class="relative flex flex-col overflow-hidden bg-white ring-2 ring-sky-400 shadow-2xl shadow-sky-500/15 -my-3 z-10">
+                            <div class="relative flex flex-col overflow-hidden bg-white ring-2 ring-sky-400 shadow-2xl shadow-sky-500/15 -my-3 z-10
+                                w-full sm:w-[calc(50%-0.5rem)] md:w-[calc(33.333%-0.667rem)]
+                                xl:w-[calc(25%-0.75rem)] 2xl:w-[calc(20%-0.8rem)]">
 
                                 <div class="h-[3px] bg-sky-400 w-full shrink-0"></div>
 
@@ -176,11 +178,12 @@
                         @else
                         {{-- ── REGULAR CARD ──────────────────────────── --}}
                         <div class="bg-white border border-gray-100 flex flex-col overflow-hidden shadow-sm
-                                    transition-all duration-200
-                                    hover:shadow-md"
-                             style="border-top: 3px solid transparent;"
-                             onmouseenter="this.style.borderTopColor='#A32D2D'"
-                             onmouseleave="this.style.borderTopColor='transparent'">
+                                    transition-all duration-200 hover:shadow-md
+                                    w-full sm:w-[calc(50%-0.5rem)] md:w-[calc(33.333%-0.667rem)]
+                                    xl:w-[calc(25%-0.75rem)] 2xl:w-[calc(20%-0.8rem)]"
+                            style="border-top: 3px solid transparent;"
+                            onmouseenter="this.style.borderTopColor='#A32D2D'"
+                            onmouseleave="this.style.borderTopColor='transparent'">
 
                             <div class="px-4 py-1.5 border-b border-gray-100 shrink-0">
                                 <span class="text-stikom-red text-[9px] font-bold uppercase tracking-widest font-poppins">Paket</span>

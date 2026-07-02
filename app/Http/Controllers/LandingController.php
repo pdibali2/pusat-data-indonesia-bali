@@ -143,6 +143,21 @@ class LandingController extends Controller
                 'tip' => 'Gunakan kata kunci yang spesifik agar hasil pencarian lebih akurat.',
             ],
             [
+                'title' => 'Template Tampilan Data',
+                'icon'  => '<svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M4 6h16M4 10h16M4 14h16M4 18h16" /></svg>',
+                'intro' => 'Template Tampilan Data memungkinkan Anda menyusun beberapa data sekaligus ke dalam satu tabel pivot yang bisa disesuaikan rentang waktunya, lalu diekspor kapan saja tanpa perlu mengulang filter dari awal.',
+                'steps' => [
+                    'Buka menu <b>Produk → Template Tampilan Data</b> dari navigasi utama.',
+                    'Klik <b>Buat Template</b>, lalu pilih salah satu jenis template: <b>Metadata</b> (pilih data secara manual satu per satu), <b>Klasifikasi</b> (ambil semua data dalam satu klasifikasi topik), atau <b>Wilayah</b> (ambil semua data yang tersedia untuk wilayah tertentu).',
+                    'Pilih data dan/atau wilayah sesuai kebutuhan, lalu beri nama template dan simpan.',
+                    'Setelah tersimpan, Anda akan diarahkan ke halaman <b>Template Tampilan Data</b>. Pilih template yang baru dibuat pada <b>Langkah 1: Pilih Template</b>.',
+                    'Pilih <b>Frekuensi Rentang Waktu</b> (Tahunan, Semesteran, Kuartal, Bulanan, dsb) sesuai frekuensi data yang tersedia — frekuensi yang tidak memiliki data akan otomatis dinonaktifkan.',
+                    'Tentukan <b>Rentang Periode</b> (misalnya dari tahun 2020 sampai 2024), lalu klik <b>Tampilkan Data</b> untuk melihat hasilnya dalam bentuk tabel.',
+                    'Gunakan tombol <b>Export</b> di atas tabel untuk mengunduh hasil dalam format Excel, PDF, atau JSON.',
+                ],
+                'tip' => 'Template yang Anda buat tanpa login akan tersimpan sementara dan bisa hilang jika cache dibersihkan. Login terlebih dahulu agar template tersimpan permanen di akun Anda dan bisa diakses dari perangkat lain.',
+            ],
+            [
                 'title' => 'Melihat Detail Data',
                 'icon'  => '<svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M9 17v-2a4 4 0 014-4h4m0 0l-4-4m4 4l-4 4M3 7h4v4H3V7z" /></svg>',
                 'intro' => 'Setiap data memiliki halaman detail berisi tabel, grafik, dan metadata lengkap.',

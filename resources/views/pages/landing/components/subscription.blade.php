@@ -12,18 +12,14 @@
 
         {{-- Grid layout --}}
         @if($pricings->isNotEmpty())
-            {{-- items-stretch agar semua card sama tinggi dalam satu baris --}}
-            <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 gap-4 items-stretch fade-up">
+            <div class="flex flex-wrap gap-4 items-stretch justify-center fade-up">
 
                 @foreach($pricings->sortBy('urutan') as $plan)
                     @php $isPopular = $plan->is_popular; @endphp
 
-                    {{--
-                        Card wrapper:
-                        - Regular  : border abu, border-top transparan → merah saat hover
-                        - Featured : dark navy + ring merah + sedikit lebih tinggi lewat negative margin atas-bawah
-                    --}}
                     <div class="relative flex flex-col overflow-hidden group bg-white
+                                w-full sm:w-[calc(50%-0.5rem)] md:w-[calc(33.333%-0.667rem)]
+                                xl:w-[calc(25%-0.75rem)] 2xl:w-[calc(20%-0.8rem)]
                                 {{ $isPopular
                                     ? 'ring-2 ring-sky-400 shadow-2xl shadow-sky-500/15 -my-3 z-10'
                                     : 'border border-gray-100 shadow-sm' }}"
