@@ -82,13 +82,22 @@
     #pivotTable th.col-sticky-nama,
     #pivotTable td.col-sticky-nama {
         left: 0;
-        min-width: 140px;
-        max-width: 180px;
-        width: 160px;
+        min-width: 200px;   /* dari 140px */
+        max-width: 240px;   /* dari 180px */
+        width: 220px;       /* dari 160px */
         background: inherit;
-        word-break: break-word;
+        word-break: normal;    /* ganti dari break-word, biar ga motong mid-word */
         white-space: normal;
         line-height: 1.3;
+    }
+
+    .loc-text {
+        display: inline-block;
+        max-width: 100%;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+        vertical-align: bottom;
     }
     /* Freeze header baris */
     #pivotTable thead th {
@@ -1542,26 +1551,29 @@ function _renderTable(d) {
     let rowIdx = 0;
 
     metaOrder.forEach((key, mIdx) => {
-        const group = grouped[key];
+            const group = grouped[key];
 
-        // Urutkan per level wilayah
-        group.rows.sort((a, b) => {
-            const la = _getLokasiLevel(a);
-            const lb = _getLokasiLevel(b);
-            if (la !== lb) return la - lb;
-            return (a.lokasi ?? '').localeCompare(b.lokasi ?? '');
-        });
+            group.rows.sort((a, b) => {
+                const la = _getLokasiLevel(a);
+                const lb = _getLokasiLevel(b);
+                if (la !== lb) return la - lb;
+                return (a.lokasi ?? '').localeCompare(b.lokasi ?? '');
+            });
 
-        group.rows.forEach((row, ri) => {
-            const level      = _getLokasiLevel(row);
-            const isFirstRow = ri === 0;
-            const span       = group.rows.length;
-            rowIdx++;
+            // ── Hitung level minimum yang benar-benar ada di grup ini ──
+            const minLevel = Math.min(...group.rows.map(r => _getLokasiLevel(r)));
 
-            const levelIcons = ['🏛️','🏙️','🏘️','🏠'];
-            const levelNames = ['Provinsi','Kabupaten','Kecamatan','Desa'];
-            const locIcon    = levelIcons[level] ?? '';
-            const locTitle   = levelNames[level] ?? '';
+            group.rows.forEach((row, ri) => {
+                const level        = _getLokasiLevel(row);       // level asli (buat ikon & tooltip)
+                const displayLevel = level - minLevel;             // level RELATIF (buat indentasi visual)
+                const isFirstRow   = ri === 0;
+                const span         = group.rows.length;
+                rowIdx++;
+
+                const levelIcons = ['🏛️','🏙️','🏘️','🏠'];
+                const levelNames = ['Provinsi','Kabupaten','Kecamatan','Desa'];
+                const locIcon    = levelIcons[level] ?? '';
+                const locTitle   = levelNames[level] ?? '';
 
             // Nilai per kolom
             const cells = cols.map((c, ci) => {
@@ -1600,14 +1612,14 @@ function _renderTable(d) {
                                 ? `<p class="text-gray-400 text-[10px] mb-1">${_esc(group.klasifikasi)}</p>`
                                 : ''}
                         ` : ''}
-                        <span class="loc-indent-${level} flex items-center gap-1 text-xs
-                                     ${level === 0 ? 'font-semibold text-gray-700' : ''}
-                                     ${level === 1 ? 'text-gray-600' : ''}
-                                     ${level === 2 ? 'text-gray-500' : ''}
-                                     ${level === 3 ? 'text-gray-400 text-[10px]' : ''}"
-                             title="${locTitle}">
+                        <span class="loc-indent-${displayLevel} flex items-center gap-1 text-xs
+                                    ${level === 0 ? 'font-semibold text-gray-700' : ''}
+                                    ${level === 1 ? 'text-gray-600' : ''}
+                                    ${level === 2 ? 'text-gray-500' : ''}
+                                    ${level === 3 ? 'text-gray-400 text-[10px]' : ''}"
+                            title="${_esc(row.lokasi ?? '-')}">
                             <span class="text-gray-300">${locIcon}</span>
-                            ${_esc(row.lokasi ?? '-')}
+                            <span class="loc-text">${_esc(row.lokasi ?? '-')}</span>
                         </span>
                     </div>
                 </td>`;

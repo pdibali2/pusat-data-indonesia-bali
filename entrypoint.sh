@@ -38,8 +38,8 @@ php artisan cache:clear || true
 echo "Running migrations..."
 php artisan migrate --force
 
-echo "Running seeding klasifikasi..."
-php artisan db:seed --class=KlasifikasiSeeder --force
+# echo "Running seeding klasifikasi..."
+# php artisan db:seed --class=KlasifikasiSeeder --force
 
 # echo "Running seeders..."
 # php artisan db:seed --force
