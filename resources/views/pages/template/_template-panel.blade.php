@@ -82,12 +82,12 @@
     #pivotTable th.col-sticky-nama,
     #pivotTable td.col-sticky-nama {
         left: 0;
-        min-width: 200px;   /* dari 140px */
-        max-width: 240px;   /* dari 180px */
-        width: 220px;       /* dari 160px */
+        min-width: 140px;
+        max-width: none;      /* dihapus */
+        width: auto;          /* auto, bukan fixed */
         background: inherit;
-        word-break: normal;    /* ganti dari break-word, biar ga motong mid-word */
-        white-space: normal;
+        word-break: normal;
+        white-space: normal;  /* boleh wrap ke 2 baris kalau perlu */
         line-height: 1.3;
     }
 
@@ -1614,9 +1614,9 @@ function _renderTable(d) {
                         ` : ''}
                         <span class="loc-indent-${displayLevel} flex items-center gap-1 text-xs
                                     ${level === 0 ? 'font-semibold text-gray-700' : ''}
-                                    ${level === 1 ? 'text-gray-600' : ''}
-                                    ${level === 2 ? 'text-gray-500' : ''}
-                                    ${level === 3 ? 'text-gray-400 text-[10px]' : ''}"
+                                    ${level === 1 ? 'text-gray-700' : ''}
+                                    ${level === 2 ? 'text-gray-700' : ''}
+                                    ${level === 3 ? 'text-gray-700' : ''}"
                             title="${_esc(row.lokasi ?? '-')}">
                             <span class="text-gray-300">${locIcon}</span>
                             <span class="loc-text">${_esc(row.lokasi ?? '-')}</span>
