@@ -18,10 +18,11 @@ class DataImport
     private const BATCH_SIZE  = 200;
     private const COL_META_ID = 0;
     private const COL_META_NM = 1;
-    private const COL_LOC_ID  = 2;
-    private const COL_LOC_NM  = 3;
-    private const COL_RUJUKAN = 4;
-    private const COL_PERIOD  = 5;
+    private const COL_SATUAN  = 2;
+    private const COL_LOC_ID  = 3;
+    private const COL_LOC_NM  = 4;
+    private const COL_RUJUKAN = 5;
+    private const COL_PERIOD  = 6;
     
 
     /**

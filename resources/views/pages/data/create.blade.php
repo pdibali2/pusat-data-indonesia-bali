@@ -1586,6 +1586,7 @@
                     groups.set(key, {
                         nama:    r.nama_metadata ?? String(r.metadata_id),
                         wilayah: r.nama_wilayah  ?? String(r.location_id),
+                        satuan:  r.satuan_data   ?? '',
                         rujukan: r.nama_rujukan  ?? String(r.rujukan_id),
                         values:  {},
                     });
@@ -1602,10 +1603,11 @@
             // Build header (tidak berubah)
             const hTop = document.getElementById('validHeaderTop');
             hTop.innerHTML = `
-                <th class="px-3 py-2 text-left font-medium" style="width:36%;">Nama</th>
+                <th class="px-3 py-2 text-left font-medium" style="width:30%;">Nama</th>
                 <th colspan="${periodOrder.length}" class="px-3 py-2 text-center font-medium border-x border-gray-200">
                     ${json.period_type === 'tahunan' ? 'Tahun' : json.period_type === 'bulanan' ? 'Bulan' : json.period_type === 'semester' ? 'Semester' : 'Periode'}
                 </th>
+                <th class="px-3 py-2 text-left font-medium">Satuan</th>
                 <th class="px-3 py-2 text-left font-medium">Sumber Rujukan</th>`;
 
             const hSub = document.getElementById('validHeaderSub');
@@ -1659,6 +1661,7 @@
                 <tr class="${i % 2 === 1 ? 'bg-gray-50/40' : ''}">
                     <td class="px-3 py-2 pl-6 text-gray-600">${esc(g.wilayah)}</td>
                     ${cells}
+                    <td class="px-3 py-2 text-gray-600">${esc(g.satuan)}</td>
                     <td class="px-3 py-2">
                         <span class="inline-block text-xs px-2 py-0.5 rounded bg-gray-100 text-gray-500 whitespace-nowrap">
                             ${esc(g.rujukan)}
