@@ -8,8 +8,7 @@ $col2 = $allKlasifikasi->slice($half);
 <nav
     x-data="navbar()"
     x-init="init()"
-    :class="scrolled ? 'bg-white shadow-lg border-b border-gray-100' : 'bg-transparent'"
-    class="fixed top-0 left-0 right-0 z-50 transition-all duration-300"
+    class="fixed top-0 left-0 right-0 z-50 transition-all duration-300 bg-white shadow-lg border-b border-gray-100"
     role="navigation"
     aria-label="Navigasi Utama"
 >
@@ -21,24 +20,11 @@ $col2 = $allKlasifikasi->slice($half);
 
             {{-- Logo --}}
             <a href="{{ route('landing') }}"
-               class="flex items-center gap-3 group shrink-0"
-               aria-label="Pusat Data Indonesia Bali">
-                <div class="w-9 h-9 bg-stikom-accent flex items-center justify-center transition-transform duration-200 group-hover:scale-110">
-                    <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                              d="M4 7v10c0 2.21 3.582 4 8 4s8-1.79 8-4V7M4 7c0 2.21 3.582 4 8 4s8-1.79 8-4M4 7c0-2.21 3.582-4 8-4s8 1.79 8 4"/>
-                    </svg>
-                </div>
-                <div class="leading-tight hidden sm:block">
-                    <div class="text-sm font-bold tracking-tight transition-colors duration-300 font-poppins"
-                         :class="scrolled ? 'text-stikom' : 'text-white'">
-                        Pusat Data Indonesia Bali
-                    </div>
-                    {{-- <div class="text-[10px] font-semibold tracking-widest uppercase transition-colors duration-300"
-                         :class="scrolled ? 'text-stikom-accent' : 'text-stikom-accent'">
-                        Provinsi Bali
-                    </div> --}}
-                </div>
+                class="flex items-center gap-3 group shrink-0"
+                aria-label="Pusat Data Indonesia Bali">
+                    <img src="{{ asset('images/logo/PDIB-transparan-B.png') }}"
+                        alt="Pusat Data Indonesia Bali"
+                        class="h-8 lg:h-9 w-auto object-contain transition-transform duration-200 group-hover:scale-105">
             </a>
 
             {{-- Desktop menu --}}
@@ -51,7 +37,7 @@ $col2 = $allKlasifikasi->slice($half);
                             {{ request()->is('klasifikasi*') ? 'border-stikom-accent' : 'border-transparent' }}"
                         :class="scrolled
                             ? '{{ request()->is('klasifikasi*') ? 'text-stikom-accent' : 'text-stikom' }} hover:text-stikom-accent hover:border-stikom-accent'
-                            : '{{ request()->is('klasifikasi*') ? 'text-white' : 'text-white/90' }} hover:text-white hover:border-stikom-accent/70'"
+                            : '{{ request()->is('klasifikasi*') ? 'text-stikom' : 'text-stikom/90' }} hover:text-stikom hover:border-stikom-accent/70'"
                         aria-haspopup="true" :aria-expanded="open"
                     >
                         Klasifikasi
@@ -108,7 +94,7 @@ $col2 = $allKlasifikasi->slice($half);
                             {{ $produkActive ? 'border-stikom-accent' : 'border-transparent' }}"
                         :class="scrolled
                             ? '{{ $produkActive ? 'text-stikom-accent' : 'text-stikom' }} hover:text-stikom-accent hover:border-stikom-accent'
-                            : '{{ $produkActive ? 'text-white' : 'text-white/90' }} hover:text-white hover:border-stikom-accent/70'"
+                            : '{{ $produkActive ? 'text-stikom' : 'text-stikom/90' }} hover:text-stikom hover:border-stikom-accent/70'"
                         aria-haspopup="true" :aria-expanded="open"
                     >
                         Produk
@@ -152,7 +138,7 @@ $col2 = $allKlasifikasi->slice($half);
                             {{ request()->routeIs('bantuan') ? 'border-stikom-accent' : 'border-transparent' }}"
                     :class="scrolled
                         ? '{{ request()->routeIs('bantuan') ? 'text-stikom-accent' : 'text-stikom' }} hover:text-stikom-accent hover:border-stikom-accent'
-                        : '{{ request()->routeIs('bantuan') ? 'text-white' : 'text-white/90' }} hover:text-white hover:border-stikom-accent/70'">
+                        : '{{ request()->routeIs('bantuan') ? 'text-stikom' : 'text-stikom/90' }} hover:text-stikom hover:border-stikom-accent/70'">
                         Bantuan
                 </a>
 
@@ -161,7 +147,7 @@ $col2 = $allKlasifikasi->slice($half);
                             {{ request()->routeIs('langganan') ? 'border-stikom-accent' : 'border-transparent' }}"
                     :class="scrolled
                         ? '{{ request()->routeIs('langganan') ? 'text-stikom-accent' : 'text-stikom' }} hover:text-stikom-accent hover:border-stikom-accent'
-                        : '{{ request()->routeIs('langganan') ? 'text-white' : 'text-white/90' }} hover:text-white hover:border-stikom-accent/70'">
+                        : '{{ request()->routeIs('langganan') ? 'text-stikom' : 'text-stikom/90' }} hover:text-stikom hover:border-stikom-accent/70'">
                         Langganan
                 </a>
 
@@ -185,7 +171,7 @@ $col2 = $allKlasifikasi->slice($half);
             <button
                 @click="mobileOpen = !mobileOpen"
                 class="lg:hidden p-2 transition-colors duration-200"
-                :class="scrolled ? 'text-stikom' : 'text-white'"
+                :class="scrolled ? 'text-stikom' : 'text-stikom'"
                 aria-label="Toggle menu" :aria-expanded="mobileOpen"
             >
                 <svg x-show="!mobileOpen" class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">

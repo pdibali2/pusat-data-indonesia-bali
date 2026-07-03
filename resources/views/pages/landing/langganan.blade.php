@@ -16,7 +16,7 @@
     <main class="pb-20 min-h-screen">
 
         {{-- ═══ PAGE HEADER ════════════════════════════════════════════ --}}
-        <div class="bg-stikom py-20 pb-14 relative overflow-hidden border-l-4 border-stikom-blue">
+        <div class="bg-stikom py-30 pb-14 relative overflow-hidden border-l-4 border-stikom-blue">
             <div class="absolute inset-0 opacity-[.06]" aria-hidden="true"
                  style="background-image:repeating-linear-gradient(0deg,rgba(255,255,255,.4) 0,rgba(255,255,255,.4) 1px,transparent 1px,transparent 40px),repeating-linear-gradient(90deg,rgba(255,255,255,.4) 0,rgba(255,255,255,.4) 1px,transparent 1px,transparent 40px)">
             </div>

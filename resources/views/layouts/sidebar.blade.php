@@ -110,22 +110,17 @@
        style="background: linear-gradient(180deg, #0c4a6e 0%, #0369a1 100%);">
 
     {{-- ── Logo + Close button (mobile) ── --}}
-    <div class="px-4 py-4 flex items-center justify-between border-b border-white/10">
+    <div class="px-4 py-2 flex items-center justify-center border-b border-white/10">
         <div class="flex items-center gap-3">
-            <div class="w-9 h-9 rounded-lg bg-white/15 border border-white/30
-                        flex items-center justify-center text-white shrink-0">
-                <i class="fas fa-database text-sm"></i>
-            </div>
-            <div class="leading-tight">
-                <p class="text-[10px] font-semibold text-white/80 tracking-wide uppercase">Pusat Data</p>
-                <p class="text-[10px] font-bold text-white tracking-wide uppercase">Indonesia Bali</p>
-            </div>
+            <img src="{{ asset('images/logo/PDIB-transparan-A.png') }}"
+                alt="Pusat Data Indonesia Bali"
+                class="h-10 w-auto object-contain">
         </div>
 
         {{-- Close button — only visible on mobile --}}
         <button @click="sidebarOpen = false"
                 class="lg:hidden w-7 h-7 flex items-center justify-center rounded-md
-                       text-white/60 hover:text-white hover:bg-white/10 transition-colors">
+                    text-white/60 hover:text-white hover:bg-white/10 transition-colors">
             <i class="fas fa-times text-xs"></i>
         </button>
     </div>
