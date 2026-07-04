@@ -163,6 +163,7 @@
                         <td class="px-4 py-3 text-gray-400 text-xs">{{ $data->firstItem() + $index }}</td>
 
                         <td class="px-4 py-3">
+                            <p class="text-xs text-gray-400 italic mt-0.5">#{{ $item->metadata_id }}</p>
                             <p class="font-semibold text-gray-800 leading-snug">{{ $item->nama }}</p>
                             @if($item->alias)
                                 <p class="text-xs text-gray-400 italic mt-0.5">{{ $item->alias }}</p>

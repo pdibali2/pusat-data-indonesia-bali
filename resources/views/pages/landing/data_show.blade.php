@@ -244,7 +244,15 @@
             @php
                 $values    = $tableRows->pluck('value')->filter(fn($v) => !is_null($v));
                 $latestRow = $tableRows->sortByDesc('year')->first();
-                $dec       = $metadata->flag_desimal ?? 0;
+
+                // Hitung jumlah digit desimal dari nilai data asli, bukan dari flag_desimal
+                // (flag_desimal di DB kadang tidak konsisten dengan data yang sebenarnya)
+                $dec = $values->reduce(function ($carry, $v) {
+                    $s = rtrim(rtrim(sprintf('%.6f', $v), '0'), '.');
+                    $pos = strpos($s, '.');
+                    $d = $pos === false ? 0 : strlen($s) - $pos - 1;
+                    return max($carry, $d);
+                }, 0);
             @endphp
 
             {{-- Chart Card --}}
@@ -477,7 +485,7 @@
     const chartLabels = @json($chartLabels);
     const chartValues = @json($chartValues);
     const satuan      = @json($metadata->satuan_data);
-    const flagDesimal = {{ $metadata->flag_desimal ?? 0 }};
+    const flagDesimal = {{ $dec }};
 
     const C_BLUE      = '#1a56db';
     const C_BLUE_BAR  = 'rgba(26,86,219,.75)';
