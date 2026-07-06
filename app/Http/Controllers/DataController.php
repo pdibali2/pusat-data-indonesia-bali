@@ -656,6 +656,59 @@ class DataController extends Controller
     // SHOW
     // ═══════════════════════════════════════════════════════════
 
+    public function edit(Data $datum)
+    {
+        $datum->load(['metadata', 'location', 'time', 'rujukan', 'produsen']);
+
+        $metadataList = Metadata::select(
+            'metadata_id', 'nama', 'tipe_data', 'satuan_data', 'frekuensi_penerbitan', 'flag_desimal'
+        )->where('status', 2)->orderBy('nama')->get();
+
+        $rujukanList  = Rujukan::select('rujukan_id', 'nama_rujukan')->orderBy('nama_rujukan')->get();
+        $locationList = Location::select('location_id', 'nama_wilayah')->orderBy('nama_wilayah')->get();
+        $timeList = Waktu::select('time_id', 'decade', 'year', 'semester', 'quarter', 'month')
+            ->orderBy('decade', 'desc')->orderBy('year', 'desc')->orderBy('month')->get();
+
+        return view('pages.data.edit', compact('datum', 'metadataList', 'rujukanList', 'locationList', 'timeList'));
+    }
+
+    public function update(Request $request, Data $datum)
+    {
+        $request->validate([
+            'metadata_id'  => 'required|integer|exists:metadata,metadata_id',
+            'location_id'  => 'required|integer|exists:location,location_id',
+            'time_id'      => 'required|integer|exists:time,time_id',
+            'rujukan_id'   => 'required|integer|exists:rujukan,rujukan_id',
+            'number_value' => 'nullable|numeric',
+        ]);
+
+        $oldValues = $datum->only([
+            'metadata_id', 'location_id', 'time_id', 'rujukan_id', 'produsen_id', 'number_value',
+        ]);
+
+        $datum->fill([
+            'metadata_id' => $request->metadata_id,
+            'location_id' => $request->location_id,
+            'time_id' => $request->time_id,
+            'rujukan_id' => $request->rujukan_id,
+            'produsen_id' => $request->produsen_id ?: null,
+            'number_value' => $request->number_value,
+            'status' => Data::STATUS_PENDING,
+            'workflow_status' => Data::WORKFLOW_DRAFT,
+            'reviewer_note' => null,
+            'reviewed_by' => null,
+            'reviewed_at' => null,
+        ]);
+
+        $datum->save();
+
+        $this->auditTrail->recordUpdated('data', $datum->id, $oldValues, $datum->only([
+            'metadata_id', 'location_id', 'time_id', 'rujukan_id', 'produsen_id', 'number_value',
+        ]));
+
+        return redirect()->route('data.show', $datum)->with('success', 'Data berhasil diperbarui dan dikembalikan ke status pending.');
+    }
+
     public function show(Data $datum)
     {
         $datum->load([

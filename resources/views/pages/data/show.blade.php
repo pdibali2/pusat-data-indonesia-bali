@@ -38,6 +38,13 @@
                     {{ $s['label'] }}
                 </span>
 
+                <div class="flex flex-wrap gap-2">
+                    <a href="{{ route('data.edit', $datum->id) }}"
+                       class="px-3 py-1.5 rounded-md text-xs font-semibold flex items-center gap-1.5 transition-colors shadow-sm border border-sky-200 text-sky-700 bg-sky-50 hover:bg-sky-100">
+                        <i class="fas fa-edit"></i> Edit
+                    </a>
+                </div>
+
                 {{-- Tombol approve/reject untuk admin --}}
                 @if($datum->status == 0)
                     <div class="flex gap-2">

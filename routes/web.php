@@ -230,6 +230,8 @@ Route::middleware(['is.login', 'is.pengelola', 'is.customer'])->group(function (
         // Approval
         Route::get('/approval',         [DataController::class, 'approval'])->name('approval');
         Route::post('/bulk-approve',    [DataController::class, 'bulkApprove'])->name('bulk_approve');
+        Route::get('/{datum}/edit',     [DataController::class, 'edit'])->name('edit');
+        Route::put('/{datum}',          [DataController::class, 'update'])->name('update');
         Route::post('/{datum}/approve', [DataController::class, 'approve'])->name('approve');
         Route::post('/{datum}/reject',  [DataController::class, 'reject'])->name('reject');
 
