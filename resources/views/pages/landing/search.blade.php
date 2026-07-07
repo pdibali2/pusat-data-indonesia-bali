@@ -26,7 +26,7 @@
 
             <div class="relative z-10 max-w-5xl mx-auto px-4 sm:px-6 lg:px-8">
                 {{-- Breadcrumb --}}
-                <nav class="flex items-center gap-2 text-[11px] text-white/35 mb-8 font-body" aria-label="Breadcrumb">
+                <nav class="flex items-center gap-2 text-[11px] text-white/35 pt-4 mb-8 font-body" aria-label="Breadcrumb">
                     <a href="{{ route('landing') }}" class="hover:text-white/70 transition-colors">Beranda</a>
                     <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/>

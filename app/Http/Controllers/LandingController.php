@@ -598,40 +598,45 @@ class LandingController extends Controller
         });
         
         // Pisahkan free dan premium dari hasil search
-        $freeFromSearch    = $scored->filter(fn($i) => !$i->is_locked)->sortByDesc('_score')->values();
-        $premiumFromSearch = $scored->filter(fn($i) =>  $i->is_locked)->sortByDesc('_score')->values();
+        if ($isLimited) {
+            $freeFromSearch    = $scored->filter(fn($i) => !$i->is_locked)->sortByDesc('_score')->values();
+            $premiumFromSearch = $scored->filter(fn($i) =>  $i->is_locked)->sortByDesc('_score')->values();
 
-        // Terapkan logika slot free:
-        if ($freeFromSearch->count() >= 3) {
-            // Kasus 1: ada ≥3 free → batasi 3 saja
-            $freeSlot = $freeFromSearch->take(3);
-        } elseif ($freeFromSearch->count() >= 1) {
-            // Kasus 2: ada 1–2 free → tampilkan semua yang ada
-            $freeSlot = $freeFromSearch;
+            // Terapkan logika slot free (hanya untuk user terbatas):
+            if ($freeFromSearch->count() >= 3) {
+                // Kasus 1: ada ≥3 free → batasi 3 saja
+                $freeSlot = $freeFromSearch->take(3);
+            } elseif ($freeFromSearch->count() >= 1) {
+                // Kasus 2: ada 1–2 free → tampilkan semua yang ada
+                $freeSlot = $freeFromSearch;
+            } else {
+                // Kasus 3: tidak ada free dari search → ambil 2 random dari DB
+                $randomFree = Metadata::where('status', 2)
+                    ->where('is_free', 1)
+                    ->whereIn('metadata_id', $freeIds)
+                    ->whereHas('data', fn($q) => $q->where('status', 1)->where('location_id', 0))
+                    ->inRandomOrder()
+                    ->limit(2)
+                    ->get();
+
+                $randomFree->each(function ($item) {
+                    $item->is_locked  = false;
+                    $item->_score     = 0;
+                    $item->_is_random = true;
+                });
+
+                $freeSlot = $randomFree;
+            }
+
+            // Gabungkan: free slot di atas, premium di bawah
+            $sorted     = $freeSlot->values()->concat($premiumFromSearch->values())->values();
+            $totalFound = $sorted->count();
         } else {
-            // Kasus 3: tidak ada free dari search → ambil 2 random dari DB
-            $randomFree = Metadata::where('status', 2)
-                ->where('is_free', 1)
-                ->whereIn('metadata_id', $freeIds)
-                ->whereHas('data', fn($q) => $q->where('status', 1)->where('location_id', 0))
-                ->inRandomOrder()
-                ->limit(2)
-                ->get();
-
-            // Set is_locked = false dan tandai sebagai rekomendasi
-            $randomFree->each(function ($item) {
-                $item->is_locked   = false;
-                $item->_score      = 0;
-                $item->_is_random  = true; // flag opsional untuk UI nanti
-            });
-
-            $freeSlot = $randomFree;
+            // User sudah punya akses penuh (login + subscribe aktif, atau admin/pengelola)
+            // → tampilkan semua hasil apa adanya, tanpa pembatasan slot gratis
+            $sorted     = $scored->sortByDesc('_score')->values();
+            $totalFound = $sorted->count();
         }
-
-        // Gabungkan: free slot di atas, premium di bawah
-        $sorted = $freeSlot->values()->concat($premiumFromSearch->values())->values();
-
-        $totalFound = $premiumFromSearch->count() + ($freeFromSearch->count()); // total asli dari search
 
         $perPage     = 10;
         $currentPage = max(1, (int) $request->input('page', 1));
