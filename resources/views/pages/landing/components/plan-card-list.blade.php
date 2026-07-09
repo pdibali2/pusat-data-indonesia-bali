@@ -7,7 +7,7 @@
         Belum ada paket untuk kategori ini.
     </div>
 @else
-    <div class="flex flex-wrap gap-4 items-stretch justify-center">
+    <div class="flex flex-wrap gap-x-4 gap-y-10 items-stretch justify-center">
         @foreach($plans as $layanan)
             @php
                 $sudahAktif = auth()->check()

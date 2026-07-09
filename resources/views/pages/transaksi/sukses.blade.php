@@ -5,10 +5,7 @@
 @section('content')
 @php
     $transaksi->loadMissing('layanan');
-    $isOrganizationPackage = optional($transaksi->layanan)->audience_type === 'organization';
-    $redirectUrl = $isOrganizationPackage
-        ? route('organizations.create', ['layanan_id' => $transaksi->layanan_id])
-        : route('transaksi.riwayat');
+    $redirectUrl = route('transaksi.riwayat');
 @endphp
 <style>
 @keyframes scaleIn {
@@ -147,7 +144,7 @@
             <div class="btn-anim px-6 py-5 flex flex-col gap-2.5">
                 <a href="{{ $redirectUrl }}"
                    class="w-full py-3 bg-emerald-600 hover:bg-emerald-700 text-white text-sm font-semibold rounded-xl transition text-center shadow-md shadow-emerald-500/30">
-                    <i class="fas fa-list-alt mr-1.5"></i> {{ $isOrganizationPackage ? 'Lanjut Buat Organisasi' : 'Lihat Riwayat Transaksi' }}
+                    <i class="fas fa-list-alt mr-1.5"></i> Lihat Riwayat Transaksi
                 </a>
                 <a href="{{ route('langganan') }}"
                    class="w-full py-3 bg-gray-100 hover:bg-gray-200 text-gray-600 text-sm font-medium rounded-xl transition text-center">

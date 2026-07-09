@@ -52,6 +52,8 @@ class LayananController extends Controller
             'fiturs'       => 'nullable|array',
             'fiturs.*'     => 'nullable|string|max:200',
             'category'     => 'nullable|in:personal,organisasi',
+            'max_seats'    => 'nullable|integer|min:1',
+            'max_concurrent_sessions' => 'nullable|integer|min:1',
             'max_templates'=> 'nullable|integer|min:0',
         ], $this->messages());
 
@@ -61,15 +63,7 @@ class LayananController extends Controller
                 ->store('layanan', 'public');
         }
 
-        $validated['audience_type'] = $request->input('audience_type', 'personal');
-        $validated['category'] = $request->input('category', $validated['audience_type'] === 'organization' ? 'organisasi' : 'personal');
-        $validated['max_seats'] = $request->input('max_seats');
-        $validated['max_concurrent_sessions'] = $request->input('max_concurrent_sessions');
-        $validated['max_templates'] = $request->input('max_templates');
-        $validated['is_popular'] = $request->boolean('is_popular');
-        $validated['urutan']     = $request->input('urutan', 0);
-
-        $layanan = Layanan::create($validated);
+        $layanan = Layanan::create(array_merge($validated, $this->prepareLayananData($request)));
 
         $this->syncFiturs($layanan, $request->input('fiturs', []));
 
@@ -115,6 +109,8 @@ class LayananController extends Controller
             'fiturs'       => 'nullable|array',
             'fiturs.*'     => 'nullable|string|max:200',
             'category'     => 'nullable|in:personal,organisasi',
+            'max_seats'    => 'nullable|integer|min:1',
+            'max_concurrent_sessions' => 'nullable|integer|min:1',
             'max_templates'=> 'nullable|integer|min:0',
         ], $this->messages());
 
@@ -129,20 +125,7 @@ class LayananController extends Controller
             unset($validated['thumbnail']);
         }
 
-        $validated['audience_type'] = $request->input('audience_type', 'personal');
-        $validated['category'] = $request->input('category', $validated['audience_type'] === 'organization' ? 'organisasi' : 'personal');
-        $validated['max_seats'] = $request->input('max_seats');
-        $validated['max_concurrent_sessions'] = $request->input('max_concurrent_sessions');
-        $validated['max_templates'] = $request->input('max_templates');
-        if ($validated['audience_type'] === 'personal') {
-            $validated['max_seats'] = null;
-            $validated['max_concurrent_sessions'] = null;
-            $validated['max_templates'] = $validated['max_templates'] ?: 10;
-        }
-        $validated['is_popular'] = $request->boolean('is_popular');
-        $validated['urutan']     = $request->input('urutan', 0);
-
-        $layanan->update($validated);
+        $layanan->update(array_merge($validated, $this->prepareLayananData($request)));
 
         $this->syncFiturs($layanan, $request->input('fiturs', []));
 
@@ -218,6 +201,30 @@ class LayananController extends Controller
         if (! empty($rows)) {
             LayananFitur::insert($rows);
         }
+    }
+
+    private function prepareLayananData(Request $request): array
+    {
+        $audienceType = $request->input('audience_type', 'personal');
+        $category = $request->input('category', $audienceType === 'organization' ? 'organisasi' : 'personal');
+
+        $data = [
+            'audience_type' => $audienceType,
+            'category' => $category,
+            'max_seats' => $request->input('max_seats') ?: null,
+            'max_concurrent_sessions' => $request->filled('max_concurrent_sessions')
+                ? (int) $request->input('max_concurrent_sessions')
+                : 1,
+            'max_templates' => $request->input('max_templates'),
+        ];
+
+        if ($audienceType === 'personal') {
+            $data['max_seats'] = null;
+            $data['max_concurrent_sessions'] = 1;
+            $data['max_templates'] = $data['max_templates'] ?: 10;
+        }
+
+        return $data;
     }
 
     private function messages(): array

@@ -33,7 +33,7 @@
                 {{-- Personal grid --}}
                 <div x-show="activeTab === 'personal'" x-cloak x-transition>
                     @if($personalPricings->isNotEmpty())
-                        <div class="flex flex-wrap gap-4 items-stretch justify-center">
+                        <div class="flex flex-wrap gap-4 gap-y-15 items-stretch justify-center">
                             @foreach($personalPricings as $plan)
                                 @php $isPopular = $plan->is_popular; @endphp
 
@@ -149,7 +149,7 @@
                 {{-- Organization grid --}}
                 <div x-show="activeTab === 'organization'" x-cloak x-transition>
                     @if($organizationPricings->isNotEmpty())
-                        <div class="flex flex-wrap gap-4 items-stretch justify-center">
+                        <div class="flex flex-wrap gap-4 gap-y-15 items-stretch justify-center">
                             @foreach($organizationPricings as $plan)
                                 @php $isPopular = $plan->is_popular; @endphp
 
