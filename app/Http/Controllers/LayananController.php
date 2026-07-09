@@ -51,6 +51,8 @@ class LayananController extends Controller
             'thumbnail'    => 'nullable|image|mimes:jpg,jpeg,png,webp|max:2048',
             'fiturs'       => 'nullable|array',
             'fiturs.*'     => 'nullable|string|max:200',
+            'category'     => 'nullable|in:personal,organisasi',
+            'max_templates'=> 'nullable|integer|min:0',
         ], $this->messages());
 
         if ($request->hasFile('thumbnail')) {
@@ -59,6 +61,11 @@ class LayananController extends Controller
                 ->store('layanan', 'public');
         }
 
+        $validated['audience_type'] = $request->input('audience_type', 'personal');
+        $validated['category'] = $request->input('category', $validated['audience_type'] === 'organization' ? 'organisasi' : 'personal');
+        $validated['max_seats'] = $request->input('max_seats');
+        $validated['max_concurrent_sessions'] = $request->input('max_concurrent_sessions');
+        $validated['max_templates'] = $request->input('max_templates');
         $validated['is_popular'] = $request->boolean('is_popular');
         $validated['urutan']     = $request->input('urutan', 0);
 
@@ -107,6 +114,8 @@ class LayananController extends Controller
             'thumbnail'    => 'nullable|image|mimes:jpg,jpeg,png,webp|max:2048',
             'fiturs'       => 'nullable|array',
             'fiturs.*'     => 'nullable|string|max:200',
+            'category'     => 'nullable|in:personal,organisasi',
+            'max_templates'=> 'nullable|integer|min:0',
         ], $this->messages());
 
         if ($request->hasFile('thumbnail')) {
@@ -120,6 +129,16 @@ class LayananController extends Controller
             unset($validated['thumbnail']);
         }
 
+        $validated['audience_type'] = $request->input('audience_type', 'personal');
+        $validated['category'] = $request->input('category', $validated['audience_type'] === 'organization' ? 'organisasi' : 'personal');
+        $validated['max_seats'] = $request->input('max_seats');
+        $validated['max_concurrent_sessions'] = $request->input('max_concurrent_sessions');
+        $validated['max_templates'] = $request->input('max_templates');
+        if ($validated['audience_type'] === 'personal') {
+            $validated['max_seats'] = null;
+            $validated['max_concurrent_sessions'] = null;
+            $validated['max_templates'] = $validated['max_templates'] ?: 10;
+        }
         $validated['is_popular'] = $request->boolean('is_popular');
         $validated['urutan']     = $request->input('urutan', 0);
 

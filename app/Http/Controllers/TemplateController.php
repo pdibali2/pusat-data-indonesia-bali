@@ -8,6 +8,7 @@ use App\Models\Klasifikasi;
 use App\Models\Metadata;
 use App\Models\Location;
 use App\Models\Data;
+use App\Services\SubscriptionLimitsService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 
@@ -677,6 +678,14 @@ class TemplateController extends Controller
             ]);
         }
     
+        $limitsService = app(SubscriptionLimitsService::class);
+        if (! $limitsService->canCreateTemplate(Auth::user())) {
+            $maxTemplates = $limitsService->getMaxTemplates(Auth::user());
+
+            return redirect()->route('data.index')
+                ->with('error', "Anda telah mencapai batas maksimal {$maxTemplates} template. Hapus template lama atau upgrade paket untuk menambah kapasitas.");
+        }
+
         // User login → simpan ke DB
         $urutanBy  = $request->input('urutan_by', []);
         $urutanStr = count($urutanBy) === 2 ? 'keduanya' : ($urutanBy[0] ?? null);

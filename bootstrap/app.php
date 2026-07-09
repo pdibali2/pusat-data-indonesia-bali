@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Middleware\EnsureSingleActiveSession;
 use App\Http\Middleware\HandleAppearance;
 use App\Http\Middleware\HandleInertiaRequests;
 use App\Http\Middleware\IsLogin;
@@ -26,6 +27,7 @@ return Application::configure(basePath: dirname(__DIR__))
             HandleAppearance::class,
             HandleInertiaRequests::class,
             AddLinkHeadersForPreloadedAssets::class,
+            EnsureSingleActiveSession::class,
         ]);
 
         $middleware->api(prepend: [

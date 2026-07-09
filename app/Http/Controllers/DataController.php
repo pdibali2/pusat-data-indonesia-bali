@@ -9,10 +9,10 @@ use App\Models\Location;
 use App\Models\Waktu;
 use App\Models\Tampilan;
 use App\Models\IsiTampilan;
-use App\Models\Transaksi;
 use App\Imports\DataImport;
 use App\Services\AnomalyDetectionService;
 use App\Services\AuditTrailService;
+use App\Services\SubscriptionAccessService;
 use App\Services\WorkflowService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -92,21 +92,21 @@ class DataController extends Controller
                 ->get()
             : collect();
 
+        $templateUsage = Auth::check()
+            ? app(\App\Services\SubscriptionLimitsService::class)->getTemplateCountForUser(Auth::user())
+            : 0;
+        $templateLimit = Auth::check()
+            ? app(\App\Services\SubscriptionLimitsService::class)->getMaxTemplates(Auth::user())
+            : 0;
+
         // ── hasAccess: guest dianggap tidak punya akses penuh ─────\
         $hasAccess = false; // default: tidak punya akses
 
         if (Auth::check()) {
             $user = Auth::user();
-            
+
             if ((int) $user->group_id === 3) {
-                // Customer → cek langganan aktif
-                $hasAccess = Transaksi::where('user_id', $user->user_id)
-                    ->where('status', 'success')
-                    ->where(function ($q) {
-                        $q->whereNull('aktif_sampai')
-                        ->orWhere('aktif_sampai', '>=', now());
-                    })
-                    ->exists();
+                $hasAccess = app(SubscriptionAccessService::class)->hasActiveAccess($user);
             } else {
                 // Admin / Pengelola → selalu punya akses
                 $hasAccess = true;
@@ -119,7 +119,8 @@ class DataController extends Controller
         return view('pages.data.index', compact(
             'data', 'metadataList', 'wilayahList',
             'availableTemplates', 'pendingCount', 'anomalyCount',
-            'hasFilter', 'activeTemplateId', 'hasAccess'
+            'hasFilter', 'activeTemplateId', 'hasAccess',
+            'templateUsage', 'templateLimit'
         ));
     }
 
@@ -743,6 +744,12 @@ class DataController extends Controller
             'filter_wilayah_id' => $request->filter_wilayah_id,
             'year'              => $request->filter_year,
         ]);
+
+        $limitsService = app(SubscriptionLimitsService::class);
+        if (! $limitsService->canCreateTemplate(Auth::user())) {
+            return redirect()->route('data.index')
+                ->with('error', 'Batas jumlah template untuk paket Anda telah tercapai.');
+        }
 
         $tampilan = Tampilan::create([
             'nama_tampilan' => $request->nama_tampilan,

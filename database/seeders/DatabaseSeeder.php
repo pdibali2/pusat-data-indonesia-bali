@@ -10,6 +10,7 @@ use Database\Seeders\ProdusenDataSeeder;
 use Database\Seeders\RujukanSeeder;
 use Database\Seeders\KlasifikasiSeeder;
 use Database\Seeders\AnomalyRuleSeeder;
+use Database\Seeders\SubscriptionPackageSeeder;
 
 class DatabaseSeeder extends Seeder
 {
@@ -26,6 +27,7 @@ class DatabaseSeeder extends Seeder
             RujukanSeeder::class,
             KlasifikasiSeeder::class,
             AnomalyRuleSeeder::class,
+            SubscriptionPackageSeeder::class,
         ]);
     }
 }

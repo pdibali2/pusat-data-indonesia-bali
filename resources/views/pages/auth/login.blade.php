@@ -26,6 +26,12 @@
                 <form action="/login" method="POST" class="space-y-6" novalidate>
                     @csrf
 
+                    @if(request('invitation_token'))
+                        <div class="rounded-sm bg-blue-50 border border-blue-200 px-4 py-3">
+                            <p class="text-sm text-blue-700">Anda memiliki undangan organisasi untuk email <strong>{{ request('email') }}</strong>. Silakan login dengan akun yang diundang.</p>
+                        </div>
+                    @endif
+
                     {{-- Badge error di atas form --}}
                     @if ($errors->any())
                         <div class="rounded-sm bg-red-50 border border-red-200 px-4 py-3">
@@ -75,7 +81,9 @@
                 </div>
 
                 <div class="mt-2">
-                    <button type="submit" tabindex="3" class="btn flex w-full justify-center rounded-sm bg-linear-to-r from-blue-500 to-blue-400 px-3 py-1.5 text-white text-sm/6 font-semibold hover:from-blue-700 hover:to-blue-600 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-500 shadow-lg shadow-blue-500/30 transition duration-300 ease-in-out hover:scale-104">Login</button>
+                    <input type="hidden" name="invitation_token" value="{{ old('invitation_token', request('invitation_token')) }}">
+                <input type="hidden" name="invitation_email" value="{{ old('invitation_email', request('email')) }}">
+                <button type="submit" tabindex="3" class="btn flex w-full justify-center rounded-sm bg-linear-to-r from-blue-500 to-blue-400 px-3 py-1.5 text-white text-sm/6 font-semibold hover:from-blue-700 hover:to-blue-600 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-500 shadow-lg shadow-blue-500/30 transition duration-300 ease-in-out hover:scale-104">Login</button>
                     <p class="text-center text-sm text-gray-500 mt-4">
                         Belum punya akun?
                         <a href="/register" class="text-blue-600 hover:underline font-medium">Daftar</a>

@@ -18,11 +18,21 @@ class Layanan extends Model
         'is_popular',
         'urutan',
         'thumbnail',
+        'audience_type',
+        'category',
+        'organization_id',
+        'max_seats',
+        'max_concurrent_sessions',
+        'max_templates',
     ];
 
     protected $casts = [
-        'harga'      => 'decimal:2',
-        'is_popular' => 'boolean',
+        'harga'                  => 'decimal:2',
+        'is_popular'             => 'boolean',
+        'organization_id'        => 'integer',
+        'max_seats'              => 'integer',
+        'max_concurrent_sessions'=> 'integer',
+        'max_templates'          => 'integer',
     ];
 
     // ── Relations ──────────────────────────────────────────────
@@ -32,6 +42,11 @@ class Layanan extends Model
                     ->orderBy('urutan');
     }
 
+    public function organization()
+    {
+        return $this->belongsTo(Organization::class, 'organization_id', 'organization_id');
+    }
+
     // ── Helpers ────────────────────────────────────────────────
     public function isPublish(): bool  { return $this->status === 'publish'; }
     public function isPending(): bool  { return $this->status === 'pending'; }
@@ -39,7 +54,9 @@ class Layanan extends Model
 
     public function getHargaFormatAttribute(): string
     {
-        return 'Rp ' . number_format($this->harga, 0, ',', '.');
+        $harga = (float) ($this->harga ?? 0);
+
+        return 'Rp ' . number_format($harga, 0, ',', '.');
     }
 
     public function getDurasiLabelAttribute(): string

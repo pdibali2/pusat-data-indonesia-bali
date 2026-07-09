@@ -25,6 +25,24 @@
             "onlyAdmin"    => false,
         ],
         (object)[
+            "title"        => "Langganan",
+            "path"         => "/langganan",
+            "icon"         => "fas fa-star",
+            "active"       => request()->is('langganan'),
+            "children"     => [],
+            "onlyCustomer" => false,
+            "onlyAdmin"    => false,
+        ],
+        // (object)[
+        //     "title"        => "Organisasi",
+        //     "path"         => "/organization/team",
+        //     "icon"         => "fas fa-building",
+        //     "active"       => request()->is('organization*'),
+        //     "children"     => [],
+        //     "onlyCustomer" => false,
+        //     "onlyAdmin"    => false,
+        // ],
+        (object)[
             "title"        => "Manajemen Data",
             "path"         => "/data",
             "icon"         => "fas fa-cogs",
@@ -103,6 +121,15 @@
                 (object)["title" => "Daftar Transaksi", "path" => "/admin/transaksi-admin",           "icon" => "fas fa-list-alt",  "active" => request()->is('admin/transaksi-admin') && !request()->is('admin/transaksi-admin/dashboard'), "onlyAdmin" => false],
             ],
         ],
+        // (object)[
+        //     "title"        => "Organisasi",
+        //     "path"         => "/admin/organizations",
+        //     "icon"         => "fas fa-building",
+        //     "active"       => request()->segment(1) === 'admin' && request()->segment(2) === 'organizations',
+        //     "children"     => [],
+        //     "onlyCustomer" => true,
+        //     "onlyAdmin"    => false,
+        // ],
     ];
 @endphp
 
@@ -130,6 +157,9 @@
         <ul class="flex flex-col gap-0.5">
             @foreach ($menus as $menu)
                 @if($isCustomer && $menu->onlyCustomer)
+                    @continue
+                @endif
+                @if(!$isAdmin && $menu->onlyAdmin)
                     @continue
                 @endif
 

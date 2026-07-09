@@ -15,7 +15,7 @@
 
     @include('pages.landing.components.navbar')
 
-    <main class="min-h-screen py-16">
+    <main class="min-h-screen py-30">
         <div class="max-w-xl mx-auto px-4">
 
             {{-- Header --}}

@@ -3,6 +3,7 @@
 use Illuminate\Support\Facades\Route;
 use Illuminate\Foundation\Http\Middleware\VerifyCsrfToken;
 use App\Http\Controllers\AuthController;
+use App\Http\Controllers\InvitationController;
 use App\Http\Controllers\RegisterController;
 use App\Http\Controllers\PasswordResetController;
 use App\Http\Controllers\UserController;
@@ -23,6 +24,7 @@ use App\Http\Controllers\LandingController;
 use App\Http\Controllers\TransaksiController;
 use App\Http\Controllers\AdminTransaksiController;
 use App\Http\Controllers\AnomalyControlController;
+use App\Http\Controllers\OrganizationController;
 
     // ── Auth ─────────────────────────────────────────────────────
     Route::get('/login',  [AuthController::class, 'loginView'])->name('login');
@@ -30,6 +32,7 @@ use App\Http\Controllers\AnomalyControlController;
 
     Route::get('/register',           [RegisterController::class, 'registerView'])->name('register');
     Route::post('/register',          [RegisterController::class, 'register']);
+    Route::get('/invitation/accept/{token}', [InvitationController::class, 'accept'])->name('invitation.accept');
     Route::get('/verify-email/{token}', [RegisterController::class, 'verify'])->name('verify.email');
 
     // ── Password Reset ────────────────────────────────────────────
@@ -151,6 +154,8 @@ Route::middleware(['is.login', 'is.pengelola', 'is.customer'])->group(function (
         Route::resource('rujukan',  RujukanController::class);
         Route::resource('klasifikasi', KlasifikasiController::class);
         Route::resource('layanan', LayananController::class);
+        Route::get('organizations', [\App\Http\Controllers\AdminOrganizationController::class, 'index'])->name('organizations.index');
+        Route::get('organizations/{organization}', [\App\Http\Controllers\AdminOrganizationController::class, 'show'])->name('organizations.show');
     
         // Toggle Status for Master Data
         Route::post('users/{user}/toggle-status',        [UserController::class, 'toggleStatus'])->name('users.toggle_status');
@@ -180,6 +185,15 @@ Route::middleware(['is.login', 'is.pengelola', 'is.customer'])->group(function (
         Route::get('/{transaksi}/sukses',       [TransaksiController::class, 'sukses'])->name('sukses');   
         Route::get('/{transaksi}/detail',       [TransaksiController::class, 'detail'])->name('detail');
         Route::get('/{transaksi}/status',       [TransaksiController::class, 'status'])->name('status');
+    });
+
+    Route::prefix('organization')->name('organizations.')->group(function () {
+        Route::get('/create', [OrganizationController::class, 'create'])->name('create');
+        Route::post('/', [OrganizationController::class, 'store'])->name('store');
+        Route::get('/team', [OrganizationController::class, 'team'])->name('team');
+        Route::get('/{organization}/manage-team', [OrganizationController::class, 'manageTeam'])->name('manage-team');
+        Route::post('/{organization}/invite-member', [OrganizationController::class, 'inviteMember'])->name('invite-member');
+        Route::delete('/{organization}/members/{member}', [OrganizationController::class, 'removeMember'])->name('remove-member');
     });
 
     // ── Dimensi Lokasi ──────────────────────────────────────

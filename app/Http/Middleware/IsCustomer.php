@@ -17,6 +17,7 @@ class IsCustomer
     private array $allowedRoutes = [
         'data.*',
         'transaksi.*',
+        'organizations.*',
     ];
 
     public function handle(Request $request, Closure $next): Response

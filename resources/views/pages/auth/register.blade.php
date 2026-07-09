@@ -42,6 +42,8 @@
 
             <form action="/register" method="POST" novalidate class="space-y-5">
                 @csrf
+                <input type="hidden" name="invitation_token" value="{{ old('invitation_token', request('invitation_token')) }}">
+                <input type="hidden" name="invitation_email" value="{{ old('invitation_email', request('email')) }}">
 
                 {{-- Nama Lengkap --}}
                 <div>
@@ -82,14 +84,24 @@
                         <span class="sr-only">(wajib diisi)</span>
                     </label>
                     <input
-                        id="email" type="email" name="email" value="{{ old('email') }}"
+                        id="email" type="email" name="email" value="{{ old('email', request('email')) }}"
+                        {{ request('invitation_token') ? 'readonly' : '' }}
                         required tabindex="3" autocomplete="email"
                         class="w-full px-2 py-1.5 bg-white text-xs text-slate-900 placeholder-slate-400 border-2 border-slate-300 rounded-lg transition-all duration-200 focus:outline-none focus:border-stikom-blue focus:ring-4 focus:ring-blue-100 @error('email') border-red-400 @enderror"
                     />
                     @error('email')
                         <p class="mt-1.5 text-xs text-red-600">{{ $message }}</p>
                     @enderror
+                    @if(request('invitation_token'))
+                        <p class="mt-2 text-xs text-slate-500">Anda sedang mendaftar sebagai akun yang diundang. Gunakan email yang sama dengan undangan untuk menerima akses organisasi.</p>
+                    @endif
                 </div>
+
+                @if(request('invitation_token'))
+                    <div class="rounded-2xl border border-blue-200 bg-blue-50 px-4 py-3 text-sm text-blue-700">
+                        Anda memiliki undangan organisasi untuk email <strong>{{ request('email') }}</strong>. Setelah mendaftar, akun Anda akan otomatis bergabung dengan organisasi jika email cocok.
+                    </div>
+                @endif
 
                 {{-- Password --}}
                 <div>
@@ -124,11 +136,22 @@
                         Konfirmasi Password <span class="text-red-600" aria-hidden="true">*</span>
                         <span class="sr-only">(wajib diisi)</span>
                     </label>
-                    <input
-                        id="password_confirmation" type="password" name="password_confirmation"
-                        required tabindex="5" autocomplete="new-password"
-                        class="w-full px-2 py-1.5 bg-white text-xs text-slate-900 border-2 border-slate-300 rounded-lg transition-all duration-200 focus:outline-none focus:border-stikom-blue focus:ring-4 focus:ring-blue-100"
-                    />
+                    <div class="relative flex items-center" id="reg-password-confirmation-wrapper">
+                        <input
+                            id="password_confirmation" type="password" name="password_confirmation"
+                            required tabindex="5" autocomplete="new-password"
+                            class="w-full pl-4 pr-12 py-1.5 bg-white text-xs text-slate-900 border-2 border-slate-300 rounded-lg transition-all duration-200 focus:outline-none focus:border-stikom-blue focus:ring-4 focus:ring-blue-100"
+                        />
+                        <button type="button" id="togglePasswordConfirmation" tabindex="-1"
+                            class="absolute right-3 p-1.5 text-slate-500 hover:text-slate-700 focus:outline-none focus:ring-2 focus:ring-stikom-blue rounded-lg transition-colors">
+                            <svg id="eyeIconConfirmation" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"
+                                stroke-width="1.5" stroke="currentColor" class="w-5 h-5" aria-hidden="true">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M2.25 12s3.75-7.5 9.75-7.5S21.75 12 21.75 12s-3.75 7.5-9.75 7.5S2.25 12 2.25 12z" />
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M12 15.75A3.75 3.75 0 1 0 12 8.25a3.75 3.75 0 0 0 0 7.5z" />
+                            </svg>
+                            <span class="sr-only">Tampilkan konfirmasi password</span>
+                        </button>
+                    </div>
                 </div>
 
                 {{-- Kebijakan Privasi --}}
@@ -208,25 +231,30 @@
     </div>
 
     <script>
-        const password = document.getElementById("password");
-        const toggle = document.getElementById("togglePassword");
-        const eyeIcon = document.getElementById("eyeIcon");
+        function setupPasswordToggle(inputId, toggleId, iconId) {
+            const input = document.getElementById(inputId);
+            const toggle = document.getElementById(toggleId);
+            const icon = document.getElementById(iconId);
 
-        toggle.addEventListener("click", function () {
-            if (password.type === "password") {
-                password.type = "text";
-                eyeIcon.innerHTML = `
-                    <path stroke-linecap="round" stroke-linejoin="round" d="M3 3l18 18" />
-                    <path stroke-linecap="round" stroke-linejoin="round" d="M10.58 10.58a3 3 0 004.24 4.24" />
-                    <path stroke-linecap="round" stroke-linejoin="round" d="M9.88 5.1A9.77 9.77 0 0112 4.5c6 0 9.75 7.5 9.75 7.5a15.3 15.3 0 01-4.24 5.33" />
-                    <path stroke-linecap="round" stroke-linejoin="round" d="M6.53 6.53A15.05 15.05 0 002.25 12s3.75 7.5 9.75 7.5c1.24 0 2.39-.22 3.44-.61" />`;
-            } else {
-                password.type = "password";
-                eyeIcon.innerHTML = `
-                    <path stroke-linecap="round" stroke-linejoin="round" d="M2.25 12s3.75-7.5 9.75-7.5S21.75 12 21.75 12s-3.75 7.5-9.75 7.5S2.25 12 2.25 12z" />
-                    <path stroke-linecap="round" stroke-linejoin="round" d="M12 15.75A3.75 3.75 0 1 0 12 8.25a3.75 3.75 0 0 0 0 7.5z" />`;
-            }
-        });
+            toggle.addEventListener("click", function () {
+                if (input.type === "password") {
+                    input.type = "text";
+                    icon.innerHTML = `
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M3 3l18 18" />
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M10.58 10.58a3 3 0 004.24 4.24" />
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M9.88 5.1A9.77 9.77 0 0112 4.5c6 0 9.75 7.5 9.75 7.5a15.3 15.3 0 01-4.24 5.33" />
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M6.53 6.53A15.05 15.05 0 002.25 12s3.75 7.5 9.75 7.5c1.24 0 2.39-.22 3.44-.61" />`;
+                } else {
+                    input.type = "password";
+                    icon.innerHTML = `
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M2.25 12s3.75-7.5 9.75-7.5S21.75 12 21.75 12s-3.75 7.5-9.75 7.5S2.25 12 2.25 12z" />
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M12 15.75A3.75 3.75 0 1 0 12 8.25a3.75 3.75 0 0 0 0 7.5z" />`;
+                }
+            });
+        }
+
+        setupPasswordToggle("password", "togglePassword", "eyeIcon");
+        setupPasswordToggle("password_confirmation", "togglePasswordConfirmation", "eyeIconConfirmation");
 
         // Modal Kebijakan Privasi
         const modal = document.getElementById('privacyModal');

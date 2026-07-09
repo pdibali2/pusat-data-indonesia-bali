@@ -3,7 +3,9 @@
 namespace App\Http\Controllers;
 
 use App\Models\User;
+use App\Services\OrganizationInvitationService;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Str;
 use Illuminate\Support\Facades\Mail;
@@ -14,15 +16,19 @@ class RegisterController extends Controller
 {
     public function registerView()
     {
-        if (auth()->check()) {
+        if (Auth::check()) {
             return redirect('/data');
         }
-        return view('pages.auth.register');
+
+        return view('pages.auth.register', [
+            'invitation_token' => request('invitation_token'),
+            'invitation_email' => request('invitation_email'),
+        ]);
     }
 
     public function register(Request $request)
     {
-        if (auth()->check()) {
+        if (Auth::check()) {
             return redirect('/data');
         }
 
@@ -53,11 +59,13 @@ class RegisterController extends Controller
 
         // ── Validasi ─────────────────────────────────────────
         $request->validate([
-            'name'           => 'required|string|max:200',
-            'username'       => 'required|string|max:50|unique:user,username',
-            'email'          => 'required|email|max:50|unique:user,email',
-            'password'       => 'required|string|min:8|confirmed',
-            'privacy_policy' => 'accepted',
+            'name'               => 'required|string|max:200',
+            'username'           => 'required|string|max:50|unique:user,username',
+            'email'              => 'required|email|max:50|unique:user,email',
+            'password'           => 'required|string|min:8|confirmed',
+            'privacy_policy'     => 'accepted',
+            'invitation_token'   => 'nullable|string',
+            'invitation_email'   => 'nullable|email',
         ], [
             'name.required'           => 'Nama wajib diisi.',
             'username.required'       => 'Username wajib diisi.',
@@ -85,6 +93,16 @@ class RegisterController extends Controller
         ]);
 
         Mail::to($user->email)->send(new VerifikasiEmail($user, $token));
+
+        if ($request->filled('invitation_token')) {
+            $invitationService = app(OrganizationInvitationService::class);
+            $member = $invitationService->acceptInvitationForUser($request->input('invitation_token'), $user);
+
+            if ($member) {
+                return redirect()->route('login')
+                    ->with('success', 'Registrasi berhasil! Silakan cek email untuk verifikasi akun. Undangan organisasi juga berhasil diterima setelah login.');
+            }
+        }
 
         return redirect()
             ->route('login')

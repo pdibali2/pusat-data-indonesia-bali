@@ -317,6 +317,9 @@ class TransaksiController extends Controller
     {
         if ($transaksi->user_id !== Auth::id()) abort(403);
         if (! $transaksi->isSuccess()) return redirect()->route('transaksi.riwayat');
+
+        $transaksi->load('layanan');
+
         return view('pages.transaksi.sukses', compact('transaksi'));
     }
 

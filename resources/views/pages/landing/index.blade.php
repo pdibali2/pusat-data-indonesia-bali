@@ -46,6 +46,20 @@
     {{-- Navbar --}}
     @include('pages.landing.components.navbar')
 
+    {{-- Forced logout toast (one-time flash) --}}
+    @if(session('forced_logout_message'))
+        <div x-data="{ show: true }" x-show="show" x-init="setTimeout(() => show = false, 6000)"
+             class="fixed top-4 right-4 z-50">
+            <div class="flex items-center gap-3 bg-red-500/90 border border-red-500/30 text-white text-sm px-4 py-3 rounded-lg shadow">
+                <i class="fas fa-exclamation-circle text-white"></i>
+                <span>{{ session('forced_logout_message') }}</span>
+                <button @click="show = false" class="ml-auto text-white hover:text-red-200">
+                    <i class="fas fa-times text-xs"></i>
+                </button>
+            </div>
+        </div>
+    @endif
+
     {{-- Main content --}}
     <main id="main-content">
         @include('pages.landing.components.hero')

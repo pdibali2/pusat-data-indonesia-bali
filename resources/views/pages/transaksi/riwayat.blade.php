@@ -107,6 +107,23 @@
         </div>
     </div>
 
+    {{-- Peringatan: Tidak ada langganan aktif --}}
+    @if(!$aktifNow)
+    <div class="card-panel bg-yellow-50 border border-yellow-200 px-4 py-3 flex items-center gap-3">
+        <div class="w-8 h-8 rounded-full bg-yellow-100 text-yellow-600 flex items-center justify-center flex-shrink-0">
+            <i class="fas fa-exclamation-triangle text-sm"></i>
+        </div>
+        <div class="min-w-0">
+            <p class="text-sm font-semibold text-yellow-800">Tidak ada langganan aktif</p>
+            <p class="text-xs text-yellow-700">Kamu belum memiliki paket langganan yang aktif saat ini. Yuk berlangganan untuk mengakses fitur lengkap.</p>
+        </div>
+        <a href="{{ route('langganan') }}"
+           class="ml-auto flex-shrink-0 text-xs font-medium text-yellow-800 hover:text-yellow-900 hover:underline whitespace-nowrap">
+            Lihat Paket
+        </a>
+    </div>
+    @endif
+
     <div class="card-panel">
         {{-- Filter --}}
         <div class="card-panel">

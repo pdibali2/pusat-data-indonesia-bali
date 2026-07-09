@@ -68,4 +68,34 @@ class User extends Authenticatable
     {
         return $this->belongsTo(Group::class, 'group_id', 'group_id');
     }
+
+    public function organizationMemberships()
+    {
+        return $this->hasMany(OrganizationMember::class, 'user_id', 'user_id');
+    }
+
+    public function ownedOrganizations()
+    {
+        return $this->hasMany(Organization::class, 'owner_id', 'user_id');
+    }
+
+    public function hasActivePersonalSubscription(): bool
+    {
+        return $this->hasActiveSubscription();
+    }
+
+    public function hasActiveSubscription(): bool
+    {
+        return Transaksi::where('user_id', $this->user_id)
+            ->where('status', 'success')
+            ->where(function ($query) {
+                $query->whereNull('aktif_sampai')
+                    ->orWhere('aktif_sampai', '>=', now());
+            })
+            ->whereHas('layanan', function ($query) {
+                $query->whereIn('audience_type', ['personal', 'organization'])
+                    ->orWhereIn('category', ['personal', 'organisasi']);
+            })
+            ->exists();
+    }
 }

@@ -8,6 +8,9 @@
         5=>'Mei', 6=>'Juni', 7=>'Juli', 8=>'Agustus',
         9=>'September', 10=>'Oktober', 11=>'November', 12=>'Desember',
     ];
+
+    $isCustomer = auth()->check() && optional(Auth::user())->group_id === 3;
+    $quotaFull  = $isCustomer && ($templateLimit ?? 0) > 0 && ($templateUsage ?? 0) >= ($templateLimit ?? 0);
 @endphp
 
 {{-- ══════════════════════════════════════════════════════════
@@ -220,9 +223,14 @@
                 Silakan membuat template terlebih dahulu untuk memilih data yang ingin ditampilkan.
             </p>
         </div>
-        <a href="{{ route('template.create') }}"
-        class="w-full sm:w-auto px-4 py-2.5 btn-primary text-sm font-semibold rounded-lg
-                shadow-md shadow-blue-400/30 flex items-center justify-center gap-2 transition-colors shrink-0">
+        <a href="{{ $quotaFull ? '#' : route('template.create') }}"
+        id="btnBuatTemplateHeader"
+        @if($quotaFull) onclick="return false;" aria-disabled="true" title="Kuota template Anda sudah penuh ({{ $templateUsage }}/{{ $templateLimit }})" @endif
+        class="w-full sm:w-auto px-4 py-2.5 text-sm font-semibold rounded-lg
+                flex items-center justify-center gap-2 transition-colors shrink-0
+                {{ $quotaFull
+                        ? 'bg-gray-200 text-gray-400 cursor-not-allowed pointer-events-none'
+                        : 'btn-primary shadow-md shadow-blue-400/30' }}">
             <i class="fas fa-plus"></i> Buat Template
         </a>
     </div>
@@ -237,6 +245,14 @@
         </div>
 
         @auth
+            @if(optional(Auth::user())->group_id === 3)
+                <div class="mb-3 rounded-lg border border-sky-100 bg-sky-50 px-3 py-2 text-sm text-sky-700">
+                    Kuota template: <span class="font-semibold">{{ $templateUsage ?? 0 }}</span> dari <span class="font-semibold">{{ $templateLimit ?? 0 }}</span> terpakai.
+                </div>
+            @endif
+        @endauth
+
+        @auth
             @if($availableTemplates->isEmpty())
                 <div class="flex flex-col w-full border border-gray-300 rounded-lg text-sm text-gray-500">
                     <div class="border-b border-gray-300 px-3 py-2 text-xs font-medium text-gray-600">
@@ -248,9 +264,12 @@
                         </div>
                         <p class="font-medium text-gray-500">Belum ada template</p>
                         <p class="text-xs text-gray-400">Buat template pertama Anda untuk memudahkan akses data</p>
-                        <a href="{{ route('template.create') }}"
-                        class="mt-1 px-4 py-2 bg-stikom-blue hover:bg-blue-700 text-white
-                                text-xs font-semibold rounded-lg transition-colors">
+                        <a href="{{ $quotaFull ? '#' : route('template.create') }}"
+                        @if($quotaFull) onclick="return false;" aria-disabled="true" title="Kuota template Anda sudah penuh" @endif
+                        class="mt-1 px-4 py-2 text-xs font-semibold rounded-lg transition-colors
+                                {{ $quotaFull
+                                        ? 'bg-gray-200 text-gray-400 cursor-not-allowed pointer-events-none'
+                                        : 'bg-stikom-blue hover:bg-blue-700 text-white' }}">
                             <i class="fas fa-plus mr-1"></i> Buat Template
                         </a>
                     </div>
@@ -1083,12 +1102,19 @@ function loadGuestTemplates() {
         guestTemplates = [];
     }
     renderGuestTemplates();
+    _updateGuestQuotaUI();
 }
 
 function saveGuestTemplateFromResponse(templateData) {
     // Dipanggil dari response store() saat guest
     try {
-        const existing = JSON.parse(localStorage.getItem(LS_KEY) ?? '[]');
+        let existing = JSON.parse(localStorage.getItem(LS_KEY) ?? '[]');
+
+        if (existing.length >= 2) {
+            alert('Anda telah mencapai batas maksimal 2 template untuk pengguna guest. Login untuk menyimpan lebih banyak template.');
+            return;
+        }
+
         // Beri ID unik berbasis timestamp
         templateData._local_id = 'local_' + Date.now();
         existing.push(templateData);
@@ -1111,6 +1137,7 @@ function deleteGuestTemplate(localId) {
         _resetDataTable();
     }
     renderGuestTemplates();
+    _updateGuestQuotaUI();
 }
 
 function renderGuestTemplates() {
@@ -1126,11 +1153,13 @@ function renderGuestTemplates() {
                 <p class="font-medium text-gray-500">Belum ada template</p>
                 <p class="text-xs text-gray-400">Buat template pertama Anda untuk memudahkan akses data</p>
                 <a href="{{ route('template.create') }}"
-                   class="mt-1 px-4 py-2 bg-stikom-blue hover:bg-blue-700 text-white
-                          text-xs font-semibold rounded-lg transition-colors">
+                id="btnBuatTemplateGuestEmpty"
+                class="mt-1 px-4 py-2 bg-stikom-blue hover:bg-blue-700 text-white
+                        text-xs font-semibold rounded-lg transition-colors">
                     <i class="fas fa-plus mr-1"></i> Buat Template
                 </a>
             </div>`;
+        _updateGuestQuotaUI();
         return;
     }
 
@@ -1198,6 +1227,36 @@ function selectGuestTemplate(localId) {
 
     // Load freq counts via endpoint guest
     loadFreqCountsGuest(tmpl);
+}
+
+const GUEST_TEMPLATE_LIMIT = 2;
+
+function _updateGuestQuotaUI() {
+    if (!IS_GUEST) return;
+    const full = guestTemplates.length >= GUEST_TEMPLATE_LIMIT;
+
+    ['btnBuatTemplateHeader', 'btnBuatTemplateGuestEmpty'].forEach(id => {
+        const btn = document.getElementById(id);
+        if (!btn) return;
+
+        if (full) {
+            btn.classList.remove('btn-primary', 'shadow-md', 'shadow-blue-400/30', 'bg-stikom-blue', 'hover:bg-blue-700', 'text-white');
+            btn.classList.add('bg-gray-200', 'text-gray-400', 'cursor-not-allowed', 'pointer-events-none');
+            btn.setAttribute('aria-disabled', 'true');
+            btn.title = `Kuota template Anda sudah penuh (${guestTemplates.length}/${GUEST_TEMPLATE_LIMIT}). Login untuk membuat lebih banyak template.`;
+            btn.addEventListener('click', _preventClick);
+        } else {
+            btn.classList.add('btn-primary', 'shadow-md', 'shadow-blue-400/30');
+            btn.classList.remove('bg-gray-200', 'text-gray-400', 'cursor-not-allowed', 'pointer-events-none');
+            btn.removeAttribute('aria-disabled');
+            btn.removeAttribute('title');
+            btn.removeEventListener('click', _preventClick);
+        }
+    });
+}
+
+function _preventClick(e) {
+    e.preventDefault();
 }
 
 async function loadFreqCountsGuest(tmpl) {

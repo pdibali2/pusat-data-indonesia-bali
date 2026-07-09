@@ -1234,6 +1234,10 @@ async function submitSaveTemplate() {
 
             if (d.success && d.storage === 'local') {
                 const existing = JSON.parse(localStorage.getItem('guest_templates') ?? '[]');
+                if (existing.length >= 2) {
+                    alert('Anda telah mencapai batas maksimal 2 template untuk pengguna guest. Login untuk menyimpan lebih banyak template.');
+                    return;
+                }
                 d.template_data._local_id = 'local_' + Date.now(); 
                 existing.push(d.template_data);
                 localStorage.setItem('guest_templates', JSON.stringify(existing));
