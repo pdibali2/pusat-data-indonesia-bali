@@ -23,6 +23,7 @@
             "children"     => [],
             "onlyCustomer" => false,
             "onlyAdmin"    => false,
+            "customerOnly" => true,
         ],
         (object)[
             "title"        => "Langganan",
@@ -247,21 +248,6 @@
         <p class="text-white/30 text-xs">
             &copy; {{ date('Y') }} Pusat Data Indonesia Bali.
         </p>
-        {{-- <form action="{{ url('/logout') }}" method="POST" id="logoutForm">
-            @csrf
-
-            <button
-                type="submit"
-                id="logoutBtn"
-                class="w-full flex items-center justify-center gap-2 text-[11px] font-semibold
-                    text-white bg-red-500/80 hover:bg-red-500 border border-red-400/30
-                    hover:border-red-400/55 py-2 rounded-lg transition-colors
-                    disabled:opacity-60 disabled:cursor-not-allowed"
-            >
-                <i class="fa-solid fa-arrow-right-from-bracket rotate-180"></i>
-                <span>Logout</span>
-            </button>
-        </form> --}}
     </div>
 
     <script>

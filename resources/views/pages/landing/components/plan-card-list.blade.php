@@ -7,7 +7,7 @@
         Belum ada paket untuk kategori ini.
     </div>
 @else
-    <div class="flex flex-wrap gap-x-4 gap-y-10 items-stretch justify-center">
+    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 items-stretch">
         @foreach($plans as $layanan)
             @php
                 $sudahAktif = auth()->check()
@@ -20,7 +20,7 @@
             @endphp
 
             @if($layanan->is_popular)
-                <div class="relative flex flex-col overflow-hidden bg-white ring-2 ring-sky-400 shadow-2xl shadow-sky-500/15 -my-3 z-10 w-full sm:w-[calc(50%-0.5rem)] md:w-[calc(33.333%-0.667rem)] xl:w-[calc(25%-0.75rem)] 2xl:w-[calc(20%-0.8rem)]">
+                <div class="relative flex flex-col overflow-hidden bg-white ring-2 ring-sky-400 shadow-2xl shadow-sky-500/15 w-full">
                     <div class="h-[3px] bg-sky-400 w-full shrink-0"></div>
                     <div class="bg-sky-50 border-b border-sky-100 px-4 py-2 flex items-center justify-between shrink-0">
                         <span class="flex items-center gap-1 text-[9px] font-black text-sky-700 uppercase tracking-widest font-poppins">
@@ -79,7 +79,7 @@
                     </div>
                 </div>
             @else
-                <div class="bg-white border border-gray-100 flex flex-col overflow-hidden shadow-sm transition-all duration-200 hover:shadow-md w-full sm:w-[calc(50%-0.5rem)] md:w-[calc(33.333%-0.667rem)] xl:w-[calc(25%-0.75rem)] 2xl:w-[calc(20%-0.8rem)]" style="border-top: 3px solid transparent;" onmouseenter="this.style.borderTopColor='#A32D2D'" onmouseleave="this.style.borderTopColor='transparent'">
+                <div class="bg-white border border-gray-100 flex flex-col overflow-hidden shadow-sm transition-all duration-200 hover:shadow-md w-full" style="border-top: 3px solid transparent;" onmouseenter="this.style.borderTopColor='#A32D2D'" onmouseleave="this.style.borderTopColor='transparent'">
                     <div class="px-4 py-1.5 border-b border-gray-100 shrink-0">
                         <span class="text-stikom-red text-[9px] font-bold uppercase tracking-widest font-poppins">Paket</span>
                     </div>
