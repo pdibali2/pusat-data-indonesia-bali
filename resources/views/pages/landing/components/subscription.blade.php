@@ -2,7 +2,7 @@
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
 
         {{-- Section header --}}
-        <div class="mb-12 fade-up">
+        <div class="mb-16 fade-up">
             <h2 id="langganan-heading" class="text-3xl sm:text-4xl font-black font-poppins text-stikom leading-tight">
                 Pilih Paket <span class="text-stikom-blue">Sesuai Kebutuhan</span>
             </h2>
@@ -14,32 +14,25 @@
         @endphp
 
         @if($pricings->isNotEmpty())
-            <div x-data="{ activeTab: 'personal' }" class="fade-up">
 
-                {{-- Tab switcher --}}
-                <div class="mb-8 flex flex-wrap gap-2">
-                    <button type="button" @click="activeTab = 'personal'"
-                        :class="activeTab === 'personal' ? 'bg-stikom text-white' : 'bg-white text-slate-700 border border-slate-200'"
-                        class="rounded-full px-4 py-2 text-sm font-semibold transition">
-                        Personal
-                    </button>
-                    <button type="button" @click="activeTab = 'organization'"
-                        :class="activeTab === 'organization' ? 'bg-stikom text-white' : 'bg-white text-slate-700 border border-slate-200'"
-                        class="rounded-full px-4 py-2 text-sm font-semibold transition">
-                        Organization
-                    </button>
+            {{-- ============ PERSONAL ============ --}}
+            <div class="fade-up grid grid-cols-1 lg:grid-cols-[280px_1fr] gap-8 lg:gap-12 items-start mb-20">
+
+                {{-- Label kiri --}}
+                <div class="lg:sticky lg:top-24">
+                    <span class="text-stikom-red text-[10px] font-bold uppercase tracking-widest font-poppins">Pilihan Paket untuk</span>
+                    <h3 class="text-2xl font-black font-poppins text-stikom mt-2 mb-3">Personal</h3>
                 </div>
 
-                {{-- Personal grid --}}
-                <div x-show="activeTab === 'personal'" x-cloak x-transition>
+                {{-- Cards kanan --}}
+                <div>
                     @if($personalPricings->isNotEmpty())
-                        <div class="flex flex-wrap gap-4 gap-y-15 items-stretch justify-center">
+                        <div class="flex flex-wrap gap-4 gap-y-15 items-stretch">
                             @foreach($personalPricings as $plan)
                                 @php $isPopular = $plan->is_popular; @endphp
 
                                 <div class="relative flex flex-col overflow-hidden group bg-white
-                                            w-full sm:w-[calc(50%-0.5rem)] md:w-[calc(33.333%-0.667rem)]
-                                            xl:w-[calc(25%-0.75rem)] 2xl:w-[calc(20%-0.8rem)]
+                                            w-full sm:w-[calc(50%-0.5rem)] xl:w-[calc(33.333%-0.667rem)]
                                             {{ $isPopular
                                                 ? 'ring-2 ring-sky-400 shadow-2xl shadow-sky-500/15 -my-3 z-10'
                                                 : 'border border-gray-100 shadow-sm' }}"
@@ -50,12 +43,10 @@
                                         @mouseleave="$el.style.borderTopColor='transparent'"
                                     @endif>
 
-                                    {{-- Top accent bar (popular only) --}}
                                     @if($isPopular)
                                         <div class="h-[3px] bg-sky-400 w-full shrink-0"></div>
                                     @endif
 
-                                    {{-- Badge row --}}
                                     @if($isPopular)
                                         <div class="bg-sky-50 border-b border-sky-100 px-4 py-2 flex items-center justify-between shrink-0">
                                             <span class="text-sky-700 text-[9px] font-black uppercase tracking-widest font-poppins flex items-center gap-1">
@@ -72,7 +63,6 @@
                                         </div>
                                     @endif
 
-                                    {{-- Card body — flex column, tumbuh mengisi tinggi card --}}
                                     <div class="flex flex-col flex-1 p-[14px] {{ $isPopular ? 'pt-4' : '' }}">
 
                                         <div class="text-[9px] font-bold uppercase tracking-widest text-gray-400 mb-2 font-poppins">
@@ -104,10 +94,8 @@
 
                                             @forelse($plan->fiturs->sortBy('urutan') as $fitur)
                                                 <li class="flex items-start gap-2 text-[11px] leading-snug {{ !$fitur->aktif ? 'opacity-30' : '' }}">
-
                                                     @if($fitur->aktif)
-                                                        <div class="w-[14px] h-[14px] flex items-center justify-center shrink-0 mt-px
-                                                                    {{ $isPopular ? 'bg-stikom-blue' : 'bg-stikom-blue' }}">
+                                                        <div class="w-[14px] h-[14px] flex items-center justify-center shrink-0 mt-px bg-stikom-blue">
                                                             <svg class="w-[7px] h-[7px] text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
                                                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="3.5" d="M5 13l4 4L19 7"/>
                                                             </svg>
@@ -119,7 +107,6 @@
                                                             </svg>
                                                         </div>
                                                     @endif
-
                                                     <span class="text-gray-600">{{ $fitur->nama_fitur }}</span>
                                                 </li>
                                             @empty
@@ -129,12 +116,9 @@
 
                                         <a href="{{ route('langganan') }}"
                                         class="block w-full py-3 text-[10px] font-black text-center font-poppins uppercase tracking-wide transition-all duration-200 shrink-0
-                                                {{ $isPopular
-                                                    ? 'bg-stikom-accent text-stikom hover:bg-yellow-600 hover:text-white'
-                                                    : 'bg-stikom-accent text-stikom hover:bg-yellow-600 hover:text-white' }}">
+                                                bg-stikom-accent text-stikom hover:bg-yellow-600 hover:text-white">
                                             Berlangganan Sekarang
                                         </a>
-
                                     </div>
                                 </div>
                             @endforeach
@@ -145,17 +129,23 @@
                         </div>
                     @endif
                 </div>
+            </div>
 
-                {{-- Organization grid --}}
-                <div x-show="activeTab === 'organization'" x-cloak x-transition>
+            {{-- Divider antar section --}}
+            <div class="border-t border-gray-200 mb-20"></div>
+
+            {{-- ============ ORGANIZATION ============ --}}
+            <div class="fade-up grid grid-cols-1 lg:grid-cols-[1fr_280px] gap-8 lg:gap-12 items-start">
+
+                {{-- Cards kiri --}}
+                <div class="lg:order-1">
                     @if($organizationPricings->isNotEmpty())
-                        <div class="flex flex-wrap gap-4 gap-y-15 items-stretch justify-center">
+                        <div class="flex flex-wrap gap-4 gap-y-15 items-stretch">
                             @foreach($organizationPricings as $plan)
                                 @php $isPopular = $plan->is_popular; @endphp
 
                                 <div class="relative flex flex-col overflow-hidden group bg-white
-                                            w-full sm:w-[calc(50%-0.5rem)] md:w-[calc(33.333%-0.667rem)]
-                                            xl:w-[calc(25%-0.75rem)] 2xl:w-[calc(20%-0.8rem)]
+                                            w-full sm:w-[calc(50%-0.5rem)] xl:w-[calc(33.333%-0.667rem)]
                                             {{ $isPopular
                                                 ? 'ring-2 ring-sky-400 shadow-2xl shadow-sky-500/15 -my-3 z-10'
                                                 : 'border border-gray-100 shadow-sm' }}"
@@ -166,12 +156,10 @@
                                         @mouseleave="$el.style.borderTopColor='transparent'"
                                     @endif>
 
-                                    {{-- Top accent bar (popular only) --}}
                                     @if($isPopular)
                                         <div class="h-[3px] bg-sky-400 w-full shrink-0"></div>
                                     @endif
 
-                                    {{-- Badge row --}}
                                     @if($isPopular)
                                         <div class="bg-sky-50 border-b border-sky-100 px-4 py-2 flex items-center justify-between shrink-0">
                                             <span class="text-sky-700 text-[9px] font-black uppercase tracking-widest font-poppins flex items-center gap-1">
@@ -188,7 +176,6 @@
                                         </div>
                                     @endif
 
-                                    {{-- Card body — flex column, tumbuh mengisi tinggi card --}}
                                     <div class="flex flex-col flex-1 p-[14px] {{ $isPopular ? 'pt-4' : '' }}">
 
                                         <div class="text-[9px] font-bold uppercase tracking-widest text-gray-400 mb-2 font-poppins">
@@ -220,10 +207,8 @@
 
                                             @forelse($plan->fiturs->sortBy('urutan') as $fitur)
                                                 <li class="flex items-start gap-2 text-[11px] leading-snug {{ !$fitur->aktif ? 'opacity-30' : '' }}">
-
                                                     @if($fitur->aktif)
-                                                        <div class="w-[14px] h-[14px] flex items-center justify-center shrink-0 mt-px
-                                                                    {{ $isPopular ? 'bg-stikom-blue' : 'bg-stikom-blue' }}">
+                                                        <div class="w-[14px] h-[14px] flex items-center justify-center shrink-0 mt-px bg-stikom-blue">
                                                             <svg class="w-[7px] h-[7px] text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
                                                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="3.5" d="M5 13l4 4L19 7"/>
                                                             </svg>
@@ -235,7 +220,6 @@
                                                             </svg>
                                                         </div>
                                                     @endif
-
                                                     <span class="text-gray-600">{{ $fitur->nama_fitur }}</span>
                                                 </li>
                                             @empty
@@ -245,12 +229,9 @@
 
                                         <a href="{{ route('langganan') }}"
                                         class="block w-full py-3 text-[10px] font-black text-center font-poppins uppercase tracking-wide transition-all duration-200 shrink-0
-                                                {{ $isPopular
-                                                    ? 'bg-stikom-accent text-stikom hover:bg-yellow-600 hover:text-white'
-                                                    : 'bg-stikom-accent text-stikom hover:bg-yellow-600 hover:text-white' }}">
+                                                bg-stikom-accent text-stikom hover:bg-yellow-600 hover:text-white">
                                             Berlangganan Sekarang
                                         </a>
-
                                     </div>
                                 </div>
                             @endforeach
@@ -262,7 +243,13 @@
                     @endif
                 </div>
 
+                {{-- Label kanan --}}
+                <div class="lg:order-2 lg:sticky lg:top-24">
+                    <span class="text-stikom-red text-[10px] font-bold uppercase tracking-widest font-poppins">Pilihan Paket Untuk</span>
+                    <h3 class="text-2xl font-black font-poppins text-stikom mt-2 mb-3">Organisasi</h3>
+                </div>
             </div>
+
         @else
             <div class="text-center py-20 text-gray-400 text-sm font-body">
                 Belum ada paket berlangganan tersedia.

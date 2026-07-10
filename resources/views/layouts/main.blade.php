@@ -108,6 +108,187 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <link href="https://fonts.googleapis.com/icon?family=Material+Icons+Outlined" rel="stylesheet">
 
+@auth
+<div x-data="sessionSecurityPopup()" x-init="init()">
+    <div x-show="open"
+         class="fixed inset-0 z-50 bg-slate-900/70 flex items-end md:items-center justify-center px-4 py-6"
+         style="display: none;"
+         @keydown.escape.window.prevent>
+        <div class="w-full max-w-2xl rounded-t-3xl bg-white shadow-2xl md:rounded-3xl overflow-hidden">
+            <div class="bg-slate-950 px-6 py-5">
+                <h2 class="text-lg font-semibold text-white" x-text="title"></h2>
+                <p class="mt-1 text-sm text-slate-300" x-text="subtitle"></p>
+            </div>
+            <div class="p-6 space-y-5 text-slate-700">
+                <template x-if="type === 'security_verification'">
+                    <div class="space-y-3">
+                        <div class="text-sm text-slate-500">Ada login baru pada akun Anda.</div>
+                        <div class="rounded-3xl border border-slate-200 bg-slate-50 p-4">
+                            <div class="text-sm"><span class="font-semibold">Perangkat:</span> <span x-text="payload.device_type"></span></div>
+                            <div class="text-sm"><span class="font-semibold">Browser:</span> <span x-text="payload.browser"></span></div>
+                            <div class="text-sm"><span class="font-semibold">Lokasi:</span> <span x-text="payload.estimated_location"></span></div>
+                            <div class="text-sm"><span class="font-semibold">Waktu:</span> <span x-text="payload.created_at"></span></div>
+                        </div>
+                    </div>
+                </template>
+                <template x-if="type === 'pending_login'">
+                    <div class="space-y-3">
+                        <div class="text-sm text-slate-500">Akun Anda sedang mencoba login pada perangkat lain.</div>
+                        <div class="rounded-3xl border border-slate-200 bg-slate-50 p-4">
+                            <div class="text-sm"><span class="font-semibold">Perangkat:</span> <span x-text="payload.device_info"></span></div>
+                            <div class="text-sm"><span class="font-semibold">Lokasi:</span> <span x-text="payload.estimated_location"></span></div>
+                            <div class="text-sm"><span class="font-semibold">Waktu:</span> <span x-text="payload.created_at"></span></div>
+                        </div>
+                    </div>
+                </template>
+            </div>
+            <div class="grid gap-3 bg-slate-100 p-6 md:grid-cols-2">
+                <button type="button"
+                        x-on:click="handleReject()"
+                        x-bind:disabled="loading"
+                        class="rounded-3xl border border-slate-300 bg-white px-4 py-3 text-sm font-semibold text-slate-700 hover:bg-slate-50 disabled:opacity-50">
+                    <span x-text="rejectLabel"></span>
+                </button>
+                <button type="button"
+                        x-on:click="handleApprove()"
+                        x-bind:disabled="loading"
+                        class="rounded-3xl bg-slate-950 px-4 py-3 text-sm font-semibold text-white hover:bg-slate-800 disabled:opacity-50">
+                    <span x-text="approveLabel"></span>
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    function sessionSecurityPopup() {
+        return {
+            open: false,
+            type: null,
+            payload: {},
+            loading: false,
+            intervalId: null,
+            title: '',
+            subtitle: '',
+            approveLabel: '',
+            rejectLabel: '',
+
+            init() {
+                this.poll();
+                this.intervalId = setInterval(() => this.poll(), 12000);
+            },
+
+            async poll() {
+                if (this.open) {
+                    return;
+                }
+
+                try {
+                    const response = await fetch('/session/security-notifications', {
+                        headers: { 'Accept': 'application/json' },
+                        credentials: 'same-origin',
+                    });
+
+                    if (! response.ok) {
+                        return;
+                    }
+
+                    const data = await response.json();
+
+                    if (data.pending) {
+                        this.openModal(data);
+                    }
+                } catch (error) {
+                    console.error(error);
+                }
+            },
+
+            openModal(data) {
+                this.type = data.type;
+                this.payload = data;
+                this.open = true;
+                this.loading = false;
+                if (data.type === 'security_verification') {
+                    this.title = 'Terdeteksi Login Baru';
+                    this.subtitle = 'Silakan konfirmasi apakah login ini berasal dari Anda.';
+                    this.approveLabel = 'Ya, Ini Saya';
+                    this.rejectLabel = 'Bukan Saya';
+                } else {
+                    this.title = 'Permintaan Login Baru';
+                    this.subtitle = 'Silakan konfirmasi apakah perangkat baru ini milik Anda.';
+                    this.approveLabel = 'Ya, Itu Saya';
+                    this.rejectLabel = 'Bukan Saya';
+                }
+            },
+
+            async handleApprove() {
+                if (! this.payload.id) {
+                    return;
+                }
+
+                this.loading = true;
+                const url = this.type === 'pending_login'
+                    ? `/session/pending-login/${this.payload.id}/approve`
+                    : `/session/verification/${this.payload.id}/approve`;
+
+                const response = await fetch(url, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRF-TOKEN': document.querySelector('meta[name=csrf-token]').content,
+                        'Accept': 'application/json',
+                    },
+                    credentials: 'same-origin',
+                });
+
+                const data = await response.json();
+
+                this.loading = false;
+                if (data.redirect) {
+                    window.location.href = data.redirect;
+                    return;
+                }
+
+                if (data.status === 'approved') {
+                    this.open = false;
+                }
+            },
+
+            async handleReject() {
+                if (! this.payload.id) {
+                    return;
+                }
+
+                this.loading = true;
+                const url = this.type === 'pending_login'
+                    ? `/session/pending-login/${this.payload.id}/reject`
+                    : `/session/verification/${this.payload.id}/reject`;
+
+                const response = await fetch(url, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRF-TOKEN': document.querySelector('meta[name=csrf-token]').content,
+                        'Accept': 'application/json',
+                    },
+                    credentials: 'same-origin',
+                });
+
+                const data = await response.json();
+                this.loading = false;
+
+                if (data.redirect) {
+                    window.location.href = data.redirect;
+                    return;
+                }
+
+                this.open = false;
+            },
+        };
+    }
+</script>
+@endauth
+
 @stack('scripts')
 </body>
 </html>

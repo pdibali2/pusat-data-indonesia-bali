@@ -147,6 +147,21 @@ use App\Http\Controllers\OrganizationController;
 
 Route::middleware(['is.login', 'is.pengelola', 'is.customer'])->group(function () {
 
+    Route::get('/session/security-notifications', [\App\Http\Controllers\SessionSecurityController::class, 'securityNotifications'])
+        ->name('session.security_notifications');
+    Route::post('/session/verification/{id}/approve', [\App\Http\Controllers\SessionSecurityController::class, 'approveVerification'])
+        ->name('session.verification.approve');
+    Route::post('/session/verification/{id}/reject', [\App\Http\Controllers\SessionSecurityController::class, 'rejectVerification'])
+        ->name('session.verification.reject');
+    Route::post('/session/pending-login/{id}/approve', [\App\Http\Controllers\SessionSecurityController::class, 'approvePendingLogin'])
+        ->name('session.pending_login.approve');
+    Route::post('/session/pending-login/{id}/reject', [\App\Http\Controllers\SessionSecurityController::class, 'rejectPendingLogin'])
+        ->name('session.pending_login.reject');
+    Route::get('/session/pending-login/{id}/status', [\App\Http\Controllers\SessionSecurityController::class, 'pendingLoginStatus'])
+        ->name('session.pending_login.status');
+    Route::get('/session/pending-login/{id}/wait', [\App\Http\Controllers\SessionSecurityController::class, 'pendingLoginWait'])
+        ->name('session.pending_login.wait');
+
     Route::prefix('admin')->name('admin.')->group(function () {
         Route::resource('users',    UserController::class);
         Route::resource('groups',   GroupController::class);
@@ -263,6 +278,9 @@ Route::middleware(['is.login', 'is.pengelola', 'is.customer'])->group(function (
     
             // Detail satu anomali + histori review
             Route::get('/{anomaly}',  [AnomalyControlController::class, 'show'])->name('show');
+
+            // Export laporan PDF
+            Route::get('/{anomaly}/export-report', [AnomalyControlController::class, 'exportReport'])->name('export_report');
     
             // Review satu anomali (POST dari modal)
             Route::post('/{anomaly}/review', [AnomalyControlController::class, 'review'])->name('review');

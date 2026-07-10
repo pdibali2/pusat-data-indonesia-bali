@@ -63,7 +63,7 @@
         {{-- ═══ PRICING SECTION ════════════════════════════════════════ --}}
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mt-10">
 
-            <div class="flex items-center gap-3 mb-8">
+            <div class="flex items-center gap-3 mb-12">
                 <div class="w-0.5 h-7 bg-stikom-blue shrink-0"></div>
                 <span class="text-[10px] font-bold text-stikom-blue uppercase tracking-[.12em] font-poppins">
                     Pilih Paket Berlangganan
@@ -75,42 +75,58 @@
                 $organizationPlans = $layanans->filter(fn ($layanan) => (string) ($layanan->audience_type ?? 'personal') === 'organization');
             @endphp
 
-            <div x-data="{ activeTab: 'personal' }">
-
-                {{-- Tab switcher --}}
-                <div class="mb-8 flex flex-wrap gap-2">
-                    <button type="button" @click="activeTab = 'personal'"
-                        :class="activeTab === 'personal' ? 'bg-stikom text-white' : 'bg-white text-slate-700 border border-slate-200'"
-                        class="rounded-full px-4 py-2 text-sm font-semibold transition">
-                        Personal
-                    </button>
-                    <button type="button" @click="activeTab = 'organization'"
-                        :class="activeTab === 'organization' ? 'bg-stikom text-white' : 'bg-white text-slate-700 border border-slate-200'"
-                        class="rounded-full px-4 py-2 text-sm font-semibold transition">
-                        Organization
-                    </button>
+            @if($layanans->isEmpty())
+                <div class="text-center py-20 text-gray-400 font-body text-sm">
+                    Belum ada paket langganan yang tersedia. Silakan cek kembali nanti.
                 </div>
+            @else
 
-                @if($layanans->isEmpty())
-                    <div class="text-center py-20 text-gray-400 font-body text-sm">
-                        Belum ada paket langganan yang tersedia. Silakan cek kembali nanti.
-                    </div>
-                @else
-                    <div x-show="activeTab === 'personal'" x-cloak x-transition>
-                        @include('pages.landing.components.plan-card-list', ['plans' => $personalPlans])
+                {{-- ============ PERSONAL ============ --}}
+                <div class="grid grid-cols-1 lg:grid-cols-[280px_1fr] gap-8 lg:gap-12 items-start mb-20">
+
+                    {{-- Label kiri --}}
+                    <div class="lg:sticky lg:top-24">
+                        <span class="text-stikom-red text-[10px] font-bold uppercase tracking-widest font-poppins">Pilihan Paket untuk</span>
+                        <h2 class="text-2xl font-black font-poppins text-stikom mt-2 mb-3">Personal</h2>
                     </div>
 
-                    <div x-show="activeTab === 'organization'" x-cloak x-transition>
-                        @if(auth()->check())
-                            <div class="mb-4 rounded-2xl border border-sky-200 bg-sky-50/70 px-4 py-3 mb-10 text-sm text-sky-700">
-                                Paket Organization cocok untuk tim. Setelah checkout, Anda bisa melanjutkan ke halaman pembuatan organisasi.
+                    {{-- Cards kanan --}}
+                    <div>
+                        @if($personalPlans->isNotEmpty())
+                            @include('pages.landing.components.plan-card-list', ['plans' => $personalPlans])
+                        @else
+                            <div class="text-center py-20 text-gray-400 font-body text-sm">
+                                Belum ada paket personal tersedia.
                             </div>
                         @endif
-                        @include('pages.landing.components.plan-card-list', ['plans' => $organizationPlans])
                     </div>
-                @endif
+                </div>
 
-            </div>
+                {{-- Divider antar section --}}
+                <div class="border-t border-gray-200 mb-20"></div>
+
+                {{-- ============ ORGANIZATION ============ --}}
+                <div class="grid grid-cols-1 lg:grid-cols-[1fr_280px] gap-8 lg:gap-12 items-start">
+
+                    {{-- Cards kiri --}}
+                    <div class="lg:order-1">
+                        @if($organizationPlans->isNotEmpty())
+                            @include('pages.landing.components.plan-card-list', ['plans' => $organizationPlans])
+                        @else
+                            <div class="text-center py-20 text-gray-400 font-body text-sm">
+                                Belum ada paket organization tersedia.
+                            </div>
+                        @endif
+                    </div>
+
+                    {{-- Label kanan --}}
+                    <div class="lg:order-2 lg:sticky lg:top-24">
+                        <span class="text-stikom-red text-[10px] font-bold uppercase tracking-widest font-poppins">Pilihan Paket untuk</span>
+                        <h2 class="text-2xl font-black font-poppins text-stikom mt-2 mb-3">Organization</h2>
+                    </div>
+                </div>
+
+            @endif
 
         </div>
     </main>

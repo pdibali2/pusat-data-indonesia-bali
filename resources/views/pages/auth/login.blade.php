@@ -97,6 +97,20 @@
     {{-- SweetAlert2 --}}
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 
+    @if (session('forced_logout_message'))
+        <script>
+            document.addEventListener("DOMContentLoaded", function () {
+                Swal.fire({
+                    icon: 'warning',
+                    title: 'Sesi Berakhir',
+                    text: '{{ session('forced_logout_message') }}',
+                    confirmButtonText: 'Oke',
+                    confirmButtonColor: '#2563eb',
+                });
+            });
+        </script>
+    @endif
+
     @if (session('reset_success'))
         <script>
             document.addEventListener("DOMContentLoaded", function () {

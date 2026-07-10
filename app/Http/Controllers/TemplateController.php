@@ -760,6 +760,23 @@ class TemplateController extends Controller
      * GET /template-tampilan/available-periods
      * Query params: tampilan_id, frekuensi
      */
+    private function guardLockedTemplate(Tampilan $tampilan): void
+    {
+        $limitsService = app(SubscriptionLimitsService::class);
+
+        if ($limitsService->isTemplateLocked($tampilan)) {
+            if (request()->expectsJson()) {
+                abort(response()->json([
+                    'success' => false,
+                    'locked'  => true,
+                    'message' => 'Template ini terkunci karena melebihi kuota paket Anda. Berlangganan untuk membuka kembali.',
+                ], 403));
+            }
+
+            abort(403, 'Template ini terkunci karena melebihi kuota paket Anda. Silakan berlangganan untuk membuka kembali.');
+        }
+    }
+
     public function getAvailablePeriods(Request $request)
     {
         $request->validate([
@@ -772,6 +789,8 @@ class TemplateController extends Controller
         $tampilan = Tampilan::where('tampilan_id', $request->tampilan_id)
             ->where('user_id', Auth::id())
             ->firstOrFail();
+
+        $this->guardLockedTemplate($tampilan);
     
         $metadataIds = IsiTampilan::where('tampilan_id', $tampilan->tampilan_id)
             ->pluck('metadata_id')
@@ -923,6 +942,8 @@ class TemplateController extends Controller
         }
         $tampilan = $tampilanQuery->firstOrFail();
 
+        $this->guardLockedTemplate($tampilan);
+
         $metadataIds = IsiTampilan::where('tampilan_id', $tampilan->tampilan_id)
             ->pluck('metadata_id')
             ->toArray();
@@ -1001,6 +1022,8 @@ class TemplateController extends Controller
         $tampilan = Tampilan::where('tampilan_id', $request->tampilan_id)
             ->where('user_id', Auth::user()->user_id)
             ->firstOrFail();
+
+        $this->guardLockedTemplate($tampilan);
     
         // Load isi tampilan beserta location_ids per metadata
         $isiList = IsiTampilan::where('tampilan_id', $tampilan->tampilan_id)->get();
@@ -1640,6 +1663,8 @@ class TemplateController extends Controller
             abort(403);
         }
 
+        $this->guardLockedTemplate($tampilan);
+
         $tampilan->load('isiTampilan.metadata');
 
         $existingMetadataIds = $tampilan->isiTampilan->pluck('metadata_id')->toArray();
@@ -1722,6 +1747,8 @@ class TemplateController extends Controller
         if ($tampilan->user_id !== Auth::user()->user_id) {
             abort(403);
         }
+
+        $this->guardLockedTemplate($tampilan);
 
         $request->validate([
             'nama_tampilan'         => 'required|string|max:100',
@@ -1809,6 +1836,8 @@ class TemplateController extends Controller
         if ($tampilan->user_id !== Auth::user()->user_id) {
             abort(403);
         }
+
+        $this->guardLockedTemplate($tampilan);
 
         $tampilan->load('isiTampilan.metadata');
 

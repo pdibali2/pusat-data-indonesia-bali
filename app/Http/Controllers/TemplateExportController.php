@@ -10,6 +10,7 @@ use App\Models\Data;
 use App\Models\Transaksi;
 use App\Models\Waktu;
 use App\Services\SubscriptionAccessService;
+use App\Services\SubscriptionLimitsService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use PhpOffice\PhpSpreadsheet\Spreadsheet;
@@ -138,6 +139,11 @@ class TemplateExportController extends Controller
             $tampilanQuery->where('user_id', Auth::id());
         }
         $tampilan = $tampilanQuery->firstOrFail();
+
+        $limitsService = app(SubscriptionLimitsService::class);
+        if ($limitsService->isTemplateLocked($tampilan)) {
+            return ['success' => false, 'message' => 'Template ini terkunci karena melebihi kuota paket Anda. Silakan berlangganan untuk membuka kembali.'];
+        }
 
         // ── 2. Isi tampilan (metadata + location_ids) ──────────
         $isiList = IsiTampilan::where('tampilan_id', $tampilan->tampilan_id)->get();

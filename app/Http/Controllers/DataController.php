@@ -12,6 +12,7 @@ use App\Models\IsiTampilan;
 use App\Imports\DataImport;
 use App\Services\AnomalyDetectionService;
 use App\Services\AuditTrailService;
+use App\Services\SubscriptionLimitsService;
 use App\Services\SubscriptionAccessService;
 use App\Services\WorkflowService;
 use Illuminate\Http\Request;
@@ -92,8 +93,16 @@ class DataController extends Controller
                 ->get()
             : collect();
 
+        if (Auth::check()) {
+            $limitsService = app(SubscriptionLimitsService::class);
+            $lockedIds = $limitsService->getLockedTemplateIds(Auth::user());
+            $availableTemplates->each(function ($tmpl) use ($lockedIds) {
+                $tmpl->is_locked = $lockedIds->contains($tmpl->tampilan_id);
+            });
+        }
+
         $templateUsage = Auth::check()
-            ? app(\App\Services\SubscriptionLimitsService::class)->getTemplateCountForUser(Auth::user())
+            ? app(SubscriptionLimitsService::class)->getTemplateCountForUser(Auth::user())
             : 0;
         $templateLimit = Auth::check()
             ? app(\App\Services\SubscriptionLimitsService::class)->getMaxTemplates(Auth::user())

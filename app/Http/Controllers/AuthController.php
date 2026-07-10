@@ -79,10 +79,21 @@ class AuthController extends Controller
             return redirect('/data')->withErrors(['invitation' => 'Tidak dapat menerima undangan organisasi. Silakan periksa kembali tautan undangan atau hubungi pemilik organisasi.']);
         }
 
-        // Only enforce session limits for customers (group_id === 3). Admin/pengelola are unlimited.
         if ((int) $user->group_id === 3) {
             $limitsService = app(SessionLimitService::class);
-            $limitsService->enforceSessionLimit($user, $request);
+            $result = $limitsService->handleLoginAttempt($user, $request);
+
+            if ($result['status'] === 'pending_login') {
+                return redirect()->route('session.pending_login.wait', ['id' => $result['pending_login']->id]);
+            }
+
+            if ($result['status'] === 'error') {
+                Auth::logout();
+                $request->session()->invalidate();
+                $request->session()->regenerateToken();
+
+                return back()->withErrors(['login' => $result['message']]);
+            }
         }
 
         return redirect('/data');

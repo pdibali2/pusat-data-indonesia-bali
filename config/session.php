@@ -38,6 +38,19 @@ return [
 
     /*
     |--------------------------------------------------------------------------
+    | Session Stale Timeout (minutes)
+    |--------------------------------------------------------------------------
+    |
+    | When using server-side session tracking (`user_sessions` table) we may
+    | want to consider sessions that have not been active for a certain
+    | number of minutes as "stale" and mark them inactive so new logins are
+    | not blocked by stale active sessions. Default: 2 minutes.
+    |
+    */
+    'stale_timeout_minutes' => (int) env('SESSION_STALE_MINUTES', 2),
+
+    /*
+    |--------------------------------------------------------------------------
     | Session Encryption
     |--------------------------------------------------------------------------
     |

@@ -39,28 +39,36 @@ class EnsureSingleActiveSession
                     $request->session()->regenerateToken();
                 }
 
-                return redirect('/')->with('forced_logout_message', 'Sesi anda telah habis, dikarenakan akun anda login di device berbeda.');
+                return redirect('/login')->with('forced_logout_message', 'Anda logout karena akun ini digunakan di perangkat lain.');
             }
 
-            $this->sessionLimitService->enforceSessionLimit($user, $request);
+            if (! $existingSession) {
+                $pendingLogin = \App\Models\PendingLogin::where('session_token', $sessionToken)
+                    ->where('status', 'pending')
+                    ->where('expires_at', '>', now())
+                    ->first();
 
-            $activeSession = UserSession::where('user_id', $user->user_id)
-                ->where('session_token', $sessionToken)
-                ->where('is_active', true)
-                ->first();
+                if ($pendingLogin) {
+                    $routeName = $request->route()?->getName() ?? '';
+                    if (in_array($routeName, [
+                        'session.security_notifications',
+                        'session.pending_login.status',
+                        'session.pending_login.wait',
+                    ], true)) {
+                        return $next($request);
+                    }
 
-            if (! $activeSession) {
+                    return redirect()->route('session.pending_login.wait', ['id' => $pendingLogin->id]);
+                }
+
                 Auth::logout();
-                $request->session()->invalidate();
-                $request->session()->regenerateToken();
+                if ($request->hasSession()) {
+                    $request->session()->invalidate();
+                    $request->session()->regenerateToken();
+                }
 
-                return redirect('/')->with('error', 'Sesi Anda telah berakhir karena login dari perangkat lain.');
+                return redirect('/login')->with('error', 'Sesi Anda tidak aktif atau tidak ditemukan.');
             }
-        }
-
-        $warningKey = 'session-limit-warning:' . ($sessionToken);
-        if (cache()->has($warningKey)) {
-            $request->session()->flash('warning', cache()->pull($warningKey));
         }
 
         return $next($request);

@@ -292,6 +292,7 @@
                                     'wilayah'     => 'Wilayah',
                                 ][$jenis] ?? $jenis;
                                 $isActive = $activeTemplateId === (int) $tmpl->tampilan_id;
+                                $isLocked = $tmpl->is_locked ?? false;
                             @endphp
         
                             {{--
@@ -300,11 +301,13 @@
                                 Baris 2: meta info (jenis · count · tanggal)
                             --}}
                             <div class="w-full border-2 rounded-lg px-4 py-3
-                                        text-xs font-semibold cursor-pointer transition-all duration-150
-                                        {{ $isActive
-                                            ? 'border-sky-500 bg-sky-500 text-white'
-                                            : 'border-sky-300 text-sky-500 hover:bg-sky-500 hover:text-white' }}"
-                                onclick="selectTemplate({{ $tmpl->tampilan_id }})">
+                                        text-xs font-semibold transition-all duration-150
+                                        {{ $isLocked
+                                            ? 'border-gray-200 bg-gray-50 text-gray-400 cursor-not-allowed'
+                                            : ($isActive
+                                                ? 'border-sky-500 bg-sky-500 text-white cursor-pointer'
+                                                : 'border-sky-300 text-sky-500 hover:bg-sky-500 hover:text-white cursor-pointer') }}"
+                                onclick="selectTemplate({{ $tmpl->tampilan_id }}, {{ $isLocked ? 'true' : 'false' }})">
         
                                 {{-- Baris 1: Nama + aksi --}}
                                 <div class="flex items-start justify-between gap-2">
@@ -313,17 +316,19 @@
                                     {{-- Aksi: edit + hapus --}}
                                     <div class="flex items-center gap-2.5 shrink-0 ml-1"
                                         onclick="event.stopPropagation()">
-                                        <a href="{{ route('template.edit', $tmpl->tampilan_id) }}"
-                                        class="{{ $isActive ? 'text-white/80 hover:text-white' : 'text-sky-400 hover:text-sky-600' }} transition-colors"
-                                        title="Edit">
-                                            <i class="fas fa-edit text-xs"></i>
-                                        </a>
+                                        @if(!$isLocked)
+                                            <a href="{{ route('template.edit', $tmpl->tampilan_id) }}"
+                                            class="{{ $isActive ? 'text-white/80 hover:text-white' : 'text-sky-400 hover:text-sky-600' }} transition-colors"
+                                            title="Edit">
+                                                <i class="fas fa-edit text-xs"></i>
+                                            </a>
+                                        @endif
                                         <form action="{{ route('template.destroy', $tmpl->tampilan_id) }}"
                                             method="POST"
                                             onsubmit="return confirm('Hapus template \'{{ addslashes($tmpl->nama_tampilan) }}\'?')">
                                             @csrf @method('DELETE')
                                             <button type="submit"
-                                                    class="{{ $isActive ? 'text-white/80 hover:text-white' : 'text-sky-400 hover:text-red-500' }} transition-colors"
+                                                    class="{{ $isLocked ? 'text-gray-400 hover:text-red-500' : ($isActive ? 'text-white/80 hover:text-white' : 'text-sky-400 hover:text-red-500') }} transition-colors"
                                                     title="Hapus">
                                                 <i class="fas fa-trash text-xs"></i>
                                             </button>
@@ -333,14 +338,21 @@
         
                                 {{-- Baris 2: meta info --}}
                                 <div class="mt-1.5 flex flex-wrap items-center text-xs gap-x-2 gap-y-0.5 font-normal
-                                            {{ $isActive ? 'text-white/75' : 'opacity-70' }}">
+                                            {{ $isLocked ? 'text-gray-400' : ($isActive ? 'text-white/75' : 'opacity-70') }}">
                                     <span>{{ $jenisLabel }}</span>
                                     <span class="opacity-50">·</span>
                                     <span>{{ $tmpl->isi_tampilan_count ?? 0 }} data</span>
                                     <span class="opacity-50">·</span>
                                     <span>Diperbarui {{ $tmpl->updated_at?->format('d-m-Y H.i') }}</span>
                                 </div>
-        
+
+                                @if($isLocked)
+                                    <div class="mt-2 inline-flex items-center gap-1 px-2 py-1 rounded-full
+                                                bg-amber-100 text-amber-700 text-[10px] font-bold">
+                                        <i class="fas fa-lock text-[9px]"></i>
+                                        Templat lama terkunci
+                                    </div>
+                                @endif
                             </div>
                         @endforeach
                     </div>
@@ -802,7 +814,12 @@ let activeGuestTemplate = null; // object template yang sedang aktif
 // ─────────────────────────────────────────────────────────────
 // STEP 1 — Pilih template
 // ─────────────────────────────────────────────────────────────
-function selectTemplate(id) {
+function selectTemplate(id, isLocked = false) {
+    if (isLocked) {
+        window.location.href = '{{ route('langganan') }}';
+        return;
+    }
+
     const url = (TS.tampilan_id === id)
         ? TMPL_URLS.base
         : TMPL_URLS.base + '?template_id=' + id;

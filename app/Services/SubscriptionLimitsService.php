@@ -8,6 +8,7 @@ use App\Models\Transaksi;
 use App\Models\User;
 use App\Models\UserSession;
 use Illuminate\Http\Request;
+use Illuminate\Support\Collection;
 
 class SubscriptionLimitsService
 {
@@ -144,5 +145,32 @@ class SubscriptionLimitsService
         }
 
         $session->delete();
+    }
+
+    public function getLockedTemplateIds($user): Collection
+    {
+        $limit = $this->getMaxTemplates($user);
+
+        $orderedIds = Tampilan::where('user_id', $user->user_id)
+            ->orderBy('created_at', 'asc') // paling lama di depan
+            ->pluck('tampilan_id');
+
+        $total       = $orderedIds->count();
+        $lockedCount = max(0, $total - $limit);
+
+        if ($lockedCount <= 0) {
+            return collect();
+        }
+
+        return $orderedIds->take($lockedCount)->values();
+    }
+
+    /**
+     * Cek apakah satu template tertentu sedang terkunci.
+     */
+    public function isTemplateLocked(Tampilan $tampilan): bool
+    {
+        return $this->getLockedTemplateIds($tampilan->user)
+            ->contains($tampilan->tampilan_id);
     }
 }

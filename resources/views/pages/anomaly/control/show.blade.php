@@ -314,6 +314,14 @@
                 @endif
             </div>
 
+            {{-- ── UNDUH LAPORAN PDF ───────────────────────── --}}
+            <a href="{{ route('anomaly.control.export_report', $anomaly->anomalies_id) }}"
+               class="w-full flex items-center justify-center gap-2 text-xs bg-red-700
+                      hover:bg-red-800 text-white py-2.5 rounded-lg font-semibold
+                      transition-colors">
+                <i class="fas fa-file-pdf"></i> Unduh Laporan PDF
+            </a>
+
             {{-- ── FORM REVIEW ─────────────────────────────── --}}
             @if($anomaly->isPendingReview())
             <div id="reviewSection" class="bg-white rounded-xl border border-amber-200 p-4">

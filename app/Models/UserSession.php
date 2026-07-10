@@ -20,6 +20,7 @@ class UserSession extends Model
         'user_agent',
         'login_at',
         'is_active',
+        'logout_reason',
     ];
 
     protected $casts = [

@@ -15,6 +15,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Collection;
 use Illuminate\Validation\ValidationException;
+// Use the container binding `dompdf.wrapper` instead of the facade import
 
 class AnomalyControlController extends Controller
 {
@@ -676,5 +677,41 @@ class AnomalyControlController extends Controller
             'trend'   => $trend,
             'stats'   => $stats,
         ]);
+    }
+
+    public function exportReport(int $anomalyId)
+    {
+        $anomaly = Anomaly::findOrFail($anomalyId);
+        $anomaly->load([
+            'data.metadata',
+            'data.location',
+            'data.time',
+            'data.user',
+            'data.produsen',
+            'data.rujukan',
+        ]);
+
+        $data = $anomaly->data;
+
+        // Reuse logic perbandingan sumber yang sama seperti di method show()
+        $sourceComparison = $this->detector->compareSourceValues(
+            $data->metadata_id,
+            $data->location_id,
+            $data->time_id,
+        );
+
+        if (!app()->bound('dompdf.wrapper')) {
+            if (class_exists(\Barryvdh\DomPDF\ServiceProvider::class)) {
+                app()->register(\Barryvdh\DomPDF\ServiceProvider::class);
+            } else {
+                throw new \RuntimeException('DOMPDF ServiceProvider not available; please install barryvdh/laravel-dompdf');
+            }
+        }
+
+        $pdf = app('dompdf.wrapper')
+            ->loadView('pages.anomaly.control.report_pdf', compact('anomaly', 'data', 'sourceComparison'))
+            ->setPaper('a4', 'portrait');
+
+        return $pdf->download("Laporan-Anomali-{$anomaly->anomalies_id}.pdf");
     }
 }

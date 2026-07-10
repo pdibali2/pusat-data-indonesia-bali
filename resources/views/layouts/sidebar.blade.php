@@ -32,6 +32,7 @@
             "children"     => [],
             "onlyCustomer" => false,
             "onlyAdmin"    => false,
+            "customerOnly" => true,
         ],
         // (object)[
         //     "title"        => "Organisasi",
@@ -160,6 +161,9 @@
                     @continue
                 @endif
                 @if(!$isAdmin && $menu->onlyAdmin)
+                    @continue
+                @endif
+                @if($isAdmin && ($menu->customerOnly ?? false))
                     @continue
                 @endif
 
