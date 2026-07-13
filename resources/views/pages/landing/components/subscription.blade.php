@@ -11,12 +11,25 @@
         @php
             $personalPricings     = $pricings->filter(fn ($plan) => (string) ($plan->audience_type ?? 'personal') !== 'organization')->sortBy('urutan');
             $organizationPricings = $pricings->filter(fn ($plan) => (string) ($plan->audience_type ?? 'personal') === 'organization')->sortBy('urutan');
+
+            // Batasi maksimal kolom biar card gak jadi terlalu sempit kalau paket makin banyak.
+            // Di atas 4 paket, card akan wrap ke baris berikutnya (tetap proporsional & seragam),
+            // bukan dipaksa muat semua dalam satu baris yang bikin card jadi kurus.
+            $gridColsClass = function (int $count) {
+                return match (true) {
+                    $count <= 1 => 'md:grid-cols-1',
+                    $count === 2 => 'md:grid-cols-2',
+                    $count === 3 => 'md:grid-cols-3',
+                     $count === 4 => 'md:grid-cols-4',
+                    default      => 'md:grid-cols-5',
+                };
+            };
         @endphp
 
         @if($pricings->isNotEmpty())
 
             {{-- ============ PERSONAL ============ --}}
-            <div class="fade-up grid grid-cols-1 lg:grid-cols-[280px_1fr] gap-8 lg:gap-12 items-start mb-20">
+            <div class="fade-up grid grid-cols-1 lg:grid-cols-[180px_1fr] gap-8 lg:gap-12 items-start mb-20">
 
                 {{-- Label kiri --}}
                 <div class="lg:sticky lg:top-24">
@@ -27,14 +40,13 @@
                 {{-- Cards kanan --}}
                 <div>
                     @if($personalPricings->isNotEmpty())
-                        <div class="flex flex-wrap gap-4 gap-y-15 items-stretch">
+                        <div class="grid grid-cols-1 sm:grid-cols-2 {{ $gridColsClass($personalPricings->count()) }} auto-rows-fr gap-4">
                             @foreach($personalPricings as $plan)
                                 @php $isPopular = $plan->is_popular; @endphp
 
-                                <div class="relative flex flex-col overflow-hidden group bg-white
-                                            w-full sm:w-[calc(50%-0.5rem)] xl:w-[calc(33.333%-0.667rem)]
+                                <div class="relative flex flex-col h-full min-w-0 overflow-hidden group bg-white
                                             {{ $isPopular
-                                                ? 'ring-2 ring-sky-400 shadow-2xl shadow-sky-500/15 -my-3 z-10'
+                                                ? 'ring-2 ring-sky-400 shadow-2xl shadow-sky-500/15 z-10'
                                                 : 'border border-gray-100 shadow-sm' }}"
                                     style="{{ $isPopular ? '' : 'border-top: 3px solid transparent;' }}"
                                     @if(!$isPopular)
@@ -45,9 +57,6 @@
 
                                     @if($isPopular)
                                         <div class="h-[3px] bg-sky-400 w-full shrink-0"></div>
-                                    @endif
-
-                                    @if($isPopular)
                                         <div class="bg-sky-50 border-b border-sky-100 px-4 py-2 flex items-center justify-between shrink-0">
                                             <span class="text-sky-700 text-[9px] font-black uppercase tracking-widest font-poppins flex items-center gap-1">
                                                 <svg class="w-2.5 h-2.5" fill="currentColor" viewBox="0 0 20 20" aria-hidden="true">
@@ -63,17 +72,17 @@
                                         </div>
                                     @endif
 
-                                    <div class="flex flex-col flex-1 p-[14px] {{ $isPopular ? 'pt-4' : '' }}">
+                                    <div class="flex flex-col flex-1 min-w-0 p-[14px] {{ $isPopular ? 'pt-4' : '' }}">
 
                                         <div class="text-[9px] font-bold uppercase tracking-widest text-gray-400 mb-2 font-poppins">
                                             {{ $plan->durasi_label }}
                                         </div>
 
-                                        <div class="text-xs font-bold text-stikom mb-1 font-poppins">
+                                        <div class="text-xs font-bold text-stikom mb-1 font-poppins truncate">
                                             {{ $plan->nama_layanan ?? 'Paket' }}
                                         </div>
 
-                                        <div class="font-black font-poppins leading-tight text-stikom {{ $isPopular ? 'text-xl' : 'text-lg' }}">
+                                        <div class="font-black font-poppins leading-tight text-stikom {{ $isPopular ? 'text-xl' : 'text-lg' }} break-words">
                                             {{ $plan->harga_format }}
                                         </div>
 
@@ -89,8 +98,9 @@
                                             </p>
                                         @endif
 
-                                        <ul class="flex-1 overflow-y-auto space-y-2 mb-12 pr-0.5"
-                                            style="max-height: 140px; scrollbar-width: thin; scrollbar-color: {{ $isPopular ? 'rgba(16,185,129,.25) transparent' : 'rgba(0,0,0,.1) transparent' }};">
+                                        {{-- Fixed height feature list biar semua card sama tinggi terlepas dari jumlah fitur --}}
+                                        <ul class="flex-1 overflow-y-auto space-y-2 mb-4 pr-0.5"
+                                            style="min-height: 90px; max-height: 140px; scrollbar-width: thin; scrollbar-color: {{ $isPopular ? 'rgba(16,185,129,.25) transparent' : 'rgba(0,0,0,.1) transparent' }};">
 
                                             @forelse($plan->fiturs->sortBy('urutan') as $fitur)
                                                 <li class="flex items-start gap-2 text-[11px] leading-snug {{ !$fitur->aktif ? 'opacity-30' : '' }}">
@@ -107,15 +117,16 @@
                                                             </svg>
                                                         </div>
                                                     @endif
-                                                    <span class="text-gray-600">{{ $fitur->nama_fitur }}</span>
+                                                    <span class="text-gray-600 break-words">{{ $fitur->nama_fitur }}</span>
                                                 </li>
                                             @empty
                                                 <li class="text-[10px] italic text-gray-300">Belum ada fitur.</li>
                                             @endforelse
                                         </ul>
 
+                                        {{-- mt-auto mendorong tombol selalu ke dasar card, walau isi konten beda panjang --}}
                                         <a href="{{ route('langganan') }}"
-                                        class="block w-full py-3 text-[10px] font-black text-center font-poppins uppercase tracking-wide transition-all duration-200 shrink-0
+                                        class="block w-full py-3 mt-auto text-[10px] font-black text-center font-poppins uppercase tracking-wide transition-all duration-200 shrink-0
                                                 bg-stikom-accent text-stikom hover:bg-yellow-600 hover:text-white">
                                             Berlangganan Sekarang
                                         </a>
@@ -140,14 +151,13 @@
                 {{-- Cards kiri --}}
                 <div class="lg:order-1">
                     @if($organizationPricings->isNotEmpty())
-                        <div class="flex flex-wrap gap-4 gap-y-15 items-stretch">
+                        <div class="grid grid-cols-1 sm:grid-cols-2 {{ $gridColsClass($organizationPricings->count()) }} auto-rows-fr gap-4">
                             @foreach($organizationPricings as $plan)
                                 @php $isPopular = $plan->is_popular; @endphp
 
-                                <div class="relative flex flex-col overflow-hidden group bg-white
-                                            w-full sm:w-[calc(50%-0.5rem)] xl:w-[calc(33.333%-0.667rem)]
+                                <div class="relative flex flex-col h-full min-w-0 overflow-hidden group bg-white
                                             {{ $isPopular
-                                                ? 'ring-2 ring-sky-400 shadow-2xl shadow-sky-500/15 -my-3 z-10'
+                                                ? 'ring-2 ring-sky-400 shadow-2xl shadow-sky-500/15 z-10'
                                                 : 'border border-gray-100 shadow-sm' }}"
                                     style="{{ $isPopular ? '' : 'border-top: 3px solid transparent;' }}"
                                     @if(!$isPopular)
@@ -158,9 +168,6 @@
 
                                     @if($isPopular)
                                         <div class="h-[3px] bg-sky-400 w-full shrink-0"></div>
-                                    @endif
-
-                                    @if($isPopular)
                                         <div class="bg-sky-50 border-b border-sky-100 px-4 py-2 flex items-center justify-between shrink-0">
                                             <span class="text-sky-700 text-[9px] font-black uppercase tracking-widest font-poppins flex items-center gap-1">
                                                 <svg class="w-2.5 h-2.5" fill="currentColor" viewBox="0 0 20 20" aria-hidden="true">
@@ -176,17 +183,17 @@
                                         </div>
                                     @endif
 
-                                    <div class="flex flex-col flex-1 p-[14px] {{ $isPopular ? 'pt-4' : '' }}">
+                                    <div class="flex flex-col flex-1 min-w-0 p-[14px] {{ $isPopular ? 'pt-4' : '' }}">
 
                                         <div class="text-[9px] font-bold uppercase tracking-widest text-gray-400 mb-2 font-poppins">
                                             {{ $plan->durasi_label }}
                                         </div>
 
-                                        <div class="text-xs font-bold text-stikom mb-1 font-poppins">
+                                        <div class="text-xs font-bold text-stikom mb-1 font-poppins truncate">
                                             {{ $plan->nama_layanan ?? 'Paket' }}
                                         </div>
 
-                                        <div class="font-black font-poppins leading-tight text-stikom {{ $isPopular ? 'text-xl' : 'text-lg' }}">
+                                        <div class="font-black font-poppins leading-tight text-stikom {{ $isPopular ? 'text-xl' : 'text-lg' }} break-words">
                                             {{ $plan->harga_format }}
                                         </div>
 
@@ -202,8 +209,8 @@
                                             </p>
                                         @endif
 
-                                        <ul class="flex-1 overflow-y-auto space-y-2 mb-12 pr-0.5"
-                                            style="max-height: 140px; scrollbar-width: thin; scrollbar-color: {{ $isPopular ? 'rgba(16,185,129,.25) transparent' : 'rgba(0,0,0,.1) transparent' }};">
+                                        <ul class="flex-1 overflow-y-auto space-y-2 mb-4 pr-0.5"
+                                            style="min-height: 90px; max-height: 140px; scrollbar-width: thin; scrollbar-color: {{ $isPopular ? 'rgba(16,185,129,.25) transparent' : 'rgba(0,0,0,.1) transparent' }};">
 
                                             @forelse($plan->fiturs->sortBy('urutan') as $fitur)
                                                 <li class="flex items-start gap-2 text-[11px] leading-snug {{ !$fitur->aktif ? 'opacity-30' : '' }}">
@@ -220,7 +227,7 @@
                                                             </svg>
                                                         </div>
                                                     @endif
-                                                    <span class="text-gray-600">{{ $fitur->nama_fitur }}</span>
+                                                    <span class="text-gray-600 break-words">{{ $fitur->nama_fitur }}</span>
                                                 </li>
                                             @empty
                                                 <li class="text-[10px] italic text-gray-300">Belum ada fitur.</li>
@@ -228,7 +235,7 @@
                                         </ul>
 
                                         <a href="{{ route('langganan') }}"
-                                        class="block w-full py-3 text-[10px] font-black text-center font-poppins uppercase tracking-wide transition-all duration-200 shrink-0
+                                        class="block w-full py-3 mt-auto text-[10px] font-black text-center font-poppins uppercase tracking-wide transition-all duration-200 shrink-0
                                                 bg-stikom-accent text-stikom hover:bg-yellow-600 hover:text-white">
                                             Berlangganan Sekarang
                                         </a>

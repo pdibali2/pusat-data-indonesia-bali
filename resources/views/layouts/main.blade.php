@@ -168,6 +168,7 @@
             payload: {},
             loading: false,
             intervalId: null,
+            pollInterval: 45000,
             title: '',
             subtitle: '',
             approveLabel: '',
@@ -175,11 +176,37 @@
 
             init() {
                 this.poll();
-                this.intervalId = setInterval(() => this.poll(), 12000);
+                this.startPolling();
+
+                document.addEventListener('visibilitychange', () => {
+                    if (document.hidden) {
+                        this.stopPolling();
+                    } else {
+                        this.poll();
+                        this.startPolling();
+                    }
+                });
+            },
+
+            startPolling() {
+                if (this.intervalId || document.hidden) {
+                    return;
+                }
+
+                this.intervalId = setInterval(() => this.poll(), this.pollInterval);
+            },
+
+            stopPolling() {
+                if (! this.intervalId) {
+                    return;
+                }
+
+                clearInterval(this.intervalId);
+                this.intervalId = null;
             },
 
             async poll() {
-                if (this.open) {
+                if (this.open || document.hidden) {
                     return;
                 }
 

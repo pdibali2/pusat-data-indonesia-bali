@@ -82,7 +82,7 @@
             @else
 
                 {{-- ============ PERSONAL ============ --}}
-                <div class="grid grid-cols-1 lg:grid-cols-[280px_1fr] gap-8 lg:gap-12 items-start mb-20">
+                <div class="grid grid-cols-1 lg:grid-cols-[180px_1fr] gap-8 lg:gap-12 items-start mb-20">
 
                     {{-- Label kiri --}}
                     <div class="lg:sticky lg:top-24">
