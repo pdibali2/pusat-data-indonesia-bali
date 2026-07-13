@@ -60,6 +60,7 @@
         <div class="md:col-span-2 space-y-5">
 
             {{-- Pesan anomali --}}
+            @if($anomaly->anomaly_type !== \App\Models\Anomaly::TYPE_SOURCE_CONFLICT)
             <div class="bg-white rounded-xl border border-gray-200 p-5">
                 <p class="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-2">
                     Pesan Anomali
@@ -75,7 +76,7 @@
                         </p>
                     </div>
                     <div class="text-center p-3 rounded-lg"
-                         style="{{ $anomaly->severity_style }}">
+                        style="{{ $anomaly->severity_style }}">
                         <p class="text-xs mb-1 opacity-75">Perubahan</p>
                         <p class="text-lg font-bold font-mono">
                             {{ $anomaly->formatted_percentage_change }}
@@ -89,38 +90,112 @@
                     </div>
                 </div>
             </div>
+            @endif
 
             {{-- Detail data --}}
-            <div class="bg-white rounded-xl border border-gray-200 p-5">
-                <p class="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-3">
-                    Detail Data
-                </p>
-                <dl class="grid grid-cols-2 gap-x-8 gap-y-3 text-sm">
-                    @php
-                    $details = [
-                        ['label'=>'Metadata',  'value'=> $data->metadata?->nama ?? '-'],
-                        ['label'=>'Satuan',    'value'=> $data->metadata?->satuan_data ?? '-'],
-                        ['label'=>'Lokasi',    'value'=> $data->location?->nama_wilayah ?? '-'],
-                        ['label'=>'Periode',   'value'=> $data->time
-                            ? ($data->time->year
-                                . ($data->time->month   ? '/Bln-'.$data->time->month   : '')
-                                . ($data->time->quarter ? '/Q'.$data->time->quarter    : '')
-                                . ($data->time->semester? '/S'.$data->time->semester   : ''))
-                            : '-'],
-                        ['label'=>'Sumber/Produsen', 'value'=> $data->produsen?->nama_produsen ?? '-'],
-                        ['label'=>'Rujukan',   'value'=> $data->rujukan?->nama_rujukan ?? '-'],
-                        ['label'=>'Diinput oleh', 'value'=> $data->user?->name ?? '-'],
-                        ['label'=>'Tanggal Input', 'value'=> $data->date_inputed?->format('d/m/Y H:i') ?? '-'],
-                    ];
-                    @endphp
-                    @foreach($details as $d)
-                    <div>
-                        <dt class="text-xs text-gray-400 font-medium">{{ $d['label'] }}</dt>
-                        <dd class="text-gray-800 mt-0.5">{{ $d['value'] }}</dd>
+            @if($anomaly->anomaly_type === \App\Models\Anomaly::TYPE_SOURCE_CONFLICT && $conflictData)
+                <div class="grid md:grid-cols-2 gap-5">
+                    {{-- Card 1: data anomali ini --}}
+                    <div class="bg-white rounded-xl border border-purple-200 p-5">
+                        <div class="flex items-center justify-between mb-3">
+                            <p class="text-xs font-semibold text-gray-500 uppercase tracking-wide">Detail Data</p>
+                            <span class="text-[10px] px-2 py-0.5 rounded-full bg-purple-50 text-purple-700 border border-purple-200 font-semibold">
+                                Data Ini
+                            </span>
+                        </div>
+                        <dl class="grid grid-cols-2 gap-x-6 gap-y-3 text-sm">
+                            @php
+                            $detailsA = [
+                                ['label'=>'Metadata',       'value'=> $data->metadata?->nama ?? '-'],
+                                ['label'=>'Satuan',         'value'=> $data->metadata?->satuan_data ?? '-'],
+                                ['label'=>'Lokasi',         'value'=> $data->location?->nama_wilayah ?? '-'],
+                                ['label'=>'Periode',        'value'=> $data->time
+                                    ? ($data->time->year
+                                        . ($data->time->month   ? '/Bln-'.$data->time->month   : '')
+                                        . ($data->time->quarter ? '/Q'.$data->time->quarter    : '')
+                                        . ($data->time->semester? '/S'.$data->time->semester   : ''))
+                                    : '-'],
+                                ['label'=>'Sumber/Produsen','value'=> $data->produsen?->nama_produsen ?? '-'],
+                                ['label'=>'Rujukan',        'value'=> $data->rujukan?->nama_rujukan ?? '-'],
+                                ['label'=>'Diinput oleh',   'value'=> $data->user?->name ?? '-'],
+                                ['label'=>'Tanggal Input',  'value'=> $data->date_inputed?->format('d/m/Y H:i') ?? '-'],
+                            ];
+                            @endphp
+                            @foreach($detailsA as $d)
+                            <div>
+                                <dt class="text-xs text-gray-400 font-medium">{{ $d['label'] }}</dt>
+                                <dd class="text-gray-800 mt-0.5">{{ $d['value'] }}</dd>
+                            </div>
+                            @endforeach
+                        </dl>
                     </div>
-                    @endforeach
-                </dl>
-            </div>
+
+                    {{-- Card 2: data lawan konflik --}}
+                    <div class="bg-white rounded-xl border border-amber-200 p-5">
+                        <div class="flex items-center justify-between mb-3">
+                            <p class="text-xs font-semibold text-gray-500 uppercase tracking-wide">Detail Data</p>
+                            <span class="text-[10px] px-2 py-0.5 rounded-full bg-amber-50 text-amber-700 border border-amber-200 font-semibold">
+                                Sumber Konflik
+                            </span>
+                        </div>
+                        <dl class="grid grid-cols-2 gap-x-6 gap-y-3 text-sm">
+                            @php
+                            $detailsB = [
+                                ['label'=>'Metadata',       'value'=> $conflictData->metadata?->nama ?? '-'],
+                                ['label'=>'Satuan',         'value'=> $conflictData->metadata?->satuan_data ?? '-'],
+                                ['label'=>'Lokasi',         'value'=> $conflictData->location?->nama_wilayah ?? '-'],
+                                ['label'=>'Periode',        'value'=> $conflictData->time
+                                    ? ($conflictData->time->year
+                                        . ($conflictData->time->month   ? '/Bln-'.$conflictData->time->month   : '')
+                                        . ($conflictData->time->quarter ? '/Q'.$conflictData->time->quarter    : '')
+                                        . ($conflictData->time->semester? '/S'.$conflictData->time->semester   : ''))
+                                    : '-'],
+                                ['label'=>'Sumber/Produsen','value'=> $conflictData->produsen?->nama_produsen ?? '-'],
+                                ['label'=>'Rujukan',        'value'=> $conflictData->rujukan?->nama_rujukan ?? '-'],
+                                ['label'=>'Diinput oleh',   'value'=> $conflictData->user?->name ?? '-'],
+                                ['label'=>'Tanggal Input',  'value'=> $conflictData->date_inputed?->format('d/m/Y H:i') ?? '-'],
+                            ];
+                            @endphp
+                            @foreach($detailsB as $d)
+                            <div>
+                                <dt class="text-xs text-gray-400 font-medium">{{ $d['label'] }}</dt>
+                                <dd class="text-gray-800 mt-0.5">{{ $d['value'] }}</dd>
+                            </div>
+                            @endforeach
+                        </dl>
+                    </div>
+                </div>
+            @else
+                {{-- Card lama, dipakai untuk tipe anomali selain source_conflict --}}
+                <div class="bg-white rounded-xl border border-gray-200 p-5">
+                    <p class="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-3">Detail Data</p>
+                    <dl class="grid grid-cols-2 gap-x-8 gap-y-3 text-sm">
+                        @php
+                        $details = [
+                            ['label'=>'Metadata',  'value'=> $data->metadata?->nama ?? '-'],
+                            ['label'=>'Satuan',    'value'=> $data->metadata?->satuan_data ?? '-'],
+                            ['label'=>'Lokasi',    'value'=> $data->location?->nama_wilayah ?? '-'],
+                            ['label'=>'Periode',   'value'=> $data->time
+                                ? ($data->time->year
+                                    . ($data->time->month   ? '/Bln-'.$data->time->month   : '')
+                                    . ($data->time->quarter ? '/Q'.$data->time->quarter    : '')
+                                    . ($data->time->semester? '/S'.$data->time->semester   : ''))
+                                : '-'],
+                            ['label'=>'Sumber/Produsen', 'value'=> $data->produsen?->nama_produsen ?? '-'],
+                            ['label'=>'Rujukan',   'value'=> $data->rujukan?->nama_rujukan ?? '-'],
+                            ['label'=>'Diinput oleh', 'value'=> $data->user?->name ?? '-'],
+                            ['label'=>'Tanggal Input', 'value'=> $data->date_inputed?->format('d/m/Y H:i') ?? '-'],
+                        ];
+                        @endphp
+                        @foreach($details as $d)
+                        <div>
+                            <dt class="text-xs text-gray-400 font-medium">{{ $d['label'] }}</dt>
+                            <dd class="text-gray-800 mt-0.5">{{ $d['value'] }}</dd>
+                        </div>
+                        @endforeach
+                    </dl>
+                </div>
+            @endif
 
             {{-- Perbandingan sumber data --}}
             <div class="bg-white rounded-xl border border-gray-200 p-5">
@@ -427,37 +502,39 @@ async function loadSourceComparison() {
         }
 
         let html = `
-        <div class="overflow-x-auto">
-          <table class="w-full text-xs">
-            <thead class="bg-gray-50">
-              <tr>
-                <th class="px-2 py-2 text-left text-gray-500 font-medium">Produsen</th>
-                <th class="px-2 py-2 text-right text-gray-500 font-medium">Nilai</th>
-                <th class="px-2 py-2 text-right text-gray-500 font-medium">Selisih</th>
-                <th class="px-2 py-2 text-right text-gray-500 font-medium">% Diff</th>
-                <th class="px-2 py-2 text-center text-gray-500 font-medium">Status</th>
-              </tr>
-            </thead>
-            <tbody class="divide-y divide-gray-100">`;
+            <div class="overflow-x-auto">
+            <table class="w-full text-xs">
+                <thead class="bg-gray-50">
+                <tr>
+                    <th class="px-2 py-2 text-left text-gray-500 font-medium">Rujukan</th>
+                    <th class="px-2 py-2 text-right text-gray-500 font-medium">Nilai Asli</th>
+                    <th class="px-2 py-2 text-left text-gray-500 font-medium">Satuan</th>
+                    <th class="px-2 py-2 text-right text-gray-500 font-medium">Selisih</th>
+                    <th class="px-2 py-2 text-right text-gray-500 font-medium">% Diff</th>
+                    <th class="px-2 py-2 text-center text-gray-500 font-medium">Status</th>
+                </tr>
+                </thead>
+                <tbody class="divide-y divide-gray-100">`;
 
         json.data.forEach(row => {
             const conflict = row.conflict;
             html += `
             <tr class="${conflict ? 'bg-amber-50/40' : ''}">
-              <td class="px-2 py-2 font-medium text-gray-700">${esc(row.produsen)}</td>
-              <td class="px-2 py-2 text-right font-mono text-gray-800">${fmt(row.value)}</td>
-              <td class="px-2 py-2 text-right font-mono ${row.selisih >= 0 ? 'text-red-600' : 'text-blue-600'}">
+            <td class="px-2 py-2 font-medium text-gray-700">${esc(row.rujukan)}</td>
+            <td class="px-2 py-2 text-right font-mono text-gray-800">${fmt(row.value)}</td>
+            <td class="px-2 py-2 text-gray-500">${esc(row.satuan)}</td>
+            <td class="px-2 py-2 text-right font-mono ${row.selisih >= 0 ? 'text-red-600' : 'text-blue-600'}">
                 ${row.selisih >= 0 ? '+' : ''}${fmt(row.selisih)}
-              </td>
-              <td class="px-2 py-2 text-right font-mono ${conflict ? 'text-amber-600 font-semibold' : 'text-gray-500'}">
+            </td>
+            <td class="px-2 py-2 text-right font-mono ${conflict ? 'text-amber-600 font-semibold' : 'text-gray-500'}">
                 ${row.pct_diff}%
-              </td>
-              <td class="px-2 py-2 text-center">
+            </td>
+            <td class="px-2 py-2 text-center">
                 ${conflict
-                  ? '<span style="background:#fef9c3;color:#a16207;" class="px-2 py-0.5 rounded-full text-[10px] font-semibold">Konflik</span>'
-                  : '<span style="background:#dcfce7;color:#15803d;" class="px-2 py-0.5 rounded-full text-[10px] font-semibold">OK</span>'
+                ? '<span style="background:#fef9c3;color:#a16207;" class="px-2 py-0.5 rounded-full text-[10px] font-semibold">Konflik</span>'
+                : '<span style="background:#dcfce7;color:#15803d;" class="px-2 py-0.5 rounded-full text-[10px] font-semibold">OK</span>'
                 }
-              </td>
+            </td>
             </tr>`;
         });
         html += `</tbody></table></div>`;

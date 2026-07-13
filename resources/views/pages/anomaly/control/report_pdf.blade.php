@@ -259,16 +259,26 @@
         </p>
     </div>
 
-    <div class="highlight-box">
-        Nilai berubah dari <strong>{{ $anomaly->previous_value !== null ? number_format($anomaly->previous_value, 2, ',', '.') : '—' }}</strong>
-        menjadi <strong>{{ $anomaly->current_value !== null ? number_format($anomaly->current_value, 2, ',', '.') : '—' }}</strong>
-        &nbsp;dengan&nbsp; perubahan sebesar <span class="val">{{ $anomaly->formatted_percentage_change }}</span>
-    </div>
+    @if($anomaly->anomaly_type === \App\Models\Anomaly::TYPE_SOURCE_CONFLICT)
+        <div class="highlight-box">
+            Nilai dari sumber ini tercatat sebesar
+            <span class="val">{{ number_format($data->number_value, 2, ',', '.') }}</span>,
+            namun terindikasi berbeda signifikan dengan sumber data lain untuk
+            lokasi dan periode yang sama. Rincian perbandingan
+            dapat dilihat pada tabel di bawah.
+        </div>
+    @else
+        <div class="highlight-box">
+            Nilai berubah dari <strong>{{ $anomaly->previous_value !== null ? number_format($anomaly->previous_value, 2, ',', '.') : '—' }}</strong>
+            menjadi <strong>{{ $anomaly->current_value !== null ? number_format($anomaly->current_value, 2, ',', '.') : '—' }}</strong>
+            &nbsp;dengan&nbsp; perubahan sebesar <span class="val">{{ $anomaly->formatted_percentage_change }}</span>
+        </div>
+    @endif
 
     <div class="section-heading">Detail Data</div>
     <table class="detail-table">
         <tr>
-            <td class="label">Metadata</td>
+            <td class="label">Judul Data</td>
             <td class="colon">:</td>
             <td>{{ $data->metadata?->nama ?? '-' }}</td>
         </tr>
@@ -311,7 +321,7 @@
         <table class="grid-table">
             <thead>
                 <tr>
-                    <th>Produsen</th>
+                    <th>Rujukan</th>
                     <th style="text-align:right">Nilai</th>
                     <th style="text-align:right">Selisih</th>
                     <th style="text-align:right">% Diff</th>
@@ -321,7 +331,7 @@
             <tbody>
                 @foreach($sourceComparison as $row)
                     <tr>
-                        <td>{{ $row->produsen ?? $row['produsen'] ?? '-' }}</td>
+                        <td>{{ $row->rujukan ?? $row['rujukan'] ?? '-' }}</td>
                         <td class="num">{{ number_format($row->value ?? $row['value'] ?? 0, 2, ',', '.') }}</td>
                         <td class="num">{{ number_format($row->selisih ?? $row['selisih'] ?? 0, 2, ',', '.') }}</td>
                         <td class="num">{{ $row->pct_diff ?? $row['pct_diff'] ?? 0 }}%</td>

@@ -165,7 +165,7 @@ class AnomalyControlController extends Controller
                 ->where('time_id', $key['time_id'])
                 ->where('status', Data::STATUS_AVAILABLE)
                 ->whereNotNull('number_value')
-                ->with('produsen')
+                ->with(['produsen', 'rujukan'])
                 ->get();
     
             $avg = $rows->avg('number_value');
@@ -174,6 +174,7 @@ class AnomalyControlController extends Controller
             $conflictMap[$mapKey] = $rows->map(fn($d) => [
                 'data_id'    => $d->id,
                 'produsen'   => $d->produsen?->nama_produsen ?? "Produsen #{$d->produsen_id}",
+                'rujukan'    => $d->rujukan?->nama_rujukan ?? '—',
                 'value'      => (float) $d->number_value,
                 'selisih'    => round((float) $d->number_value - $avg, 4),
                 'pct_diff'   => $avg > 0 ? round(abs(((float) $d->number_value - $avg) / $avg * 100), 2) : 0,
@@ -251,14 +252,18 @@ class AnomalyControlController extends Controller
                         $src['is_current'] = ($src['data_id'] === $data?->id);
                     }
                     unset($src);
+
+                    $avgRef = count($sources) > 0
+                        ? round(array_sum(array_column($sources, 'value')) / count($sources), 4)
+                        : null;
     
                     $anomaly->_ctx_type       = 'source_conflict';
                     $anomaly->_ctx_ref_label  = 'Rata-rata sumber';
-                    $anomaly->_ctx_ref_value  = count($sources) > 0
-                        ? round(array_sum(array_column($sources, 'value')) / count($sources), 4)
-                        : null;
+                    $anomaly->_ctx_ref_value  = $avgRef;
                     $anomaly->_ctx_curr_value = $anomaly->current_value;
-                    $anomaly->_ctx_change_pct = $anomaly->percentage_change;
+                    $anomaly->_ctx_change_pct = ($avgRef !== null && $avgRef > 0)
+                        ? round(abs(((float) $anomaly->current_value - $avgRef) / $avgRef) * 100, 2)
+                        : null;
                     $anomaly->_ctx_sources    = $sources;
                     $anomaly->_ctx_stats      = [];
                     break;
@@ -417,6 +422,20 @@ class AnomalyControlController extends Controller
 
         $data = $anomaly->data;
 
+        $conflictData = null;
+        if ($anomaly->anomaly_type === Anomaly::TYPE_SOURCE_CONFLICT) {
+            $conflictData = Data::where('metadata_id', $data->metadata_id)
+                ->where('location_id', $data->location_id)
+                ->where('time_id', $data->time_id)
+                ->where('id', '!=', $data->id)
+                ->where('status', Data::STATUS_AVAILABLE)
+                ->whereNotNull('number_value')
+                ->with(['metadata', 'location', 'time', 'user', 'produsen', 'rujukan'])
+                // Ambil yang selisihnya paling besar, sesuai logika checkSourceConflict()
+                ->orderByRaw('ABS(number_value - ?) DESC', [(float) $data->number_value])
+                ->first();
+        }
+
         // ── Histori keputusan stakeholder ─────────────────────
         $decisionHistory = $this->workflow->getDecisionHistory($data->id);
 
@@ -436,6 +455,7 @@ class AnomalyControlController extends Controller
         return view('pages.anomaly.control.show', compact(
             'anomaly',
             'data',
+            'conflictData',
             'decisionHistory',
             'sourceComparison',
             'auditHistory',

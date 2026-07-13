@@ -393,15 +393,14 @@
                             {{-- Detail Perbandingan (kontekstual) --}}
                             <td class="px-3 py-3">
                                 @if($ctxType === 'source_conflict' && !empty($sources))
-                                    {{-- Tabel mini produsen vs nilai --}}
                                     <div class="space-y-1">
                                         @foreach($sources as $src)
                                         <div class="flex items-center justify-between gap-2 px-2 py-1 rounded
                                                     {{ $src['is_current'] ? 'bg-purple-50 border border-purple-200' : 'bg-gray-50' }}">
                                             <span class="truncate max-w-25 {{ $src['is_current'] ? 'font-semibold text-purple-800' : 'text-gray-600' }}"
-                                                title="{{ $src['produsen'] }}">
+                                                title="{{ $src['rujukan'] }}">
                                                 @if($src['is_current'])<i class="fas fa-circle text-[6px] text-purple-500 mr-0.5"></i>@endif
-                                                {{ $src['produsen'] }}
+                                                {{ $src['rujukan'] }}
                                             </span>
                                             <span class="font-mono text-[11px] shrink-0
                                                         {{ $src['pct_diff'] >= 5 ? 'text-amber-600 font-semibold' : 'text-gray-600' }}">

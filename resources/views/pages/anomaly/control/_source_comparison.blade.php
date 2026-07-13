@@ -5,8 +5,9 @@
     <table class="w-full text-xs">
         <thead class="bg-gray-50">
             <tr>
-                <th class="px-2 py-2 text-left text-gray-500 font-medium">Produsen</th>
+                <th class="px-2 py-2 text-left text-gray-500 font-medium">Rujukan</th>
                 <th class="px-2 py-2 text-right text-gray-500 font-medium">Nilai</th>
+                <th class="px-2 py-2 text-left text-gray-500 font-medium">Satuan</th>
                 <th class="px-2 py-2 text-right text-gray-500 font-medium">Selisih</th>
                 <th class="px-2 py-2 text-right text-gray-500 font-medium">% Diff</th>
                 <th class="px-2 py-2 text-center text-gray-500 font-medium">Status</th>
@@ -15,10 +16,11 @@
         <tbody class="divide-y divide-gray-100">
             @foreach($sourceComparison as $src)
             <tr class="{{ $src['conflict'] ? 'bg-amber-50/40' : '' }}">
-                <td class="px-2 py-2 font-medium text-gray-700">{{ $src['produsen'] }}</td>
+                <td class="px-2 py-2 font-medium text-gray-700">{{ $src['rujukan'] }}</td>
                 <td class="px-2 py-2 text-right font-mono text-gray-800">
                     {{ number_format($src['value'], 2) }}
                 </td>
+                <td class="px-2 py-2 text-gray-500">{{ $src['satuan'] }}</td>
                 <td class="px-2 py-2 text-right font-mono {{ $src['selisih'] >= 0 ? 'text-red-600' : 'text-blue-600' }}">
                     {{ $src['selisih'] >= 0 ? '+' : '' }}{{ number_format($src['selisih'], 2) }}
                 </td>

@@ -343,7 +343,7 @@ class AnomalyDetectionService
             ->where('location_id', $locationId)
             ->where('time_id', $timeId)
             ->whereNotNull('number_value')
-            ->with('produsen')
+            ->with(['produsen', 'rujukan', 'metadata'])
             ->get();
 
         if ($rows->isEmpty()) return collect();
@@ -360,6 +360,8 @@ class AnomalyDetectionService
                 'data_id'       => $d->id,
                 'produsen_id'   => $d->produsen_id,
                 'produsen'      => $d->produsen?->nama_produsen ?? "Produsen #{$d->produsen_id}",
+                'rujukan'       => $d->rujukan?->nama_rujukan ?? '—',
+                'satuan'        => $d->metadata?->satuan_data ?? '—',
                 'value'         => $value,
                 'avg_baseline'  => round($avg, 4),
                 'selisih'       => round($selisih, 4),
