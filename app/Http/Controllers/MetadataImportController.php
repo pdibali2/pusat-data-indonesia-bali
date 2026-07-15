@@ -456,7 +456,18 @@ class MetadataImportController extends Controller
         if (!empty($r['tipe_data'])) {
             $r['tipe_data'] = str_ireplace('Angka Numerik', 'Numerik', $r['tipe_data']);
         }
-        $r['klasifikasi_id'] = is_numeric($r['klasifikasi_id']) ? (int)$r['klasifikasi_id'] : null;
+
+        // ── Klasifikasi: dukung ID numerik ATAU nama klasifikasi ──
+        $rawKlasifikasi = $r['klasifikasi_id'];
+
+        if (is_numeric($rawKlasifikasi)) {
+            $r['klasifikasi_id'] = (int) $rawKlasifikasi;
+        } elseif (is_string($rawKlasifikasi) && trim($rawKlasifikasi) !== '') {
+            $r['klasifikasi_id'] = $this->resolveKlasifikasiId(trim($rawKlasifikasi));
+        } else {
+            $r['klasifikasi_id'] = null;
+        }
+
         return $r;
     }
 
