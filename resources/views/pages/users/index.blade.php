@@ -103,6 +103,12 @@
                                         <i class="fas fa-circle-xmark text-xs"></i> Nonaktif
                                     </span>
                                 @endif
+
+                                @if ($user->locked_at)
+                                    <span class="mt-2 inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs bg-red-500/10 text-red-400 border border-red-500/20">
+                                        <i class="fas fa-lock text-xs"></i> Terkunci
+                                    </span>
+                                @endif
                             </td>
                             <td class="px-4 py-3 text-gray-500">
                                 {{ $user->registerdate ? $user->registerdate->format('d M Y') : '-' }}
@@ -136,6 +142,18 @@
                                             </button>
                                         @endif
                                     </form>
+
+                                    @if ($user->locked_at)
+                                        <form action="{{ route('admin.users.unlock', $user) }}" method="POST" style="display: inline;">
+                                            @csrf
+                                            <button type="submit"
+                                                    class="p-1.5 rounded-md bg-blue-500/10 text-blue-400 hover:bg-blue-500/20 transition"
+                                                    title="Buka kunci"
+                                                    onclick="return confirm('Yakin ingin membuka kunci user {{ addslashes($user->name) }}?')">
+                                                <i class="fas fa-unlock text-xs"></i>
+                                            </button>
+                                        </form>
+                                    @endif
                                 </div>
                             </td>
                         </tr>

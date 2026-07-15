@@ -7,8 +7,6 @@ use App\Models\User;
 use App\Models\UserSession;
 use App\Services\OrganizationInvitationService;
 use App\Services\SessionLimitService;
-use App\Services\SubscriptionLimitsService;
-use Illuminate\Cache\RateLimiting\Limit;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
@@ -16,6 +14,7 @@ use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\RateLimiter;
 use Illuminate\Support\Str;
+use App\Services\RecaptchaService;
 
 class AuthController extends Controller
 {
@@ -27,7 +26,7 @@ class AuthController extends Controller
         return view('pages.auth.login');
     }
 
-    public function login(Request $request)
+    public function login(Request $request, RecaptchaService $recaptcha)
     {
         if (Auth::check()){
             return back();
@@ -35,25 +34,11 @@ class AuthController extends Controller
         
         $throttleKey = Str::transliterate(Str::lower($request->input('username', 'guest')).'|'.$request->ip());
 
-        $recaptchaSecret = env('RECAPTCHA_SECRET');
-        if ($recaptchaSecret) {
+        if ($recaptcha->isEnabled()) {
             $token = $request->input('g-recaptcha-response');
-            if (! $token) {
-                return back()->withErrors(['recaptcha' => 'reCAPTCHA diperlukan.'])->withInput();
-            }
 
-            try {
-                $response = Http::asForm()->post('https://www.google.com/recaptcha/api/siteverify', [
-                    'secret' => $recaptchaSecret,
-                    'response' => $token,
-                    'remoteip' => $request->ip(),
-                ]);
-
-                if (! $response->successful() || ! ($response->json('success') ?? false)) {
-                    return back()->withErrors(['recaptcha' => 'reCAPTCHA gagal.'])->withInput();
-                }
-            } catch (\Throwable $e) {
-                return back()->withErrors(['recaptcha' => 'Verifikasi reCAPTCHA gagal.'])->withInput();
+            if (! $recaptcha->verify($token, 'login', $request->ip())) {
+                return back()->withErrors(['recaptcha' => 'Verifikasi keamanan gagal, silakan coba lagi.'])->withInput();
             }
         }
 

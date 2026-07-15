@@ -10,6 +10,7 @@ use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\RateLimiter;
 use Illuminate\Support\Str;
 use Carbon\Carbon;
+use App\Services\RecaptchaService;
 
 class PasswordResetController extends Controller
 {
@@ -20,7 +21,7 @@ class PasswordResetController extends Controller
     }
 
     // ── Proses kirim email reset ──────────────────────────────
-    public function sendResetLink(Request $request)
+    public function sendResetLink(Request $request, RecaptchaService $recaptcha)
     {
         // Rate limiting: 3x per jam per IP
         $key = 'password-reset:' . $request->ip();
@@ -34,6 +35,14 @@ class PasswordResetController extends Controller
         }
 
         RateLimiter::hit($key, 3600);
+
+        if ($recaptcha->isEnabled()) {
+            $token = $request->input('g-recaptcha-response');
+
+            if (! $recaptcha->verify($token, 'forgot_password', $request->ip())) {
+                return back()->withErrors(['recaptcha' => 'Verifikasi keamanan gagal, silakan coba lagi.'])->withInput();
+            }
+        }
 
         $request->validate([
             'email' => 'required|email',

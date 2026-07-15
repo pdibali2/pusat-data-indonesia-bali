@@ -113,6 +113,18 @@ class UserController extends Controller
             ->with('success', "User {$user->name} berhasil {$status}.");
     }
 
+    public function unlock(User $user)
+    {
+        $user->update([
+            'locked_at' => null,
+            'unlock_token' => null,
+            'unlock_token_expires_at' => null,
+        ]);
+
+        return redirect()->route('admin.users.index')
+            ->with('success', "User {$user->name} berhasil dibuka kunci.");
+    }
+
     public function destroy(User $user)
     {
         return redirect()->route('admin.users.index')

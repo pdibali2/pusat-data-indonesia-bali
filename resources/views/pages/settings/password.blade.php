@@ -31,25 +31,43 @@
             <div class="grid gap-4 md:grid-cols-2">
                 <div class="md:col-span-2">
                     <label class="text-xs font-medium text-gray-400">Password Saat Ini <span class="text-red-400">*</span></label>
-                    <input type="password" name="current_password"
-                           class="mt-2 w-full rounded-xl border bg-white/90 px-3 py-2 text-sm text-slate-900 shadow-sm outline-none transition focus:border-sky-400"
-                           placeholder="Password saat ini">
+                    <div class="relative mt-2">
+                        <input type="password" id="current_password" name="current_password"
+                               class="w-full rounded-xl border bg-white/90 px-3 py-2 pr-10 text-sm text-slate-900 shadow-sm outline-none transition focus:border-sky-400"
+                               placeholder="Password saat ini">
+                        <button type="button" data-toggle="current_password"
+                                class="password-toggle absolute inset-y-0 right-0 flex items-center pr-3 text-gray-400 hover:text-gray-600">
+                            <i class="fas fa-eye"></i>
+                        </button>
+                    </div>
                     @error('current_password') <p class="mt-1 text-xs text-red-400">{{ $message }}</p> @enderror
                 </div>
 
                 <div class="md:col-span-2">
                     <label class="text-xs font-medium text-gray-400">Password Baru <span class="text-red-400">*</span></label>
-                    <input type="password" name="password"
-                           class="mt-2 w-full rounded-xl border bg-white/90 px-3 py-2 text-sm text-slate-900 shadow-sm outline-none transition focus:border-sky-400"
-                           placeholder="Password baru">
+                    <div class="relative mt-2">
+                        <input type="password" id="password" name="password"
+                               class="w-full rounded-xl border bg-white/90 px-3 py-2 pr-10 text-sm text-slate-900 shadow-sm outline-none transition focus:border-sky-400"
+                               placeholder="Password baru">
+                        <button type="button" data-toggle="password"
+                                class="password-toggle absolute inset-y-0 right-0 flex items-center pr-3 text-gray-400 hover:text-gray-600">
+                            <i class="fas fa-eye"></i>
+                        </button>
+                    </div>
                     @error('password') <p class="mt-1 text-xs text-red-400">{{ $message }}</p> @enderror
                 </div>
 
                 <div class="md:col-span-2">
                     <label class="text-xs font-medium text-gray-400">Konfirmasi Password Baru <span class="text-red-400">*</span></label>
-                    <input type="password" name="password_confirmation"
-                           class="mt-2 w-full rounded-xl border bg-white/90 px-3 py-2 text-sm text-slate-900 shadow-sm outline-none transition focus:border-sky-400"
-                           placeholder="Ulangi password baru">
+                    <div class="relative mt-2">
+                        <input type="password" id="password_confirmation" name="password_confirmation"
+                               class="w-full rounded-xl border bg-white/90 px-3 py-2 pr-10 text-sm text-slate-900 shadow-sm outline-none transition focus:border-sky-400"
+                               placeholder="Ulangi password baru">
+                        <button type="button" data-toggle="password_confirmation"
+                                class="password-toggle absolute inset-y-0 right-0 flex items-center pr-3 text-gray-400 hover:text-gray-600">
+                            <i class="fas fa-eye"></i>
+                        </button>
+                    </div>
                 </div>
             </div>
 
@@ -65,4 +83,25 @@
         </form>
     </div>
 </div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+    document.querySelectorAll('.password-toggle').forEach(function (btn) {
+        btn.addEventListener('click', function () {
+            const input = document.getElementById(btn.dataset.toggle);
+            const icon = btn.querySelector('i');
+
+            if (input.type === 'password') {
+                input.type = 'text';
+                icon.classList.remove('fa-eye');
+                icon.classList.add('fa-eye-slash');
+            } else {
+                input.type = 'password';
+                icon.classList.remove('fa-eye-slash');
+                icon.classList.add('fa-eye');
+            }
+        });
+    });
+});
+</script>
 @endsection

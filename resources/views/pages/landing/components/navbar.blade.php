@@ -250,14 +250,14 @@ $col2 = $allKlasifikasi->slice($half);
                 @auth
                     <a href="{{ route('data.index') }}"
                     @click="mobileOpen = false"
-                    class="block w-full text-center px-4 py-3 text-sm font-bold bg-stikom-accent text-white hover:bg-[#2d9955] transition-colors">
+                    class="block w-full text-center px-4 py-3 text-sm font-bold bg-stikom-accent hover:bg-yellow-600 text-stikom hover:text-white transition-colors">
                         Halaman Data
                     </a>
                 @endauth
 
                 @guest
                     <a href="{{ route('login') }}"
-                    class="block w-full text-center px-4 py-3 text-sm font-bold bg-stikom-accent text-black hover:bg-[#2d9955] transition-colors">
+                    class="block w-full text-center px-4 py-3 text-sm font-bold bg-stikom-accent text-black hover:text-white hover:bg-yellow-700 transition-colors">
                         Login
                     </a>
                 @endguest
