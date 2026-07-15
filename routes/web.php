@@ -6,6 +6,7 @@ use App\Http\Controllers\AuthController;
 use App\Http\Controllers\InvitationController;
 use App\Http\Controllers\RegisterController;
 use App\Http\Controllers\PasswordResetController;
+use App\Http\Controllers\AccountSecurityController;
 use App\Http\Controllers\UserController;
 use App\Http\Controllers\GroupController;
 use App\Http\Controllers\ProdusenController;
@@ -34,6 +35,7 @@ use App\Http\Controllers\OrganizationController;
     Route::post('/register',          [RegisterController::class, 'register']);
     Route::get('/invitation/accept/{token}', [InvitationController::class, 'accept'])->name('invitation.accept');
     Route::get('/verify-email/{token}', [RegisterController::class, 'verify'])->name('verify.email');
+    Route::get('/unlock-account/{token}', [AccountSecurityController::class, 'unlock'])->name('account.unlock');
 
     // ── Password Reset ────────────────────────────────────────────
     Route::get('/forgot-password',        [PasswordResetController::class, 'requestView'])->name('password.request');
@@ -312,6 +314,8 @@ Route::middleware(['is.login', 'is.pengelola', 'is.customer'])->group(function (
     // ── Metadata ─────────────────────────────────────────────
     Route::get( '/metadata',            [MetadataController::class, 'index'])->name('metadata.index');
     Route::get( '/metadata/create',     [MetadataController::class, 'create'])->name('metadata.create');
+    Route::get('/metadata/search-for-group', [MetadataController::class, 'searchForGroupBy'])
+        ->name('metadata.search_for_group');
     Route::post('/metadata',            [MetadataController::class, 'store'])->name('metadata.store');
     Route::get( '/metadata/check-nama', [MetadataController::class, 'checkNama'])->name('metadata.check_nama');
     Route::get( '/metadata/approval',   [MetadataController::class, 'approval'])->name('metadata.approval');

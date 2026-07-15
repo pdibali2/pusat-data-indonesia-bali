@@ -172,6 +172,7 @@
 
                 {{-- Tombol Daftar --}}
                 <div class="pt-2">
+                    <input type="hidden" name="g-recaptcha-response" id="g-recaptcha-response" value="">
                     <button type="submit" tabindex="7"
                         class="btn flex w-full justify-center rounded-sm bg-linear-to-r from-blue-500 to-blue-400 px-3 py-1.5 text-white text-sm/6 font-semibold hover:from-blue-700 hover:to-blue-600 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-500 shadow-lg shadow-blue-500/30 transition duration-300 ease-in-out hover:scale-104">
                         Daftar
@@ -230,6 +231,11 @@
         </div>
     </div>
 
+    @php $recaptchaSiteKey = env('RECAPTCHA_SITE_KEY'); @endphp
+    @if($recaptchaSiteKey)
+        <script src="https://www.google.com/recaptcha/api.js?render={{ $recaptchaSiteKey }}"></script>
+    @endif
+
     <script>
         function setupPasswordToggle(inputId, toggleId, iconId) {
             const input = document.getElementById(inputId);
@@ -285,6 +291,32 @@
             checkbox.checked = true;
             closeModal();
         });
+
+        const form = document.querySelector('form[action="/register"]');
+        const tokenInput = document.getElementById('g-recaptcha-response');
+
+        if (form && tokenInput && '{{ $recaptchaSiteKey }}') {
+            form.addEventListener('submit', function (event) {
+                if (tokenInput.value) {
+                    return;
+                }
+
+                event.preventDefault();
+
+                if (!window.grecaptcha) {
+                    form.submit();
+                    return;
+                }
+
+                window.grecaptcha.ready(function () {
+                    window.grecaptcha.execute('{{ $recaptchaSiteKey }}', { action: 'register' })
+                        .then(function (token) {
+                            tokenInput.value = token;
+                            form.submit();
+                        });
+                });
+            });
+        }
     </script>
 </body>
 </html>

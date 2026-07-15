@@ -14,6 +14,7 @@ use PhpOffice\PhpSpreadsheet\Style\Protection;
 use App\Models\Klasifikasi;
 use App\Models\Metadata;
 use App\Models\ProdusenData;
+use Illuminate\Support\Facades\DB;
 
 class MetadataController extends Controller
 {
@@ -27,16 +28,13 @@ class MetadataController extends Controller
         $query = Metadata::with(['produsen', 'klasifikasi'])
                 ->where('status', self::STATUS_ACTIVE)
                 ->leftJoinSub(
-                    \Illuminate\Support\Facades\DB::table('data')
+                    DB::table('data')
                         ->join('time', 'data.time_id', '=', 'time.time_id')
                         ->where('data.status', 1)
                         ->whereNotNull('data.number_value')
                         ->selectRaw('data.metadata_id, MAX(time.year) as max_year')
                         ->groupBy('data.metadata_id'),
-                    'data_avail',
-                    'data_avail.metadata_id',
-                    '=',
-                    'metadata.metadata_id'
+                    'data_avail', 'data_avail.metadata_id', '=', 'metadata.metadata_id'
                 )
                 ->select('metadata.*');
 
@@ -99,7 +97,7 @@ class MetadataController extends Controller
             ->where('status', self::STATUS_ACTIVE)
             ->firstOrFail(['metadata_id', 'nama']);
 
-        $locations = \Illuminate\Support\Facades\DB::table('data')
+        $locations = DB::table('data')
             ->join('location', 'data.location_id', '=', 'location.location_id')
             ->join('time', 'data.time_id', '=', 'time.time_id')
             ->where('data.metadata_id', $id)
@@ -171,36 +169,14 @@ class MetadataController extends Controller
         $sheet->setTitle('Metadata');
 
         $headers = [
-            'ID',
-            'Nama',
-            'Alias',
-            'Konsep',
-            'Definisi',
-            'Klasifikasi',
-            'Asumsi',
-            'Metodologi',
-            'Penjelasan Metodologi',
-            'Tipe Data',
-            'Satuan Data',
-            'Tahun Mulai Data',
-            'Frekuensi Penerbitan',
-            'Tahun Data Tersedia',
-            'Bulan Pertama Rilis',
-            'Tanggal Rilis',
-            'Produsen Id',
-            'Tag',
-            'Flag Desimal',
-            'Tipe Group',
-            'Group By',
-            'Status',
+            'ID', 'Nama', 'Alias', 'Konsep', 'Definisi', 'Klasifikasi', 'Asumsi',
+            'Metodologi', 'Penjelasan Metodologi', 'Tipe Data', 'Satuan Data',
+            'Tahun Mulai Data', 'Frekuensi Penerbitan', 'Tahun Data Tersedia',
+            'Bulan Pertama Rilis', 'Tanggal Rilis', 'Produsen Id', 'Tag',
+            'Flag Desimal', 'Tipe Group', 'Group By', 'Status',
         ];
 
-        /*
-        |--------------------------------------------------------------------------
-        | Header Row
-        |--------------------------------------------------------------------------
-        */
-
+        // ── Header Row ──────────────────────────────────────────────────────
         $col = 'A';
         foreach ($headers as $header) {
             $sheet->setCellValue($col . '1', $header);
@@ -209,27 +185,15 @@ class MetadataController extends Controller
         }
 
         $sheet->getStyle('A1:V1')->applyFromArray([
-            'font' => [
-                'bold' => true,
-                'size' => 10,
-            ],
+            'font' => ['bold' => true, 'size' => 10],
             'alignment' => [
                 'horizontal' => Alignment::HORIZONTAL_CENTER,
                 'vertical'   => Alignment::VERTICAL_CENTER,
             ],
-            'borders' => [
-                'allBorders' => [
-                    'borderStyle' => Border::BORDER_THIN,
-                ],
-            ],
+            'borders' => ['allBorders' => ['borderStyle' => Border::BORDER_THIN]],
         ]);
 
-        /*
-        |--------------------------------------------------------------------------
-        | Data Rows
-        |--------------------------------------------------------------------------
-        */
-
+        // ── Data Rows — HANYA setCellValue, TANPA getStyle per baris ─────────
         foreach ($rows as $index => $m) {
             $row = $index + 2;
 
@@ -251,7 +215,6 @@ class MetadataController extends Controller
             $sheet->setCellValue("P{$row}", $m->tanggal_rilis);
             $sheet->setCellValue("Q{$row}", $m->produsen_id);
 
-            // tag harus format JSON string
             $sheet->setCellValue(
                 "R{$row}",
                 is_array($m->tag)
@@ -263,8 +226,12 @@ class MetadataController extends Controller
             $sheet->setCellValue("T{$row}", $m->tipe_group ?? 0);
             $sheet->setCellValue("U{$row}", $m->group_by);
             $sheet->setCellValue("V{$row}", $m->status ?? 1);
+        }
 
-            $sheet->getStyle("A{$row}:V{$row}")
+        // ── Border SEKALI untuk seluruh block data, bukan per baris ──────────
+        $lastRow = $rows->count() + 1;
+        if ($lastRow >= 2) {
+            $sheet->getStyle("A2:V{$lastRow}")
                 ->getBorders()
                 ->getAllBorders()
                 ->setBorderStyle(Border::BORDER_HAIR);
@@ -293,20 +260,20 @@ class MetadataController extends Controller
             'rentang'     => 'required|in:5-tahun,semester,quarter,bulanan',
             'tahun_awal'  => 'required|integer|min:1990|max:2099',
         ]);
-    
+
         $produsen  = ProdusenData::findOrFail($request->produsen_id);
         $tahunAwal = (int) $request->tahun_awal;
         $rentang   = $request->rentang;
-    
+
         // ── Metadata aktif milik produsen ─────────────────────────────────────
         $metadataList = Metadata::where('status', self::STATUS_ACTIVE)
             ->where('produsen_id', $request->produsen_id)
             ->orderBy('metadata_id')
             ->get(['metadata_id', 'nama', 'satuan_data', 'flag_desimal']);
-    
+
         // ── Bangun daftar kolom periode ────────────────────────────────────────
         $periodCols = $this->buildPeriodColumns($rentang, $tahunAwal);
-    
+
         // ── Nama file ──────────────────────────────────────────────────────────
         $rentangLabel = [
             '5-tahun'  => '5Tahun',
@@ -314,7 +281,7 @@ class MetadataController extends Controller
             'quarter'  => 'Quarter',
             'bulanan'  => 'Bulanan',
         ][$rentang];
-    
+
         $filename = 'Template_' . str_replace(' ', '_', $produsen->nama_produsen)
                 . '_' . $rentangLabel
                 . '_' . $tahunAwal . '-' . ($tahunAwal + 4)
@@ -322,17 +289,17 @@ class MetadataController extends Controller
                 . '.xlsx';
 
         $metadataIds = $metadataList->pluck('metadata_id')->toArray();
-    
+
         $rawData = [];
-    
+
         if (! empty($metadataIds)) {
             $rawData = \Illuminate\Support\Facades\DB::table('data')
                 ->join('time',     'data.time_id',     '=', 'time.time_id')
                 ->join('location', 'data.location_id', '=', 'location.location_id')
                 ->whereIn('data.metadata_id', $metadataIds)
-                ->where('data.status', 1)        
+                ->where('data.status', 1)
                 ->whereIn('time.year', $this->extractYearsFromPeriod($rentang, $tahunAwal))
-                ->where('time.month',   0)           
+                ->where('time.month',   0)
                 ->where('time.quarter', 0)
                 ->select(
                     'data.metadata_id',
@@ -342,15 +309,16 @@ class MetadataController extends Controller
                     'time.quarter',
                     'time.month',
                     'location.location_id',
-                    'location.nama_wilayah' 
+                    'location.nama_wilayah'
                 )
                 ->orderBy('data.metadata_id')
                 ->orderBy('location.location_id')
                 ->orderBy('time.year')
                 ->get();
         }
-        $pivot = []; 
-    
+
+        $pivot = [];
+
         foreach ($rawData as $row) {
             $metaId = (int) $row->metadata_id;
             $locId  = (int) $row->location_id;
@@ -361,9 +329,9 @@ class MetadataController extends Controller
                     'periods'      => [],
                 ];
             }
-    
+
             $periodKey = $this->buildPeriodKey($rentang, $row);
-    
+
             if ($periodKey !== null && ! array_key_exists($periodKey, $pivot[$metaId][$locId]['periods'])) {
                 $pivot[$metaId][$locId]['periods'][$periodKey] = $row->number_value !== null
                     ? (float) $row->number_value
@@ -371,16 +339,19 @@ class MetadataController extends Controller
             }
         }
 
-        $excelRows = [];   
-    
+        // ── Bangun $excelRows sekaligus catat range baris per metadata (utk styling batch) ──
+        $excelRows        = [];
+        $metaRowRanges    = []; // [metadata_id => ['start' => n, 'end' => n, 'flag_desimal' => x]]
+
         foreach ($metadataList as $meta) {
-            $metaId = $meta->metadata_id;
-    
+            $metaId    = $meta->metadata_id;
+            $startIdx  = count($excelRows); // index sebelum ditambah baris metadata ini
+
             if (! empty($pivot[$metaId])) {
                 foreach ($pivot[$metaId] as $locId => $locData) {
                     $namaLokasi = $this->buildLocationName($locData['location_row']);
                     $loc = $locData['location_row'];
-                        
+
                     $row = [
                         'metadata_id'  => $metaId,
                         'nama_metadata'=> $meta->nama,
@@ -391,15 +362,14 @@ class MetadataController extends Controller
                         'flag_desimal' => $meta->flag_desimal ?? 0,
                         'periods'      => [],
                     ];
-    
+
                     foreach ($periodCols as $colLabel) {
                         $row['periods'][$colLabel] = $locData['periods'][$colLabel] ?? null;
                     }
-    
+
                     $excelRows[] = $row;
                 }
             } else {
-                    
                 $row = [
                     'metadata_id'  => $metaId,
                     'nama_metadata'=> $meta->nama,
@@ -412,25 +382,34 @@ class MetadataController extends Controller
                 ];
                 $excelRows[] = $row;
             }
+
+            $endIdx = count($excelRows) - 1;
+            if ($endIdx >= $startIdx) {
+                $metaRowRanges[] = [
+                    'start'        => $startIdx + 4, // +4 karena data mulai di baris ke-4 sheet
+                    'end'          => $endIdx + 4,
+                    'flag_desimal' => (int) ($meta->flag_desimal ?? 0),
+                ];
+            }
         }
 
         $spreadsheet = new Spreadsheet();
         $spreadsheet->getProperties()
             ->setTitle('Template Import Data')
             ->setDescription('Template import data untuk produsen ' . $produsen->nama_produsen);
-    
-        // Warna palet 
-        $C_HEADER    = '0284C7';   
-        $C_PERIOD    = '0369A1';   
-        $C_META_FILL = 'E0F2FE';   
-        $C_META_ALT  = 'DBEAFE';   
-        $C_VAL_ALT   = 'F0F9FF';   
-    
+
+        // Warna palet
+        $C_HEADER    = '0284C7';
+        $C_PERIOD    = '0369A1';
+        $C_META_FILL = 'E0F2FE';
+        $C_META_ALT  = 'DBEAFE';
+        $C_VAL_ALT   = 'F0F9FF';
+
         $ws = $spreadsheet->getActiveSheet()->setTitle('Data Import');
-    
+
         $totalCols     = 6 + count($periodCols);
         $lastColLetter = $this->colLetter($totalCols);
-    
+
         // ── Baris 1: Judul ────────────────────────────────────────────────────
         $ws->mergeCells('A1:' . $lastColLetter . '1');
         $ws->setCellValue('A1',
@@ -443,13 +422,12 @@ class MetadataController extends Controller
                             'vertical'   => Alignment::VERTICAL_CENTER],
         ]);
         $ws->getRowDimension(1)->setRowHeight(26);
-    
+
         // ── Baris 2: Info ─────────────────────────────────────────────────────
-        $totalLokasi   = count($excelRows);
         $totalWithData = array_reduce($excelRows, function($c, $r) {
             return $c + (!empty($r['location_id']) ? 1 : 0);
         }, 0);
-    
+
         $ws->mergeCells('A2:' . $lastColLetter . '2');
         $ws->setCellValue('A2',
             $metadataList->count() . ' metadata aktif  |  '
@@ -461,7 +439,7 @@ class MetadataController extends Controller
             'alignment' => ['horizontal' => Alignment::HORIZONTAL_CENTER],
         ]);
         $ws->getRowDimension(2)->setRowHeight(16);
-    
+
         // ── Baris 3: Header kolom ─────────────────────────────────────────────
         $fixedHeaders = [
             ['label' => 'metadata_id',   'width' => 13, 'note' => 'ID metadata (otomatis, jangan diubah)'],
@@ -471,7 +449,7 @@ class MetadataController extends Controller
             ['label' => 'nama_wilayah',   'width' => 40, 'note' => 'Nama lokasi (referensi, boleh dikosongkan)'],
             ['label' => 'rujukan_id',    'width' => 15, 'note' => 'ID rujukan dari tabel rujukan'],
         ];
-    
+
         foreach ($fixedHeaders as $i => $h) {
             $col  = $this->colLetter($i + 1);
             $cell = $col . '3';
@@ -479,7 +457,7 @@ class MetadataController extends Controller
             $ws->getColumnDimension($col)->setWidth($h['width']);
             $ws->getComment($cell)->getText()->createTextRun($h['note']);
         }
-    
+
         foreach ($periodCols as $pi => $periodLabel) {
             $col = $this->colLetter(7 + $pi);
             $ws->setCellValue($col . '3', $periodLabel);
@@ -496,7 +474,7 @@ class MetadataController extends Controller
             'borders'   => ['allBorders' => ['borderStyle' => Border::BORDER_THIN,
                                             'color'       => ['rgb' => '0369A1']]],
         ]);
-    
+
         if (count($periodCols) > 0) {
             $ws->getStyle('G3:' . $lastColLetter . '3')->applyFromArray([
                 'font'      => ['bold' => true, 'color' => ['rgb' => 'FFFFFF'], 'size' => 10],
@@ -509,8 +487,8 @@ class MetadataController extends Controller
             ]);
         }
         $ws->getRowDimension(3)->setRowHeight(22);
-    
-        // ── Baris 4+: Data ────────────────────────────────────────────────────
+
+        // ── Baris 4+: Data — HANYA setCellValue di sini, TANPA getStyle per sel ──
         if (empty($excelRows)) {
             $ws->mergeCells('A4:' . $lastColLetter . '4');
             $ws->setCellValue('A4', 'Tidak ada metadata aktif untuk produsen ini.');
@@ -521,129 +499,103 @@ class MetadataController extends Controller
         } else {
             foreach ($excelRows as $i => $row) {
                 $rowNum = $i + 4;
-                $isAlt  = ($i % 2 === 1);
-    
-                // ── Kolom A: metadata_id ─────────────────────────
+
                 $ws->setCellValue('A' . $rowNum, $row['metadata_id']);
-                $ws->getStyle('A' . $rowNum)->applyFromArray([
-                    'fill'      => ['fillType'   => Fill::FILL_SOLID,
-                                    'startColor' => ['rgb' => $isAlt ? $C_META_ALT : $C_META_FILL]],
-                    'font'      => ['bold' => true, 'size' => 9, 'color' => ['rgb' => '0369A1']],
-                    'alignment' => ['horizontal' => Alignment::HORIZONTAL_CENTER,
-                                    'vertical'   => Alignment::VERTICAL_CENTER],
-                    'borders'   => ['allBorders' => ['borderStyle' => Border::BORDER_HAIR,
-                                                    'color'       => ['rgb' => 'BFDBFE']]],
-                ]);
-    
-                // ── Kolom B: nama_metadata ───────────────────────
                 $ws->setCellValue('B' . $rowNum, $row['nama_metadata']);
-                $ws->getStyle('B' . $rowNum)->applyFromArray([
-                    'fill'      => ['fillType'   => Fill::FILL_SOLID,
-                                    'startColor' => ['rgb' => $isAlt ? $C_META_ALT : $C_META_FILL]],
-                    'font'      => ['size' => 9, 'color' => ['rgb' => '0369A1']],
-                    'alignment' => ['vertical' => Alignment::VERTICAL_CENTER,
-                                    'wrapText' => true],
-                    'borders'   => ['allBorders' => ['borderStyle' => Border::BORDER_HAIR,
-                                                    'color'       => ['rgb' => 'BFDBFE']]],
-                ]);
-    
-                // ── Kolom C: satuan ─────────────────────────
                 $ws->setCellValue('C' . $rowNum, $row['satuan']);
-                $ws->getStyle('C' . $rowNum)->applyFromArray([
-                    'fill'      => ['fillType'   => Fill::FILL_SOLID,
-                                    'startColor' => ['rgb' => $isAlt ? $C_META_ALT : $C_META_FILL]],
-                    'font'      => ['size' => 9, 'color' => ['rgb' => '0369A1']],
-                    'alignment' => ['vertical' => Alignment::VERTICAL_CENTER,
-                                    'wrapText' => true],
-                    'borders'   => ['allBorders' => ['borderStyle' => Border::BORDER_HAIR,
-                                                    'color'       => ['rgb' => 'BFDBFE']]],
-                ]);
-
-                // ── Kolom D: location_id ─────────────────────────
                 $ws->setCellValue('D' . $rowNum, $row['location_id']);
-                $ws->getStyle('D' . $rowNum)->applyFromArray([
-                    'fill'      => ['fillType'   => Fill::FILL_SOLID,
-                                    'startColor' => ['rgb' => 'FFFFFF']],
-                    'font'      => ['size' => 9],
-                    'alignment' => ['horizontal' => Alignment::HORIZONTAL_CENTER],
-                    'borders'   => ['allBorders' => ['borderStyle' => Border::BORDER_HAIR,
-                                                    'color'       => ['rgb' => 'E2E8F0']]],
-                ]);
-    
-                // ── Kolom E: nama_wilayah ─────────────────────────
                 $ws->setCellValue('E' . $rowNum, $row['nama_wilayah']);
-                $ws->getStyle('E' . $rowNum)->applyFromArray([
-                    'fill'      => ['fillType'   => Fill::FILL_SOLID,
-                                    'startColor' => ['rgb' => 'FFFFFF']],
-                    'font'      => ['size' => 9],
-                    'borders'   => ['allBorders' => ['borderStyle' => Border::BORDER_HAIR,
-                                                    'color'       => ['rgb' => 'E2E8F0']]],
-                ]);
-
                 $ws->setCellValue('F' . $rowNum, $row['rujukan_id']);
-                $ws->getStyle('F' . $rowNum)->applyFromArray([
-                    'fill' => [
-                        'fillType' => Fill::FILL_SOLID,
-                        'startColor' => ['rgb' => 'FFFFFF']
-                    ],
-                    'font' => ['size' => 9],
-                    'alignment' => [
-                        'horizontal' => Alignment::HORIZONTAL_CENTER
-                    ],
-                    'borders' => [
-                        'allBorders' => [
-                            'borderStyle' => Border::BORDER_HAIR,
-                            'color' => ['rgb' => 'E2E8F0']
-                        ]
-                    ],
-                ]);
-
-                // ── Kolom G+: nilai per periode ──────────────────
-                $flagDesimal = (int) ($row['flag_desimal'] ?? 0);
-                $numFormat   = $flagDesimal > 0
-                    ? '#,##0.0' . str_repeat('0', $flagDesimal)
-                    : '#,##0';
 
                 foreach ($periodCols as $pi => $colLabel) {
-                    $col   = $this->colLetter(7 + $pi);
                     $value = $row['periods'][$colLabel] ?? null;
-    
                     if ($value !== null) {
+                        $col = $this->colLetter(7 + $pi);
                         $ws->setCellValue($col . $rowNum, $value);
-                        $ws->getStyle($col . $rowNum)->getNumberFormat()->setFormatCode($numFormat);
                     }
-    
-                    $ws->getStyle($col . $rowNum)->applyFromArray([
-                        'fill'      => ['fillType'   => Fill::FILL_SOLID,
-                                        'startColor' => ['rgb' => $isAlt ? $C_VAL_ALT : 'FFFFFF']],
-                        'font'      => ['size' => 9],
-                        'alignment' => ['horizontal' => Alignment::HORIZONTAL_CENTER],
-                        'borders'   => ['allBorders' => ['borderStyle' => Border::BORDER_HAIR,
-                                                        'color'       => ['rgb' => 'E0F2FE']]],
-                    ]);
                 }
-    
+
                 $ws->getRowDimension($rowNum)->setRowHeight(18);
             }
+
+            $lastDataRow = count($excelRows) + 3;
+
+            // ── Styling BATCH per range, bukan per sel ──────────────────────────
+            // Kolom A-B (metadata_id, nama_metadata)
+            $ws->getStyle("A4:B{$lastDataRow}")->applyFromArray([
+                'fill'      => ['fillType' => Fill::FILL_SOLID, 'startColor' => ['rgb' => $C_META_FILL]],
+                'font'      => ['size' => 9, 'color' => ['rgb' => '0369A1']],
+                'alignment' => ['vertical' => Alignment::VERTICAL_CENTER, 'wrapText' => true],
+                'borders'   => ['allBorders' => ['borderStyle' => Border::BORDER_HAIR, 'color' => ['rgb' => 'BFDBFE']]],
+            ]);
+            $ws->getStyle("A4:A{$lastDataRow}")->applyFromArray([
+                'font'      => ['bold' => true, 'size' => 9, 'color' => ['rgb' => '0369A1']],
+                'alignment' => ['horizontal' => Alignment::HORIZONTAL_CENTER, 'vertical' => Alignment::VERTICAL_CENTER],
+            ]);
+
+            // Kolom D (location_id), E (nama_wilayah), F (rujukan_id)
+            $ws->getStyle("D4:F{$lastDataRow}")->applyFromArray([
+                'fill'      => ['fillType' => Fill::FILL_SOLID, 'startColor' => ['rgb' => 'FFFFFF']],
+                'font'      => ['size' => 9],
+                'borders'   => ['allBorders' => ['borderStyle' => Border::BORDER_HAIR, 'color' => ['rgb' => 'E2E8F0']]],
+            ]);
+            $ws->getStyle("D4:D{$lastDataRow}")->applyFromArray([
+                'alignment' => ['horizontal' => Alignment::HORIZONTAL_CENTER],
+            ]);
+            $ws->getStyle("F4:F{$lastDataRow}")->applyFromArray([
+                'alignment' => ['horizontal' => Alignment::HORIZONTAL_CENTER],
+            ]);
+
+            // Kolom periode (G+) — style dasar untuk seluruh block sekaligus
+            if (count($periodCols) > 0) {
+                $ws->getStyle("G4:{$lastColLetter}{$lastDataRow}")->applyFromArray([
+                    'fill'      => ['fillType' => Fill::FILL_SOLID, 'startColor' => ['rgb' => 'FFFFFF']],
+                    'font'      => ['size' => 9],
+                    'alignment' => ['horizontal' => Alignment::HORIZONTAL_CENTER],
+                    'borders'   => ['allBorders' => ['borderStyle' => Border::BORDER_HAIR, 'color' => ['rgb' => 'E0F2FE']]],
+                ]);
+
+                // Number format per metadata (grouped by contiguous row range, bukan per sel)
+                foreach ($metaRowRanges as $range) {
+                    $numFormat = $range['flag_desimal'] > 0
+                        ? '#,##0.0' . str_repeat('0', $range['flag_desimal'])
+                        : '#,##0';
+
+                    $ws->getStyle("G{$range['start']}:{$lastColLetter}{$range['end']}")
+                        ->getNumberFormat()->setFormatCode($numFormat);
+                }
+            }
+
+            // Warna selang-seling (alternating row) — 1 range call per baris ganjil,
+            // jauh lebih sedikit dari sebelumnya (dulu 6+N getStyle per baris)
+            for ($i = 1; $i < count($excelRows); $i += 2) {
+                $rowNum = $i + 4;
+                $ws->getStyle("A{$rowNum}:B{$rowNum}")
+                    ->getFill()->setFillType(Fill::FILL_SOLID)->getStartColor()->setRGB($C_META_ALT);
+
+                if (count($periodCols) > 0) {
+                    $ws->getStyle("G{$rowNum}:{$lastColLetter}{$rowNum}")
+                        ->getFill()->setFillType(Fill::FILL_SOLID)->getStartColor()->setRGB($C_VAL_ALT);
+                }
+            }
         }
-    
+
         // ── Freeze & AutoFilter ───────────────────────────────────────────────
         $ws->freezePane('G4');
         $ws->setAutoFilter('A3:' . $lastColLetter . '3');
-    
+
         $lastDataRow = max(count($excelRows) + 3, 4);
         $unlockStyle = ['protection' => [
             'locked' => Protection::PROTECTION_UNPROTECTED,
         ]];
 
         $ws->getStyle('A1:' . $lastColLetter . '3')->applyFromArray($unlockStyle);
-
         $ws->getStyle('C4:' . $lastColLetter . $lastDataRow)->applyFromArray($unlockStyle);
-    
+
         $spreadsheet->setActiveSheetIndex(0);
-    
+
         $writer = new Xlsx($spreadsheet);
-    
+
         return response()->streamDownload(
             fn() => $writer->save('php://output'),
             $filename,
@@ -753,11 +705,37 @@ class MetadataController extends Controller
     // REACTIVATE / BULK APPROVE / BULK APPROVE ALL / DETAIL
     // ═══════════════════════════════════════════════════════════
     public function create()
-    {
-        $metadataList = Metadata::where('status', self::STATUS_ACTIVE)->orderBy('nama')->get();
-        $produsen     = ProdusenData::all();
+    {   
+        $metadataList = Metadata::where('status', self::STATUS_ACTIVE)
+            ->with('klasifikasi:klasifikasi_id,nama_klasifikasi')
+            ->orderBy('nama')
+            ->get(['metadata_id', 'nama', 'klasifikasi_id']);
+
+        $produsen        = ProdusenData::all();
         $klasifikasiList = Klasifikasi::orderBy('nama_klasifikasi')->get();
-        return view('pages.metadata.create', compact('metadataList', 'produsen', 'klasifikasiList'  ));
+
+        return view('pages.metadata.create', compact('metadataList', 'produsen', 'klasifikasiList'));
+    }   
+
+    public function searchForGroupBy(Request $request)
+    {
+        $q = trim($request->input('q', ''));
+
+        $query = Metadata::where('status', self::STATUS_ACTIVE)
+            ->with('klasifikasi:klasifikasi_id,nama_klasifikasi');
+
+        if ($q !== '') {
+            $query->where('nama', 'like', "%{$q}%");
+        }
+
+        return response()->json(
+            $query->orderBy('nama')->limit(30)->get(['metadata_id', 'nama', 'klasifikasi_id'])
+                ->map(fn($m) => [
+                    'metadata_id' => $m->metadata_id,
+                    'nama'        => $m->nama,
+                    'klasifikasi' => $m->klasifikasi?->nama_klasifikasi,
+                ])
+        );
     }
 
     public function store(Request $request)

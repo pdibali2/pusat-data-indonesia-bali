@@ -28,7 +28,12 @@ class User extends Authenticatable
         'name',
         'username',
         'email',
+        'phone',
+        'address',
         'password',
+        'locked_at',
+        'unlock_token',
+        'unlock_token_expires_at',
         'block',
         'status',
         'registerdate',
@@ -47,6 +52,7 @@ class User extends Authenticatable
         'two_factor_secret',
         'two_factor_recovery_codes',
         'remember_token',
+        'unlock_token',
     ];
 
     /**
@@ -61,6 +67,10 @@ class User extends Authenticatable
             'registerdate' => 'datetime',
             'lastvisitdate' => 'datetime',
             'two_factor_confirmed_at' => 'datetime',
+            'locked_at' => 'datetime',
+            'unlock_token_expires_at' => 'datetime',
+            'phone' => \App\Casts\Encrypted::class,
+            'address' => \App\Casts\Encrypted::class,
         ];
     }
 

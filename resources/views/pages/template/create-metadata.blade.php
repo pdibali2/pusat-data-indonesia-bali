@@ -607,26 +607,43 @@ function mGetDeepestLocId() {
 // ═══════════════════════════════════════════════════════════════
 let selectedMeta = {};
 let metaTimeout  = null;
+let metaLastResults = [];
 
-const metaCache = @json($allMetadata);
+async function fetchMetaSearch(q) {
+    const params = new URLSearchParams();
+    if (q) params.append('q', q);
+    try {
+        const r = await fetch(SEARCH_META_URL + '?' + params.toString(), {
+            headers: { 'Accept': 'application/json' }
+        });
+        if (!r.ok) return [];
+        return await r.json();
+    } catch (e) {
+        console.error('search metadata error', e);
+        return [];
+    }
+}
 
 function onMetaSearchFocus() {
     const box = document.getElementById('metaDropList');
     if (!box.classList.contains('hidden')) return;
-    if (!metaCache) return;
-    renderMetaDrop(metaCache);
+    loadMetaDrop('');
 }
 
 function onMetaSearchInput() {
     clearTimeout(metaTimeout);
     const q = document.getElementById('metaSearch').value.trim();
-    metaTimeout = setTimeout(() => {
-        if (!metaCache) return;
-        const filtered = q
-            ? metaCache.filter(m => (m.nama || '').toLowerCase().includes(q.toLowerCase()))
-            : metaCache;
-        renderMetaDrop(filtered);
-    }, 150);
+    metaTimeout = setTimeout(() => loadMetaDrop(q), 250);
+}
+
+async function loadMetaDrop(q) {
+    const box = document.getElementById('metaDropList');
+    box.innerHTML = '<p class="px-4 py-3 text-xs text-gray-400 text-center"><i class="fas fa-circle-notch fa-spin mr-1"></i> Memuat...</p>';
+    box.classList.remove('hidden');
+
+    const results = await fetchMetaSearch(q);
+    metaLastResults = results;
+    renderMetaDrop(results);
 }
 
 function renderMetaDrop(results) {
@@ -657,20 +674,18 @@ function renderMetaDrop(results) {
     box.classList.remove('hidden');
 }
 
-// Fungsi baru — ambil data dari metaCache berdasarkan ID
 function toggleMetaById(idStr) {
     const id = parseInt(idStr);
-    const m  = metaCache.find(x => x.metadata_id === id);
+    const m  = metaLastResults.find(x => x.metadata_id === id);
     if (!m) return;
     toggleMeta(m.metadata_id, m.nama, m.klasifikasi || '', m.satuan_data || '', m.frekuensi_penerbitan || '');
 }
+
 function toggleMeta(id, nama, klasifikasi, satuan, frekuensi) {
     if (selectedMeta[id]) { delete selectedMeta[id]; }
     else { selectedMeta[id] = { metadata_id: id, nama, klasifikasi, satuan_data: satuan, frekuensi_penerbitan: frekuensi }; }
     renderMetaChips();
-    const q = document.getElementById('metaSearch').value.trim();
-    const list = metaCache ? (q ? metaCache.filter(m => m.nama.toLowerCase().includes(q.toLowerCase())) : metaCache) : null;
-    if (list) renderMetaDrop(list);
+    renderMetaDrop(metaLastResults); // re-render pakai hasil AJAX terakhir, bukan query ulang
 }
 
 function renderMetaChips() {

@@ -533,6 +533,8 @@ class LandingController extends Controller
                 'freeIds'    => $freeIds,
                 'isLimited'  => $isLimited,
                 'totalFound' => 0,
+                'realFound'  => 0,
+                'isFallback' => false,
             ]);
         }
 
@@ -592,52 +594,61 @@ class LandingController extends Controller
 
             if ($item->is_free) $score += 30;
 
-            // is_locked: murni berdasarkan is_free, tanpa paksa topThree
             $item->is_locked = $isLimited && !in_array($item->metadata_id, $freeIds);
             $item->_score    = $score;
             return $item;
-        });
-        
-        // Pisahkan free dan premium dari hasil search
+        })->sortByDesc('_score')->values();
+
+        $realCount  = $scored->count();
+        $isFallback = $realCount === 0;
+        $targetTotal = 10;
+
         if ($isLimited) {
-            $freeFromSearch    = $scored->filter(fn($i) => !$i->is_locked)->sortByDesc('_score')->values();
-            $premiumFromSearch = $scored->filter(fn($i) =>  $i->is_locked)->sortByDesc('_score')->values();
-
-            // Terapkan logika slot free (hanya untuk user terbatas):
-            if ($freeFromSearch->count() >= 3) {
-                // Kasus 1: ada ≥3 free → batasi 3 saja
-                $freeSlot = $freeFromSearch->take(3);
-            } elseif ($freeFromSearch->count() >= 1) {
-                // Kasus 2: ada 1–2 free → tampilkan semua yang ada
-                $freeSlot = $freeFromSearch;
+            if ($isFallback) {
+                // Kasus 0: tidak ada match sama sekali → 2 free random + 8 premium random
+                $freeSlot    = $this->randomMetadata(2, $q, true, $freeIds, []);
+                $premiumSlot = $this->randomMetadata(8, $q, false, [], $freeSlot->pluck('metadata_id')->all());
+                $sorted = $freeSlot->concat($premiumSlot)->values();
             } else {
-                // Kasus 3: tidak ada free dari search → ambil 2 random dari DB
-                $randomFree = Metadata::where('status', 2)
-                    ->where('is_free', 1)
-                    ->whereIn('metadata_id', $freeIds)
-                    ->whereHas('data', fn($q) => $q->where('status', 1)->where('location_id', 0))
-                    ->inRandomOrder()
-                    ->limit(2)
-                    ->get();
-
-                $randomFree->each(function ($item) {
-                    $item->is_locked  = false;
-                    $item->_score     = 0;
-                    $item->_is_random = true;
+                // Kasus 1: ada match asli → free yang tampil UNLOCKED dibatasi maksimal 2 (pemancing).
+                // Sisanya (baik free asli yang kelebihan kuota, maupun premium asli) tetap ditampilkan tapi dikunci.
+                $freeQuota = 0;
+                $matched = $scored->map(function ($item) use (&$freeQuota) {
+                    if (!$item->is_locked) {
+                        if ($freeQuota < 2) {
+                            $freeQuota++;
+                            // tetap unlocked, ini slot pemancing
+                        } else {
+                            $item->is_locked = true; // kuota gratis habis → kunci juga
+                        }
+                    }
+                    return $item;
                 });
 
-                $freeSlot = $randomFree;
+                $needed     = max(0, $targetTotal - $matched->count());
+                $excludeIds = $matched->pluck('metadata_id')->all();
+                $padding    = $needed > 0
+                    ? $this->randomMetadata($needed, $q, false, [], $excludeIds) // padding selalu premium
+                    : collect();
+                $sorted = $matched->concat($padding)->values();
             }
-
-            // Gabungkan: free slot di atas, premium di bawah
-            $sorted     = $freeSlot->values()->concat($premiumFromSearch->values())->values();
-            $totalFound = $sorted->count();
         } else {
-            // User sudah punya akses penuh (login + subscribe aktif, atau admin/pengelola)
-            // → tampilkan semua hasil apa adanya, tanpa pembatasan slot gratis
-            $sorted     = $scored->sortByDesc('_score')->values();
-            $totalFound = $sorted->count();
+            // Full access — tidak ada pembatasan, tampilkan semua seperti biasa
+            if ($isFallback) {
+                $sorted = $this->randomMetadata($targetTotal, $q, null, [], []);
+            } else {
+                $matched    = $scored->each(fn($item) => $item->is_locked = false);
+                $needed     = max(0, $targetTotal - $matched->count());
+                $excludeIds = $matched->pluck('metadata_id')->all();
+                $padding    = $needed > 0
+                    ? $this->randomMetadata($needed, $q, null, [], $excludeIds)
+                    : collect();
+                $sorted = $matched->concat($padding)->values();
+            }
         }
+
+        $totalFound = $sorted->count(); // dipakai paginator, jumlah item yg benar2 ditampilkan
+        $realFound  = $realCount;       // dipakai teks "X data ditemukan" — jumlah match asli
 
         $perPage     = 10;
         $currentPage = max(1, (int) $request->input('page', 1));
@@ -657,8 +668,69 @@ class LandingController extends Controller
             'isLimited'  => $isLimited,
             'freeIds'    => $freeIds,
             'totalFound' => $totalFound,
+            'realFound'  => $realFound,
+            'isFallback' => $isFallback,
         ]);
     }
+
+/**
+ * Ambil metadata random sebagai bahan padding/fallback hasil pencarian.
+ * Kalau $q diisi, diprioritaskan yang similarity-nya ke keyword lebih tinggi
+ * (bukan murni acak) supaya tetap "mendekati keyword" walau bukan match persis.
+ *
+ * @param int         $count
+ * @param string      $q
+ * @param bool|null   $isFree  true = hanya gratis, false = hanya premium, null = campur (dipakai utk full access)
+ * @param array       $freeIds
+ * @param array       $excludeIds
+ */
+private function randomMetadata(int $count, string $q, ?bool $isFree, array $freeIds, array $excludeIds)
+{
+    if ($count <= 0) {
+        return collect();
+    }
+
+    $query = Metadata::where('status', 2)
+        ->whereHas('data', fn($qd) => $qd->where('status', 1)->where('location_id', 0))
+        ->with(['klasifikasi', 'data' => fn($qd) => $qd->where('status', 1)->where('location_id', 0)->with('rujukan.produsen')->limit(1)]);
+
+    if ($isFree === true) {
+        $query->where('is_free', 1);
+        if (!empty($freeIds)) {
+            $query->whereIn('metadata_id', $freeIds);
+        }
+    } elseif ($isFree === false) {
+        $query->where('is_free', 0);
+    }
+
+    if (!empty($excludeIds)) {
+        $query->whereNotIn('metadata_id', $excludeIds);
+    }
+
+    // Ambil pool lebih besar dari yang dibutuhkan, lalu urutkan berdasarkan
+    // kemiripan ke keyword (similar_text) supaya hasil padding tetap "nyerempet" relevan
+    $pool = $query->inRandomOrder()->limit(max($count * 5, 30))->get();
+
+    if ($q === '' || $pool->isEmpty()) {
+        return $pool->take($count)->each(function ($item) use ($isFree) {
+            $item->is_locked  = $isFree === false ? true : ($isFree === true ? false : false);
+            $item->_score     = 0;
+            $item->_is_random = true;
+        })->values();
+    }
+
+    $qLower = strtolower($q);
+
+    $scored = $pool->map(function ($item) use ($qLower, $isFree) {
+        similar_text($qLower, strtolower($item->nama), $similarity);
+        $item->_score     = $similarity;
+        $item->is_locked  = $isFree === false ? true : ($isFree === true ? false : false);
+        $item->_is_random = true;
+        return $item;
+    });
+
+    return $scored->sortByDesc('_score')->take($count)->values();
+}
 
     private function isLimitedUser(): bool
     {

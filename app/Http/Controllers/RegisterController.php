@@ -57,6 +57,28 @@ class RegisterController extends Controller
         // reset dalam 10 menit (600 detik)
         RateLimiter::hit($key, 600);
 
+        // If reCAPTCHA is enabled, verify token
+        if (env('RECAPTCHA_SECRET')) {
+            $token = $request->input('g-recaptcha-response');
+            if (! $token) {
+                return back()->withErrors(['recaptcha' => 'reCAPTCHA diperlukan.'])->withInput();
+            }
+
+            try {
+                $resp = \Illuminate\Support\Facades\Http::asForm()->post('https://www.google.com/recaptcha/api/siteverify', [
+                    'secret' => env('RECAPTCHA_SECRET'),
+                    'response' => $token,
+                    'remoteip' => $request->ip(),
+                ]);
+
+                if (! $resp->successful() || ! ($resp->json('success') ?? false)) {
+                    return back()->withErrors(['recaptcha' => 'reCAPTCHA gagal.'])->withInput();
+                }
+            } catch (\Throwable $e) {
+                return back()->withErrors(['recaptcha' => 'Verifikasi reCAPTCHA gagal.'])->withInput();
+            }
+        }
+
         // ── Validasi ─────────────────────────────────────────
         $request->validate([
             'name'               => 'required|string|max:200',

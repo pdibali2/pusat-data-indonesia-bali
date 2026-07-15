@@ -2,14 +2,20 @@
 
 namespace App\Http\Controllers;
 
+use App\Mail\AccountLocked;
 use App\Models\User;
 use App\Models\UserSession;
 use App\Services\OrganizationInvitationService;
 use App\Services\SessionLimitService;
 use App\Services\SubscriptionLimitsService;
+use Illuminate\Cache\RateLimiting\Limit;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Http;
+use Illuminate\Support\Facades\Mail;
+use Illuminate\Support\Facades\RateLimiter;
+use Illuminate\Support\Str;
 
 class AuthController extends Controller
 {
@@ -27,6 +33,30 @@ class AuthController extends Controller
             return back();
         }
         
+        $throttleKey = Str::transliterate(Str::lower($request->input('username', 'guest')).'|'.$request->ip());
+
+        $recaptchaSecret = env('RECAPTCHA_SECRET');
+        if ($recaptchaSecret) {
+            $token = $request->input('g-recaptcha-response');
+            if (! $token) {
+                return back()->withErrors(['recaptcha' => 'reCAPTCHA diperlukan.'])->withInput();
+            }
+
+            try {
+                $response = Http::asForm()->post('https://www.google.com/recaptcha/api/siteverify', [
+                    'secret' => $recaptchaSecret,
+                    'response' => $token,
+                    'remoteip' => $request->ip(),
+                ]);
+
+                if (! $response->successful() || ! ($response->json('success') ?? false)) {
+                    return back()->withErrors(['recaptcha' => 'reCAPTCHA gagal.'])->withInput();
+                }
+            } catch (\Throwable $e) {
+                return back()->withErrors(['recaptcha' => 'Verifikasi reCAPTCHA gagal.'])->withInput();
+            }
+        }
+
         $validated = $request->validate([
             'username' => ['required', 'string'],
             'password' => ['required'],
@@ -36,6 +66,46 @@ class AuthController extends Controller
 
         // Cari user berdasarkan username
         $user = User::where('username', $validated['username'])->first();
+
+        if ($user && $user->locked_at) {
+            return back()->withErrors(['username' => 'Akun Anda saat ini terkunci. Silakan cek email untuk membuka kembali.']);
+        }
+
+        if (!$user) {
+            RateLimiter::hit($throttleKey, 3600);
+            return back()
+                ->withErrors(['username' => 'Username tidak ditemukan.'])
+                ->withInput();
+        }
+
+        if (!Hash::check($validated['password'], $user->password)) {
+            RateLimiter::hit($throttleKey, 3600);
+
+            if (RateLimiter::tooManyAttempts($throttleKey, 3)) {
+                $token = Str::random(64);
+                $user->update([
+                    'locked_at' => now(),
+                    'unlock_token' => $token,
+                    'unlock_token_expires_at' => now()->addHours(24),
+                ]);
+
+                try {
+                    Mail::to($user->email)->send(new AccountLocked($user, $token));
+                } catch (\Throwable $e) {
+                    // ignore mail errors
+                }
+
+                return back()
+                    ->withErrors(['username' => 'Akun dikunci karena terlalu banyak percobaan login. Silakan cek email untuk membuka kembali.'])
+                    ->withInput();
+            }
+
+            return back()
+                ->withErrors(['password' => 'Password yang Anda masukkan salah.'])
+                ->withInput();
+        }
+
+        RateLimiter::clear($throttleKey);
 
         // Username tidak ditemukan
         if (!$user) {

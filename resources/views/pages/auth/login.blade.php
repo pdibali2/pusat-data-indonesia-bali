@@ -33,6 +33,12 @@
                     @endif
 
                     {{-- Badge error di atas form --}}
+                    @if (session('success'))
+                        <div class="rounded-sm bg-green-50 border border-green-200 px-4 py-3">
+                            <p class="text-sm text-green-700">{{ session('success') }}</p>
+                        </div>
+                    @endif
+
                     @if ($errors->any())
                         <div class="rounded-sm bg-red-50 border border-red-200 px-4 py-3">
                             @foreach ($errors->all() as $error)
@@ -82,8 +88,9 @@
 
                 <div class="mt-2">
                     <input type="hidden" name="invitation_token" value="{{ old('invitation_token', request('invitation_token')) }}">
-                <input type="hidden" name="invitation_email" value="{{ old('invitation_email', request('email')) }}">
-                <button type="submit" tabindex="3" class="btn flex w-full justify-center rounded-sm bg-linear-to-r from-blue-500 to-blue-400 px-3 py-1.5 text-white text-sm/6 font-semibold hover:from-blue-700 hover:to-blue-600 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-500 shadow-lg shadow-blue-500/30 transition duration-300 ease-in-out hover:scale-104">Login</button>
+                    <input type="hidden" name="invitation_email" value="{{ old('invitation_email', request('email')) }}">
+                    <input type="hidden" name="g-recaptcha-response" id="g-recaptcha-response" value="">
+                    <button type="submit" tabindex="3" class="btn flex w-full justify-center rounded-sm bg-linear-to-r from-blue-500 to-blue-400 px-3 py-1.5 text-white text-sm/6 font-semibold hover:from-blue-700 hover:to-blue-600 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-500 shadow-lg shadow-blue-500/30 transition duration-300 ease-in-out hover:scale-104">Login</button>
                     <p class="text-center text-sm text-gray-500 mt-4">
                         Belum punya akun?
                         <a href="/register" class="text-blue-600 hover:underline font-medium">Daftar</a>
@@ -140,6 +147,11 @@
         </script>
     @endif
 
+    @php $recaptchaSiteKey = env('RECAPTCHA_SITE_KEY'); @endphp
+    @if($recaptchaSiteKey)
+        <script src="https://www.google.com/recaptcha/api.js?render={{ $recaptchaSiteKey }}"></script>
+    @endif
+
     <script>
     document.addEventListener("DOMContentLoaded", function () {
 
@@ -169,6 +181,32 @@
             }
 
         });
+
+        const form = document.querySelector('form[action="/login"]');
+        const tokenInput = document.getElementById('g-recaptcha-response');
+
+        if (form && tokenInput && '{{ $recaptchaSiteKey }}') {
+            form.addEventListener('submit', function (event) {
+                if (tokenInput.value) {
+                    return;
+                }
+
+                event.preventDefault();
+
+                if (!window.grecaptcha) {
+                    form.submit();
+                    return;
+                }
+
+                window.grecaptcha.ready(function () {
+                    window.grecaptcha.execute('{{ $recaptchaSiteKey }}', { action: 'login' })
+                        .then(function (token) {
+                            tokenInput.value = token;
+                            form.submit();
+                        });
+                });
+            });
+        }
 
     });
     </script>

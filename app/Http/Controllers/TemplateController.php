@@ -57,16 +57,7 @@ class TemplateController extends Controller
             ->orderBy('nama_wilayah')
             ->get(['location_id', 'nama_wilayah']);
 
-        $allMetadata = Metadata::where('status', Metadata::STATUS_ACTIVE)
-        ->with('klasifikasi')
-        ->orderBy('nama')
-        ->get(['metadata_id', 'nama', 'klasifikasi_id', 'satuan_data', 'frekuensi_penerbitan'])
-        ->map(fn($m) => array_merge(
-            $m->toArray(),
-            ['klasifikasi' => $m->klasifikasi?->nama_klasifikasi]
-        ));
-
-        return view('pages.template.create-metadata', compact('provinsiList', 'allMetadata'));
+        return view('pages.template.create-metadata', compact('provinsiList'));
     }
 
     // ═══════════════════════════════════════════════════════════
@@ -108,7 +99,7 @@ class TemplateController extends Controller
 
     public function searchMetadata(Request $request)
     {
-        $q           = $request->input('q', '');
+        $q           = trim($request->input('q', ''));
         $klasifikasi = $request->input('klasifikasi', '');
         $locationId  = $request->input('location_id', '');
 
@@ -116,7 +107,8 @@ class TemplateController extends Controller
             ->orderBy('nama');
 
         if ($q !== '') {
-            $query->where('nama', 'like', "%{$q}%");
+            // Prefix match: "jum" → nama yang DIAWALI "jum" (bisa manfaatin index, jauh lebih cepat)
+            $query->where('nama', 'like', "{$q}%");
         }
 
         if ($klasifikasi !== '') {
@@ -126,11 +118,11 @@ class TemplateController extends Controller
         if ($locationId !== '') {
             $query->whereHas('data', function ($q) use ($locationId) {
                 $q->where('location_id', $locationId)
-                  ->where('status', Data::STATUS_AVAILABLE);
+                ->where('status', Data::STATUS_AVAILABLE);
             });
         }
 
-        $limit = ($q === '' && $klasifikasi === '' && $locationId === '') ? 100 : 50;
+        $limit = ($q === '' && $klasifikasi === '' && $locationId === '') ? 20 : 30;
 
         return response()->json(
             $query->with('klasifikasi')->limit($limit)->get(['metadata_id', 'nama', 'klasifikasi_id', 'satuan_data', 'frekuensi_penerbitan'])

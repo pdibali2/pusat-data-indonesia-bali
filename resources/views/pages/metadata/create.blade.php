@@ -292,14 +292,6 @@
                                    rounded-sm focus:outline-none focus:ring-2 focus:ring-sky-400 text-xs
                                    disabled:bg-gray-100 disabled:text-gray-400 disabled:cursor-not-allowed"
                             disabled>
-                            @forelse($metadataList as $item)
-                                <option value="{{ $item->metadata_id }}"
-                                    {{ old('group_by') == $item->metadata_id ? 'selected' : '' }}>
-                                    {{ $item->nama }}{{ $item->klasifikasi ? ' — '.$item->klasifikasi : '' }}
-                                </option>
-                            @empty
-                                <option value="" disabled>Belum ada metadata aktif</option>
-                            @endforelse
                         </select>
                         @error('group_by')
                             <p class="mt-1 text-xs text-red-500">{{ $message }}</p>
@@ -617,14 +609,31 @@ let skippedOpen = false;
 
 function initTomSelect(selector) {
     document.querySelectorAll(selector).forEach(el => {
-        if (!el.tomselect) {
+        if (el.tomselect) return;
+
+        if (el.id === 'group_by') {
             new TomSelect(el, {
-                create: true,
-                sortField: {
-                    field: "text",
-                    direction: "asc"
+                valueField: 'metadata_id',
+                labelField: 'nama',
+                searchField: 'nama',
+                create: false,
+                load: function (query, callback) {
+                    fetch(`{{ route('metadata.search_for_group') }}?q=${encodeURIComponent(query)}`)
+                        .then(r => r.json())
+                        .then(data => callback(data))
+                        .catch(() => callback());
+                },
+                render: {
+                    option: function (item, escape) {
+                        return `<div>${escape(item.nama)}${item.klasifikasi ? ' — ' + escape(item.klasifikasi) : ''}</div>`;
+                    },
+                    item: function (item, escape) {
+                        return `<div>${escape(item.nama)}</div>`;
+                    }
                 }
             });
+        } else {
+            new TomSelect(el, { create: true, sortField: { field: "text", direction: "asc" } });
         }
     });
 }
