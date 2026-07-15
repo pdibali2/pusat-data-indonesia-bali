@@ -1703,19 +1703,22 @@ function _renderTable(d) {
             html += cells;
 
             // ── Satuan + Sumber: rowspan hanya di baris pertama (sama untuk semua lokasi) ──
+            // ── Satuan: tetap rowspan, karena satuan sama untuk semua lokasi ──
             if (isFirstRow) {
                 html += `
                     <td class="px-3 py-2.5 text-xs text-gray-500 text-center
-                               border-l border-gray-200 whitespace-nowrap align-middle"
+                            border-l border-gray-200 whitespace-nowrap align-middle"
                         rowspan="${span}">
                         ${_esc(row.satuan ?? '-')}
-                    </td>
-                    <td class="px-3 py-2.5 text-xs text-gray-400 align-top border-l border-gray-200"
-                        style="max-width:180px" title="${_esc(row.sumber ?? '')}"
-                        rowspan="${span}">
-                        <span class="line-clamp-3">${_esc(row.sumber ?? '-')}</span>
                     </td>`;
             }
+
+            // ── Sumber: PER BARIS, karena tiap lokasi bisa punya rujukan/produsen beda ──
+            html += `
+                <td class="px-3 py-2.5 text-xs text-gray-400 align-top border-l border-gray-200"
+                    style="max-width:180px" title="${_esc(row.sumber ?? '')}">
+                    <span class="line-clamp-3">${_esc(row.sumber ?? '-')}</span>
+                </td>`;
 
             // ── Aksi/Grafik: muncul di SETIAP baris (per lokasi) ──
             const grafikUrl = `${TMPL_URLS.grafik}?metadata_id=${row.metadata_id}&location_id=${row.location_id ?? ''}`;
@@ -1834,7 +1837,6 @@ function _renderMobileCards(d) {
 
             return `
                 <div class="border-t border-gray-100">
-                    {{-- Sub-header lokasi --}}
                     <div class="flex items-center justify-between px-4 py-2 bg-gray-50 gap-2">
                         <span class="text-xs font-semibold text-gray-600">
                             ${_esc(row.lokasi ?? 'Semua Wilayah')}
@@ -1845,6 +1847,10 @@ function _renderMobileCards(d) {
                         </a>
                     </div>
                     ${nilaiRows}
+                    ${row.sumber ? `
+                    <div class="px-4 py-1.5 text-[10px] text-gray-400 border-t border-gray-50">
+                        <span class="font-medium text-gray-500">Sumber:</span> ${_esc(row.sumber)}
+                    </div>` : ''}
                 </div>`;
         }).join('');
 
@@ -1876,15 +1882,6 @@ function _renderMobileCards(d) {
                 {{-- Body accordion --}}
                 <div class="meta-card-body" id="mc-${idx}">
                     ${lokasiRows}
-
-                    {{-- Footer: sumber --}}
-                    ${group.sumber ? `
-                    <div class="px-4 py-2.5 border-t border-gray-100 bg-gray-50">
-                        <p class="text-[10px] text-gray-400">
-                            <span class="font-medium text-gray-500">Sumber:</span>
-                            ${_esc(group.sumber)}
-                        </p>
-                    </div>` : ''}
                 </div>
             </div>`;
     }).join('');

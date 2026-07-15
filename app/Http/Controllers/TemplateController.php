@@ -744,7 +744,18 @@ class TemplateController extends Controller
 
         $location = Location::find($locationId);
 
-        return view('pages.template.grafik', compact('metadata', 'location'));
+        // Ambil sumber dari data-rujukan_id-produsen_id, BUKAN dari metadata->produsen_id
+        $dataRow = Data::where('metadata_id', $metadataId)
+            ->where('location_id', $locationId)
+            ->where('status', Data::STATUS_AVAILABLE)
+            ->whereNotNull('rujukan_id')
+            ->with('rujukan.produsen')
+            ->latest('date_inputed')
+            ->first();
+
+        $rujukan = $dataRow?->rujukan?->produsen;
+
+        return view('pages.template.grafik', compact('metadata', 'location', 'rujukan'));
     }
 
     /**
@@ -1072,7 +1083,7 @@ class TemplateController extends Controller
         $locationMap = Location::pluck('nama_wilayah', 'location_id');
     
         // ── Query data — ambil semua sekaligus ────────────────
-        $dataQuery = Data::with(['rujukan:rujukan_id,nama_rujukan'])
+        $dataQuery = Data::with(['rujukan:rujukan_id,produsen_id', 'rujukan.produsen:produsen_id,nama_produsen'])
             ->whereIn('metadata_id', $metadataIds)
             ->where('status', Data::STATUS_AVAILABLE);
     
@@ -1090,10 +1101,12 @@ class TemplateController extends Controller
         $dataIndex    = [];
         $rujukanIndex = [];
     
+        
         foreach ($allData as $d) {
             $dataIndex[$d->metadata_id][$d->location_id][$d->time_id] = $d->number_value;
-            if ($d->rujukan) {
-                $rujukanIndex[$d->metadata_id][$d->location_id][$d->time_id] = $d->rujukan->nama_rujukan;
+            $namaProdusen = $d->rujukan?->produsen?->nama_produsen;
+            if ($namaProdusen) {
+                $rujukanIndex[$d->metadata_id][$d->location_id][$d->time_id] = $namaProdusen;
             }
         }
     
@@ -1321,7 +1334,7 @@ class TemplateController extends Controller
 
         $locationMap = Location::pluck('nama_wilayah', 'location_id');
 
-        $dataQuery = Data::with(['rujukan:rujukan_id,nama_rujukan'])
+        $dataQuery = Data::with(['rujukan:rujukan_id,produsen_id', 'rujukan.produsen:produsen_id,nama_produsen'])
             ->whereIn('metadata_id', $metadataIds)
             ->where('status', Data::STATUS_AVAILABLE);
 
@@ -1339,8 +1352,9 @@ class TemplateController extends Controller
 
         foreach ($allData as $d) {
             $dataIndex[$d->metadata_id][$d->location_id][$d->time_id] = $d->number_value;
-            if ($d->rujukan) {
-                $rujukanIndex[$d->metadata_id][$d->location_id][$d->time_id] = $d->rujukan->nama_rujukan;
+            $namaProdusen = $d->rujukan?->produsen?->nama_produsen;
+            if ($namaProdusen) {
+                $rujukanIndex[$d->metadata_id][$d->location_id][$d->time_id] = $namaProdusen;
             }
         }
 

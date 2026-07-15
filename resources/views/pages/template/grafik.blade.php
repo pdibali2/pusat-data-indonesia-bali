@@ -373,7 +373,7 @@
                 {{ $metadata->klasifikasi?->nama_klasifikasi ?? '—' }}
             </div>
             <div class="font-medium text-sm text-gray-500">
-                {{ $metadata->produsen->nama_produsen ?? '—' }}
+                {{ $rujukan->nama_produsen ?? '—' }}
             </div>
         </div>
 
