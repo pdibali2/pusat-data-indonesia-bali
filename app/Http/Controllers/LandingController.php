@@ -361,10 +361,10 @@ class LandingController extends Controller
             ->where(function ($qb) use ($keywords, $q) {
                 // Coba exact phrase dulu
                 $qb->where('nama', 'like', "%{$q}%")
-                ->orWhere(function ($inner) use ($keywords) {
-                    // Fallback: semua kata harus ada (AND, bukan OR)
-                    foreach ($keywords as $kw) {
-                        $inner->where('nama', 'like', "%{$kw}%");
+                        ->orWhere(function ($inner) use ($keywords) {
+                    foreach ($keywords as $i => $kw) {
+                        $i === 0 ? $inner->where('nama', 'like', "%{$kw}%")
+                                : $inner->orWhere('nama', 'like', "%{$kw}%");
                     }
                 });
             })
@@ -459,8 +459,9 @@ class LandingController extends Controller
             ->where(function ($qb) use ($q, $keywords) {
                 $qb->where('nama', 'like', "%{$q}%")
                 ->orWhere(function ($inner) use ($keywords) {
-                    foreach ($keywords as $kw) {
-                        $inner->where('nama', 'like', "%{$kw}%");
+                    foreach ($keywords as $i => $kw) {
+                        $i === 0 ? $inner->where('nama', 'like', "%{$kw}%")
+                                : $inner->orWhere('nama', 'like', "%{$kw}%");
                     }
                 })
                 ->orWhere('konsep',      'like', "%{$q}%")
@@ -550,8 +551,9 @@ class LandingController extends Controller
             ->where(function ($qb) use ($q, $keywords) {
                 $qb->where('nama', 'like', "%{$q}%")
                 ->orWhere(function ($inner) use ($keywords) {
-                    foreach ($keywords as $kw) {
-                        $inner->where('nama', 'like', "%{$kw}%");
+                    foreach ($keywords as $i => $kw) {
+                        $i === 0 ? $inner->where('nama', 'like', "%{$kw}%")
+                                : $inner->orWhere('nama', 'like', "%{$kw}%");
                     }
                 })
                 ->orWhere('konsep',      'like', "%{$q}%")
