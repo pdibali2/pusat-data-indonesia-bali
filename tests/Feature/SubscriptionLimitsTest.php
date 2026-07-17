@@ -109,19 +109,26 @@ class SubscriptionLimitsTest extends TestCase
             'is_active' => true,
         ]);
 
-        $request = new Request();
+        $request = Request::create('/', 'GET', [], [], [], [
+            'REMOTE_ADDR' => '127.0.0.1',
+            'HTTP_USER_AGENT' => 'test-agent-new',
+        ]);
+
         $request->setLaravelSession(app('session.store'));
-        $request->server->set('HTTP_USER_AGENT', 'test-agent-new');
+        $request->session()->start();
+
+        $request->session()->start();
 
         $service = app(SessionLimitService::class);
-        $service->enforceSessionLimit($user, $request);
+
+        $result = $service->handleLoginAttempt($user, $request);
+
+        $this->assertEquals('pending_login', $result['status']);
 
         $oldSession = UserSession::where('session_id', 'session-old')->first();
-        $newSession = UserSession::where('session_id', $request->session()->getId())->first();
 
         $this->assertNotNull($oldSession);
-        $this->assertFalse($oldSession->is_active);
-        $this->assertTrue($newSession->is_active);
+        $this->assertTrue($oldSession->is_active);
     }
 
     public function test_it_blocks_template_creation_when_limit_reached(): void

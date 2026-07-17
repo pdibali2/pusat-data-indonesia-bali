@@ -17,6 +17,7 @@ use App\Services\AnomalyDetectionService;
 use App\Services\WorkflowService;
 use Illuminate\Support\Facades\View;
 use Illuminate\Pagination\Paginator;
+use App\Services\StemmerService;
 
 class AppServiceProvider extends ServiceProvider
 {
@@ -36,6 +37,8 @@ class AppServiceProvider extends ServiceProvider
  
         // ── WorkflowService: singleton ───────────────────────────
         $this->app->singleton(WorkflowService::class);
+
+        $this->app->singleton(StemmerService::class, fn () => new StemmerService());
     }
 
     /**

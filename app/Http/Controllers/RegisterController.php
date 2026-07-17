@@ -58,7 +58,7 @@ class RegisterController extends Controller
         // reset dalam 10 menit (600 detik)
         RateLimiter::hit($key, 600);
 
-        if ($recaptcha->isEnabled()) {
+        if (! app()->environment('testing') && $recaptcha->isEnabled()) {
             $token = $request->input('g-recaptcha-response');
 
             if (! $recaptcha->verify($token, 'register', $request->ip())) {

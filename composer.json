@@ -20,7 +20,8 @@
         "laravel/wayfinder": "^0.1.9",
         "maatwebsite/excel": "*",
         "midtrans/midtrans-php": "*",
-        "railsware/mailtrap-php": "*"
+        "railsware/mailtrap-php": "*",
+        "sastrawi/sastrawi": "*"
     },
     "require-dev": {
         "fakerphp/faker": "^1.23",
