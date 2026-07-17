@@ -411,8 +411,10 @@ class LandingController extends Controller
         $results = Metadata::where('status', 2)
             ->whereHas('data', fn($query) => $query->where('status', 1)->where('location_id', 0))
             ->where(function ($qb) use ($q, $expandedKeywords) {
-                $qb->where('nama', 'like', "%{$q}%"); // exact phrase tetap dicoba dulu
-                $this->applyExpandedSearch($qb, 'nama', $expandedKeywords);
+                $qb->where('nama', 'like', "%{$q}%")
+                    ->orWhere(function ($inner) use ($expandedKeywords) {
+                        $this->applyExpandedSearch($inner, 'nama', $expandedKeywords);
+                    });
             })
             ->when($klasifikasi, function ($query) use ($klasifikasi) {
                 $query->whereHas('klasifikasi', fn($q) => $q->where('nama_klasifikasi', $klasifikasi));
@@ -482,10 +484,10 @@ class LandingController extends Controller
             )
             ->where(function ($qb) use ($q, $expandedKeywords) {
                 // exact phrase tetap dicoba dulu
-                $qb->where('nama', 'like', "%{$q}%");
-
-                // BARU: broaden pakai OR + stem + sinonim (gantikan blok AND-semua-kata lama)
-                $this->applyExpandedSearch($qb, 'nama', $expandedKeywords);
+                $qb->where('nama', 'like', "%{$q}%")
+                    ->orWhere(function ($inner) use ($expandedKeywords) {
+                        $this->applyExpandedSearch($inner, 'nama', $expandedKeywords);
+                    });
 
                 // field pendukung lain tetap dicek exact-phrase seperti semula
                 $qb->orWhere('konsep',      'like', "%{$q}%")
@@ -574,10 +576,10 @@ class LandingController extends Controller
                 $query->where('status', 1)->where('location_id', 0)
             )
             ->where(function ($qb) use ($q, $expandedKeywords) {
-                $qb->where('nama', 'like', "%{$q}%");
-
-                // BARU: broaden pakai OR + stem + sinonim (gantikan blok AND-semua-kata lama)
-                $this->applyExpandedSearch($qb, 'nama', $expandedKeywords);
+                $qb->where('nama', 'like', "%{$q}%")
+                    ->orWhere(function ($inner) use ($expandedKeywords) {
+                        $this->applyExpandedSearch($inner, 'nama', $expandedKeywords);
+                    });
 
                 $qb->orWhere('konsep',      'like', "%{$q}%")
                 ->orWhere('definisi',    'like', "%{$q}%")
