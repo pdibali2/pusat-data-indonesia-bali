@@ -12,6 +12,7 @@ use Illuminate\Support\Facades\Mail;
 use App\Mail\VerifikasiEmail;
 use Illuminate\Support\Facades\RateLimiter;
 use App\Services\RecaptchaService;
+use Throwable;
 
 class RegisterController extends Controller
 {
@@ -101,7 +102,18 @@ class RegisterController extends Controller
             'activation'    => $token,
         ]);
 
-        Mail::to($user->email)->send(new VerifikasiEmail($user, $token));
+        $mailSent = true;
+
+        try {
+            Mail::to($user->email)->send(new VerifikasiEmail($user, $token));
+        } catch (Throwable $exception) {
+            report($exception);
+            $mailSent = false;
+        }
+
+        $message = $mailSent
+            ? 'Registrasi berhasil! Silakan cek email untuk verifikasi akun.'
+            : 'Registrasi berhasil! Namun email verifikasi gagal dikirim. Silakan hubungi admin atau coba lagi nanti.';
 
         if ($request->filled('invitation_token')) {
             $invitationService = app(OrganizationInvitationService::class);
@@ -109,16 +121,13 @@ class RegisterController extends Controller
 
             if ($member) {
                 return redirect()->route('login')
-                    ->with('success', 'Registrasi berhasil! Silakan cek email untuk verifikasi akun. Undangan organisasi juga berhasil diterima setelah login.');
+                    ->with('success', $message . ' Undangan organisasi juga berhasil diterima setelah login.');
             }
         }
 
         return redirect()
             ->route('login')
-            ->with(
-                'success',
-                'Registrasi berhasil! Silakan cek email untuk verifikasi akun.'
-            );
+            ->with('success', $message);
     }
 
     public function verify(Request $request, string $token)
