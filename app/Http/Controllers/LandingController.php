@@ -7,19 +7,21 @@ use App\Models\Layanan;
 use App\Models\Klasifikasi;
 use App\Models\Metadata;
 use App\Models\Data;
-use App\Models\Transaksi;
 use App\Models\ProdusenData;
 use App\Services\SubscriptionAccessService;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
+use App\Services\SearchExpansionService;
 
 class LandingController extends Controller
 {
     /** Daftar semua klasifikasi yang diakui sistem */
     private $allKlasifikasi;
+    private SearchExpansionService $expansion;
 
-    public function __construct()
+    public function __construct(SearchExpansionService $expansion)
     {
+        $this->expansion = $expansion;
         $this->allKlasifikasi = Klasifikasi::query()
             ->whereHas('metadata', function ($q) {
                 $q->where('status', 2)
@@ -34,6 +36,57 @@ class LandingController extends Controller
                     && Str::slug($k) !== '';
             })
             ->values();
+    }
+
+    /**
+     * Build kondisi WHERE ...LIKE... dari hasil expand kata (stem + sinonim),
+     * broaden pakai OR supaya satu kata yang tidak match tidak menggagalkan seluruh baris.
+     */
+    private function applyExpandedSearch($queryBuilder, string $column, array $expandedKeywords): void
+    {
+        $queryBuilder->where(function ($outer) use ($column, $expandedKeywords) {
+            foreach ($expandedKeywords as $group) {
+                $terms = array_filter(array_merge(
+                    [$group['original'], $group['stemmed']],
+                    $group['sinonim']
+                ));
+
+                $outer->orWhere(function ($inner) use ($column, $terms) {
+                    foreach ($terms as $t) {
+                        $inner->orWhere($column, 'like', "%{$t}%");
+                    }
+                });
+            }
+        });
+    }
+
+    /**
+     * Hitung skor tambahan berdasarkan expanded keywords.
+     * Match kata asli dibobot lebih tinggi daripada match via stem/sinonim.
+     */
+    private function scoreExpandedMatch(string $nama, array $expandedKeywords): int
+    {
+        $nama = strtolower($nama);
+        $score = 0;
+
+        foreach ($expandedKeywords as $group) {
+            if (str_contains($nama, $group['original'])) {
+                $score += 50; // match kata asli — bobot penuh
+                continue;
+            }
+            if ($group['stemmed'] && str_contains($nama, $group['stemmed'])) {
+                $score += 35; // match kata dasar hasil stem
+                continue;
+            }
+            foreach ($group['sinonim'] as $s) {
+                if (str_contains($nama, $s)) {
+                    $score += 20; // match via sinonim — bobot paling rendah
+                    break;
+                }
+            }
+        }
+
+        return $score;
     }
 
     // ─────────────────────────────────────────────────────────────────────────
@@ -347,81 +400,49 @@ class LandingController extends Controller
         $isLimited = $this->isLimitedUser();
         $freeIds   = $this->getFreeIds();
 
-        // ── Pecah keyword jadi kata-kata ────────────────────────────────
         $keywords = collect(explode(' ', $q))
             ->map(fn($k) => trim(strtolower($k)))
             ->filter(fn($k) => strlen($k) >= 2)
             ->values();
 
-        // ── Query: ambil semua yang mengandung setidaknya 1 kata ────────
+        // ── BARU: expand kata → stem + sinonim ──────────────────────
+        $expandedKeywords = $this->expansion->expand($keywords->all());
+
         $results = Metadata::where('status', 2)
-            ->whereHas('data', function ($query) {
-                $query->where('status', 1)->where('location_id', 0);
-            })
-            ->where(function ($qb) use ($keywords, $q) {
-                // Coba exact phrase dulu
-                $qb->where('nama', 'like', "%{$q}%")
-                        ->orWhere(function ($inner) use ($keywords) {
-                    foreach ($keywords as $i => $kw) {
-                        $i === 0 ? $inner->where('nama', 'like', "%{$kw}%")
-                                : $inner->orWhere('nama', 'like', "%{$kw}%");
-                    }
-                });
+            ->whereHas('data', fn($query) => $query->where('status', 1)->where('location_id', 0))
+            ->where(function ($qb) use ($q, $expandedKeywords) {
+                $qb->where('nama', 'like', "%{$q}%"); // exact phrase tetap dicoba dulu
+                $this->applyExpandedSearch($qb, 'nama', $expandedKeywords);
             })
             ->when($klasifikasi, function ($query) use ($klasifikasi) {
-                $query->whereHas('klasifikasi', fn($q) =>
-                    $q->where('nama_klasifikasi', $klasifikasi)
-                );
+                $query->whereHas('klasifikasi', fn($q) => $q->where('nama_klasifikasi', $klasifikasi));
             })
             ->with(['klasifikasi', 'produsen'])
-            ->select('metadata_id', 'nama', 'klasifikasi_id', 'produsen_id', 'satuan_data', 'frekuensi_penerbitan', 'tahun_mulai_data')
-            ->limit(100)
+            ->select('metadata_id', 'nama', 'klasifikasi_id', 'produsen_id', 'satuan_data', 'frekuensi_penerbitan', 'tahun_mulai_data', 'tag')
+            ->limit(150) // naikkan dikit karena hasil sekarang lebih luas
             ->get();
 
-        // ── Scoring: hitung kemiripan tiap hasil dengan keyword ─────────
         $qLower = strtolower($q);
 
-        $scored = $results->map(function ($item) use ($q, $qLower, $keywords) {
-            $nama      = strtolower($item->nama);
-            $score     = 0;
+        $scored = $results->map(function ($item) use ($q, $qLower, $expandedKeywords) {
+            $nama  = strtolower($item->nama);
+            $score = 0;
 
-            // 1. Exact match penuh → skor tertinggi
-            if ($nama === $qLower) {
-                $score += 1000;
-            }
+            if ($nama === $qLower)               $score += 1000;
+            if (str_starts_with($nama, $qLower)) $score += 500;
+            if (str_contains($nama, $qLower))    $score += 300;
 
-            // 2. Nama dimulai dengan keyword
-            if (str_starts_with($nama, $qLower)) {
-                $score += 500;
-            }
+            // ── BARU: skor dari hasil expand, gantikan blok "5. Hitung berapa kata..." lama
+            $score += $this->scoreExpandedMatch($item->nama, $expandedKeywords);
 
-            // 3. Mengandung exact phrase
-            if (str_contains($nama, $qLower)) {
-                $score += 300;
-            }
-
-            // 4. Semua kata keyword ada di nama
-            $allMatch = $keywords->every(fn($kw) => str_contains($nama, $kw));
-            if ($allMatch) {
-                $score += 200;
-            }
-
-            // 5. Hitung berapa kata keyword yang cocok
-            $matchCount = $keywords->filter(fn($kw) => str_contains($nama, $kw))->count();
-            $score += $matchCount * 50;
-
-            // 6. Skor similar_text (0–100) untuk kemiripan karakter
             similar_text($qLower, $nama, $similarity);
             $score += (int) $similarity;
-
-            // 7. Bonus: nama lebih pendek → lebih relevan (hindari nama super panjang naik)
             $score -= (int) (strlen($nama) / 10);
 
             $item->_score = $score;
             return $item;
         });
 
-        // Sort descending by score, ambil 50 teratas
         $sorted = $scored->sortByDesc('_score')->take(50)->values();
 
         return response()->json(
@@ -433,7 +454,7 @@ class LandingController extends Controller
                 'satuan_data'          => $item->satuan_data,
                 'frekuensi_penerbitan' => $item->frekuensi_penerbitan,
                 'tahun_mulai_data'     => $item->tahun_mulai_data,
-                'is_locked'            => $isLimited && !in_array($item->metadata_id, $freeIds), // pakai $freeIds murni
+                'is_locked'            => $isLimited && !in_array($item->metadata_id, $freeIds),
                 'produsen'             => $item->produsen?->nama ?? $item->produsen?->nama_produsen,
             ])
         );
@@ -452,55 +473,56 @@ class LandingController extends Controller
             ->filter(fn($k) => strlen($k) >= 2)
             ->values();
 
+        // ── BARU: expand kata → stem (Sastrawi) + sinonim ───────────────
+        $expandedKeywords = $this->expansion->expand($keywords->all());
+
         $results = Metadata::where('status', 2)
             ->whereHas('data', fn($query) =>
                 $query->where('status', 1)->where('location_id', 0)
             )
-            ->where(function ($qb) use ($q, $keywords) {
-                $qb->where('nama', 'like', "%{$q}%")
-                ->orWhere(function ($inner) use ($keywords) {
-                    foreach ($keywords as $i => $kw) {
-                        $i === 0 ? $inner->where('nama', 'like', "%{$kw}%")
-                                : $inner->orWhere('nama', 'like', "%{$kw}%");
-                    }
-                })
-                ->orWhere('konsep',      'like', "%{$q}%")
+            ->where(function ($qb) use ($q, $expandedKeywords) {
+                // exact phrase tetap dicoba dulu
+                $qb->where('nama', 'like', "%{$q}%");
+
+                // BARU: broaden pakai OR + stem + sinonim (gantikan blok AND-semua-kata lama)
+                $this->applyExpandedSearch($qb, 'nama', $expandedKeywords);
+
+                // field pendukung lain tetap dicek exact-phrase seperti semula
+                $qb->orWhere('konsep',      'like', "%{$q}%")
                 ->orWhere('definisi',    'like', "%{$q}%")
                 ->orWhere('satuan_data', 'like', "%{$q}%")
                 ->orWhere('tag',         'like', "%{$q}%");
             })
             ->select('metadata_id', 'nama', 'klasifikasi_id', 'konsep', 'definisi', 'satuan_data', 'tag')
             ->with('klasifikasi:klasifikasi_id,nama_klasifikasi')
-            ->limit(80)
+            ->limit(120) // dinaikkan sedikit dari 80 karena hasil sekarang lebih luas
             ->get();
 
         $qLower = strtolower($q);
 
-        $scored = $results->map(function ($item) use ($q, $qLower, $keywords) {
-            $nama  = strtolower($item->nama);
-            $score = 0;
+        $scored = $results->map(function ($item) use ($q, $qLower, $expandedKeywords) {
+            $nama = strtolower($item->nama);
 
+            // BARU: hitung sekali, dipakai untuk skor dan untuk deteksi found_in
+            $expandedScore = $this->scoreExpandedMatch($item->nama, $expandedKeywords);
+
+            $score = 0;
             if ($nama === $qLower)               $score += 1000;
             if (str_starts_with($nama, $qLower)) $score += 500;
             if (str_contains($nama, $qLower))    $score += 300;
-
-            $allMatch = $keywords->every(fn($kw) => str_contains($nama, $kw));
-            if ($allMatch) $score += 200;
-
-            $matchCount = $keywords->filter(fn($kw) => str_contains($nama, $kw))->count();
-            $score += $matchCount * 50;
+            $score += $expandedScore;
 
             similar_text($qLower, $nama, $similarity);
             $score += (int) $similarity;
             $score -= (int) (strlen($nama) / 10);
 
-            // Deteksi "ditemukan di" field mana
+            // Deteksi "ditemukan di" field mana — hanya jika nama sendiri (asli/stem/sinonim) tidak match
             $foundIn = null;
-            if (!str_contains($nama, $qLower) && !$allMatch) {
-                if ($item->konsep   && str_contains(strtolower($item->konsep),      $qLower)) $foundIn = 'konsep';
-                elseif ($item->definisi  && str_contains(strtolower($item->definisi),   $qLower)) $foundIn = 'definisi';
+            if (!str_contains($nama, $qLower) && $expandedScore === 0) {
+                if ($item->konsep       && str_contains(strtolower($item->konsep),      $qLower)) $foundIn = 'konsep';
+                elseif ($item->definisi    && str_contains(strtolower($item->definisi),    $qLower)) $foundIn = 'definisi';
                 elseif ($item->satuan_data && str_contains(strtolower($item->satuan_data), $qLower)) $foundIn = 'satuan data';
-                elseif ($item->tag   && str_contains(strtolower($item->tag),         $qLower)) $foundIn = 'tag';
+                elseif ($item->tag         && str_contains(strtolower($item->tag),         $qLower)) $foundIn = 'tag';
             }
 
             $item->_score    = $score;
@@ -512,10 +534,10 @@ class LandingController extends Controller
 
         return response()->json(
             $sorted->map(fn($item) => [
-                'label'      => $item->nama,
-                'klasifikasi'=> $item->klasifikasi?->nama_klasifikasi,
-                'found_in'   => $item->_found_in,   // null kalau match di nama
-                'q'          => $item->nama,
+                'label'       => $item->nama,
+                'klasifikasi' => $item->klasifikasi?->nama_klasifikasi,
+                'found_in'    => $item->_found_in,
+                'q'           => $item->nama,
             ])
         );
     }
@@ -544,25 +566,26 @@ class LandingController extends Controller
             ->filter(fn($k) => strlen($k) >= 2)
             ->values();
 
+        // ── BARU: expand kata → stem (Sastrawi) + sinonim ───────────────
+        $expandedKeywords = $this->expansion->expand($keywords->all());
+
         $results = Metadata::where('status', 2)
             ->whereHas('data', fn($query) =>
                 $query->where('status', 1)->where('location_id', 0)
             )
-            ->where(function ($qb) use ($q, $keywords) {
-                $qb->where('nama', 'like', "%{$q}%")
-                ->orWhere(function ($inner) use ($keywords) {
-                    foreach ($keywords as $i => $kw) {
-                        $i === 0 ? $inner->where('nama', 'like', "%{$kw}%")
-                                : $inner->orWhere('nama', 'like', "%{$kw}%");
-                    }
-                })
-                ->orWhere('konsep',      'like', "%{$q}%")
+            ->where(function ($qb) use ($q, $expandedKeywords) {
+                $qb->where('nama', 'like', "%{$q}%");
+
+                // BARU: broaden pakai OR + stem + sinonim (gantikan blok AND-semua-kata lama)
+                $this->applyExpandedSearch($qb, 'nama', $expandedKeywords);
+
+                $qb->orWhere('konsep',      'like', "%{$q}%")
                 ->orWhere('definisi',    'like', "%{$q}%")
                 ->orWhere('satuan_data', 'like', "%{$q}%")
                 ->orWhere('tag',         'like', "%{$q}%");
             })
             ->with([
-            'klasifikasi:klasifikasi_id,nama_klasifikasi',
+                'klasifikasi:klasifikasi_id,nama_klasifikasi',
                 'data' => fn($q) => $q->where('status', 1)
                     ->where('location_id', 0)
                     ->with('rujukan.produsen')
@@ -571,12 +594,12 @@ class LandingController extends Controller
             ->select('metadata_id', 'nama', 'klasifikasi_id', 'satuan_data',
                     'frekuensi_penerbitan', 'tahun_mulai_data', 'is_free',
                     'konsep', 'definisi', 'tag')
-            ->limit(200)
+            ->limit(250) // dinaikkan sedikit dari 200 karena hasil sekarang lebih luas
             ->get();
 
         $qLower = strtolower($q);
 
-        $scored = $results->map(function ($item) use ($q, $qLower, $keywords, $freeIds, $isLimited) {
+        $scored = $results->map(function ($item) use ($q, $qLower, $expandedKeywords, $freeIds, $isLimited) {
             $nama  = strtolower($item->nama);
             $score = 0;
 
@@ -584,11 +607,8 @@ class LandingController extends Controller
             if (str_starts_with($nama, $qLower)) $score += 500;
             if (str_contains($nama, $qLower))    $score += 300;
 
-            $allMatch = $keywords->every(fn($kw) => str_contains($nama, $kw));
-            if ($allMatch) $score += 200;
-
-            $matchCount = $keywords->filter(fn($kw) => str_contains($nama, $kw))->count();
-            $score += $matchCount * 50;
+            // BARU: gantikan blok "4. Semua kata keyword ada di nama" + "5. Hitung berapa kata..." lama
+            $score += $this->scoreExpandedMatch($item->nama, $expandedKeywords);
 
             similar_text($qLower, $nama, $similarity);
             $score += (int) $similarity;
@@ -607,21 +627,17 @@ class LandingController extends Controller
 
         if ($isLimited) {
             if ($isFallback) {
-                // Kasus 0: tidak ada match sama sekali → 2 free random + 8 premium random
                 $freeSlot    = $this->randomMetadata(2, $q, true, $freeIds, []);
                 $premiumSlot = $this->randomMetadata(8, $q, false, [], $freeSlot->pluck('metadata_id')->all());
                 $sorted = $freeSlot->concat($premiumSlot)->values();
             } else {
-                // Kasus 1: ada match asli → free yang tampil UNLOCKED dibatasi maksimal 2 (pemancing).
-                // Sisanya (baik free asli yang kelebihan kuota, maupun premium asli) tetap ditampilkan tapi dikunci.
                 $freeQuota = 0;
                 $matched = $scored->map(function ($item) use (&$freeQuota) {
                     if (!$item->is_locked) {
                         if ($freeQuota < 2) {
                             $freeQuota++;
-                            // tetap unlocked, ini slot pemancing
                         } else {
-                            $item->is_locked = true; // kuota gratis habis → kunci juga
+                            $item->is_locked = true;
                         }
                     }
                     return $item;
@@ -630,12 +646,11 @@ class LandingController extends Controller
                 $needed     = max(0, $targetTotal - $matched->count());
                 $excludeIds = $matched->pluck('metadata_id')->all();
                 $padding    = $needed > 0
-                    ? $this->randomMetadata($needed, $q, false, [], $excludeIds) // padding selalu premium
+                    ? $this->randomMetadata($needed, $q, false, [], $excludeIds)
                     : collect();
                 $sorted = $matched->concat($padding)->values();
             }
         } else {
-            // Full access — tidak ada pembatasan, tampilkan semua seperti biasa
             if ($isFallback) {
                 $sorted = $this->randomMetadata($targetTotal, $q, null, [], []);
             } else {
@@ -649,8 +664,8 @@ class LandingController extends Controller
             }
         }
 
-        $totalFound = $sorted->count(); // dipakai paginator, jumlah item yg benar2 ditampilkan
-        $realFound  = $realCount;       // dipakai teks "X data ditemukan" — jumlah match asli
+        $totalFound = $sorted->count();
+        $realFound  = $realCount;
 
         $perPage     = 10;
         $currentPage = max(1, (int) $request->input('page', 1));
