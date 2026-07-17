@@ -623,36 +623,49 @@ class LandingController extends Controller
             return $item;
         })->sortByDesc('_score')->values();
 
-        $realCount  = $scored->count();
-        $isFallback = $realCount === 0;
+        $realCount   = $scored->count();
+        $isFallback  = $realCount === 0;
         $targetTotal = 10;
+        $maxFreeBait = 2;
 
         if ($isLimited) {
             if ($isFallback) {
-                $freeSlot    = $this->randomMetadata(2, $q, true, $freeIds, []);
-                $premiumSlot = $this->randomMetadata(8, $q, false, [], $freeSlot->pluck('metadata_id')->all());
+                $freeSlot    = $this->randomMetadata($maxFreeBait, $q, true, $freeIds, []);
+                $premiumSlot = $this->randomMetadata($targetTotal - $maxFreeBait, $q, false, [], $freeSlot->pluck('metadata_id')->all());
                 $sorted = $freeSlot->concat($premiumSlot)->values();
             } else {
-                $freeQuota = 0;
-                $matched = $scored->map(function ($item) use (&$freeQuota) {
-                    if (!$item->is_locked) {
-                        if ($freeQuota < 2) {
-                            $freeQuota++;
-                        } else {
-                            $item->is_locked = true;
-                        }
-                    }
-                    return $item;
-                });
+                // Pisahkan hasil match asli: mana yang gratis (unlocked), mana yang premium (locked)
+                // $scored sudah ter-sort by _score sebelumnya, jadi urutan di dalam masing-masing grup tetap relevan
+                $freeMatched    = $scored->filter(fn($item) => !$item->is_locked)->values();
+                $premiumMatched = $scored->filter(fn($item) => $item->is_locked)->values();
 
-                $needed     = max(0, $targetTotal - $matched->count());
-                $excludeIds = $matched->pluck('metadata_id')->all();
+                // Bait maksimal 2, ambil yang paling relevan duluan dari yang match asli
+                $freeBait = $freeMatched->take($maxFreeBait);
+
+                // BARU: kalau tidak ada satupun match asli yang gratis, pinjam dari pool gratis umum
+                // (pola sama seperti borrow di klasifikasiShow())
+                if ($freeBait->isEmpty() && !empty($freeIds)) {
+                    $excludeIds = $scored->pluck('metadata_id')->all();
+                    $freeBait = $this->randomMetadata($maxFreeBait, $q, true, $freeIds, $excludeIds);
+                }
+
+                // Free match asli yang kelebihan kuota bait tetap dikunci, digabung ke daftar premium
+                $extraLockedFree = $freeMatched->slice($maxFreeBait)->values()
+                    ->each(fn($item) => $item->is_locked = true);
+
+                $lockedCombined = $premiumMatched->concat($extraLockedFree)->sortByDesc('_score')->values();
+
+                $needed     = max(0, $targetTotal - $freeBait->count() - $lockedCombined->count());
+                $excludeIds = $scored->pluck('metadata_id')->all();
                 $padding    = $needed > 0
                     ? $this->randomMetadata($needed, $q, false, [], $excludeIds)
                     : collect();
-                $sorted = $matched->concat($padding)->values();
+
+                // BARU: urutan final — gratis SELALU di paling awal, baru premium (sorted by relevansi), baru padding
+                $sorted = $freeBait->concat($lockedCombined)->concat($padding)->values();
             }
         } else {
+            // Full access (sudah langganan) — urutan MURNI berdasar relevansi, tidak ada perlakuan khusus gratis/premium
             if ($isFallback) {
                 $sorted = $this->randomMetadata($targetTotal, $q, null, [], []);
             } else {
