@@ -8,19 +8,19 @@ use App\Models\SinonimKata;
 class SearchExpansionService
 {
     protected StemmerService $stemmer;
-
-    /** Cache in-memory per request, biar 1 kata cuma di-lookup sekali walau dipanggil berkali-kali */
     protected array $cache = [];
+
+    /** Sinonim di bawah panjang ini terlalu generik/rawan false-match, jangan dipakai sebagai term pencarian */
+    protected int $minSinonimLength = 4;
+
+    /** Kalau satu kata cocok ke lebih dari sekian grup kata_dasar, anggap terlalu ambigu → skip sinonim, cuma pakai kata asli+stem */
+    protected int $maxAmbiguousGroups = 2;
 
     public function __construct(StemmerService $stemmer)
     {
         $this->stemmer = $stemmer;
     }
 
-    /**
-     * @param array $keywords kata-kata hasil pecah dari input user
-     * @return array of ['original' => string, 'stemmed' => string, 'sinonim' => string[]]
-     */
     public function expand(array $keywords): array
     {
         return array_map(fn ($kw) => $this->expandOne($kw), $keywords);
@@ -35,20 +35,24 @@ class SearchExpansionService
         }
 
         $stemmed = $this->stemmer->stem($keyword);
-
-        // cari grup sinonim berdasarkan kata asli ATAU kata dasarnya
         $lookupTerms = array_unique([$keyword, $stemmed]);
 
-        $grup = SinonimKata::whereIn('kata', $lookupTerms)->pluck('kata_dasar');
+        $grup = SinonimKata::whereIn('kata', $lookupTerms)->pluck('kata_dasar')->unique();
 
-        $sinonim = $grup->isNotEmpty()
-            ? SinonimKata::whereIn('kata_dasar', $grup)
+        $sinonim = [];
+
+        // BARU: kalau kata ini ambigu (masuk ke banyak grup berbeda), jangan expand sinonim sama sekali —
+        // terlalu berisiko menarik makna yang tidak relevan.
+        if ($grup->isNotEmpty() && $grup->count() <= $this->maxAmbiguousGroups) {
+            $sinonim = SinonimKata::whereIn('kata_dasar', $grup)
                 ->pluck('kata')
                 ->reject(fn ($k) => in_array($k, [$keyword, $stemmed]))
+                // BARU: buang sinonim yang terlalu pendek, rawan jadi substring acak di kata lain
+                ->filter(fn ($k) => mb_strlen($k) >= $this->minSinonimLength)
                 ->unique()
                 ->values()
-                ->all()
-            : [];
+                ->all();
+        }
 
         return $this->cache[$keyword] = [
             'original' => $keyword,
