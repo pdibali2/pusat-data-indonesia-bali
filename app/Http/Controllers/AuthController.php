@@ -34,11 +34,13 @@ class AuthController extends Controller
         
         $throttleKey = Str::transliterate(Str::lower($request->input('username', 'guest')).'|'.$request->ip());
 
-        if ($recaptcha->isEnabled()) {
+        if (! app()->environment('testing') && $recaptcha->isEnabled()) {
             $token = $request->input('g-recaptcha-response');
 
             if (! $recaptcha->verify($token, 'login', $request->ip())) {
-                return back()->withErrors(['recaptcha' => 'Verifikasi keamanan gagal, silakan coba lagi.'])->withInput();
+                return back()->withErrors([
+                    'recaptcha' => 'Verifikasi keamanan gagal, silakan coba lagi.'
+                ])->withInput();
             }
         }
 

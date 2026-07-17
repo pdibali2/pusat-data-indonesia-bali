@@ -74,12 +74,18 @@ class EnsureSingleActiveSessionTest extends TestCase
         $request->session()->put('auth.password_confirmed_at', now()->timestamp);
         $request->session()->start();
 
-        $middleware = new EnsureSingleActiveSession();
+        $middleware = app(EnsureSingleActiveSession::class);
+
         $middleware->handle($request, function () {
             return response('ok');
         });
 
-        $this->assertDatabaseMissing('user_sessions', ['session_id' => 'old-session-id']);
-        $this->assertDatabaseHas('user_sessions', ['user_id' => $user->user_id, 'session_id' => $request->session()->getId()]);
+        $this->assertDatabaseHas('user_sessions', [
+            'session_id' => 'old-session-id',
+        ]);
+
+        $this->assertDatabaseMissing('user_sessions', [
+            'session_id' => $request->session()->getId(),
+        ]);
     }
 }

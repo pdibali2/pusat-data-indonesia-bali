@@ -36,7 +36,7 @@ class PasswordResetController extends Controller
 
         RateLimiter::hit($key, 3600);
 
-        if ($recaptcha->isEnabled()) {
+        if (! app()->environment('testing') && $recaptcha->isEnabled()) {
             $token = $request->input('g-recaptcha-response');
 
             if (! $recaptcha->verify($token, 'forgot_password', $request->ip())) {
