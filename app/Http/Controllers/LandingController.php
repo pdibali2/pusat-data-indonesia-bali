@@ -642,11 +642,13 @@ class LandingController extends Controller
                 // Bait maksimal 2, ambil yang paling relevan duluan dari yang match asli
                 $freeBait = $freeMatched->take($maxFreeBait);
 
-                // BARU: kalau tidak ada satupun match asli yang gratis, pinjam dari pool gratis umum
-                // (pola sama seperti borrow di klasifikasiShow())
-                if ($freeBait->isEmpty() && !empty($freeIds)) {
-                    $excludeIds = $scored->pluck('metadata_id')->all();
-                    $freeBait = $this->randomMetadata($maxFreeBait, $q, true, $freeIds, $excludeIds);
+                // DIUBAH: dulu cuma pinjam kalau freeBait KOSONG, sekarang selalu dipaksa genap $maxFreeBait —
+                // pinjam sebanyak kekurangannya, siapa pun yang match asli tetap didahulukan urutannya
+                if ($freeBait->count() < $maxFreeBait && !empty($freeIds)) {
+                    $kurang      = $maxFreeBait - $freeBait->count();
+                    $excludeIds  = $scored->pluck('metadata_id')->all(); // hindari duplikat dgn yg sudah match
+                    $pinjaman    = $this->randomMetadata($kurang, $q, true, $freeIds, $excludeIds);
+                    $freeBait    = $freeBait->concat($pinjaman)->values();
                 }
 
                 // Free match asli yang kelebihan kuota bait tetap dikunci, digabung ke daftar premium
@@ -656,7 +658,10 @@ class LandingController extends Controller
                 $lockedCombined = $premiumMatched->concat($extraLockedFree)->sortByDesc('_score')->values();
 
                 $needed     = max(0, $targetTotal - $freeBait->count() - $lockedCombined->count());
-                $excludeIds = $scored->pluck('metadata_id')->all();
+                $excludeIds = $scored->pluck('metadata_id')
+                    ->concat($freeBait->pluck('metadata_id'))
+                    ->unique()
+                    ->all();
                 $padding    = $needed > 0
                     ? $this->randomMetadata($needed, $q, false, [], $excludeIds)
                     : collect();
