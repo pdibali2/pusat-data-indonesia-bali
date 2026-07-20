@@ -16,6 +16,7 @@ class Metadata extends Model
 
     protected $fillable = [
         'nama',
+        'sub_nama_metadata',
         'alias',
         'konsep',
         'definisi',
@@ -55,6 +56,7 @@ class Metadata extends Model
         'group_by'            => 'integer',
         'user_id'             => 'integer',
         'is_free'             => 'boolean',
+        'sub_nama_metadata' => 'array',
     ];
 
     // ── RELASI ────────────────────────────────────────────────
@@ -134,6 +136,28 @@ class Metadata extends Model
     public function isPending(): bool
     {
         return $this->status === self::STATUS_PENDING;
+    }
+
+    // tambahkan helper accessor:
+    /**
+     * Ambil label sub-nama metadata untuk satuan tertentu.
+     * Fallback ke nama metadata biasa jika belum ada sub-nama untuk satuan itu.
+     */
+    public function getSubNamaForSatuan(int $satuanId): string
+    {
+        $subs = $this->sub_nama_metadata ?? [];
+        return $subs[$satuanId] ?? $this->nama;
+    }
+
+    /**
+     * Set/update label sub-nama metadata untuk satuan tertentu.
+     */
+    public function setSubNamaForSatuan(int $satuanId, string $label): void
+    {
+        $subs = $this->sub_nama_metadata ?? [];
+        $subs[$satuanId] = $label;
+        $this->sub_nama_metadata = $subs;
+        $this->save();
     }
 
     // ── COMPUTED: Tahun Mulai Data & Tahun Data Tersedia ──────

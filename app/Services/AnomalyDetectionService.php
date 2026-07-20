@@ -159,7 +159,6 @@ class AnomalyDetectionService
     {
         if ($data->number_value === null) return null;
 
-        // Cari data lain dengan metadata + lokasi + waktu sama tapi produsen beda
         $conflicts = Data::where('metadata_id', $data->metadata_id)
             ->where('location_id', $data->location_id)
             ->where('time_id', $data->time_id)
@@ -171,30 +170,70 @@ class AnomalyDetectionService
 
         if ($conflicts->isEmpty()) return null;
 
-        // Hitung selisih terbesar
+        $current = (float) $data->number_value;
+
+        // Hitung selisih terbesar — tapi bandingkan dalam satuan yang SAMA jika memungkinkan
         $maxDiff        = 0;
         $conflictSource = null;
         $conflictValue  = null;
+        $conflictRaw    = null; // nilai asli sebelum konversi, untuk pesan
+        $unitNormalized = false;
 
         foreach ($conflicts as $conflict) {
-            $diff = abs((float) $data->number_value - (float) $conflict->number_value);
+            $otherValue = (float) $conflict->number_value;
+
+            // Jika keduanya punya satuan_id dan berbeda → konversi dulu
+            if ($data->satuan_id && $conflict->satuan_id && $data->satuan_id !== $conflict->satuan_id) {
+                $converted = \App\Models\Satuan::convertValue($otherValue, $conflict->satuan_id, $data->satuan_id);
+                if ($converted !== null) {
+                    $otherValue     = $converted;
+                    $unitNormalized = true;
+                }
+            }
+
+            $diff = abs($current - $otherValue);
             if ($diff > $maxDiff) {
                 $maxDiff        = $diff;
                 $conflictSource = $conflict->produsen?->nama_produsen ?? "Produsen #{$conflict->produsen_id}";
-                $conflictValue  = (float) $conflict->number_value;
+                $conflictValue  = $otherValue;
+                $conflictRaw    = (float) $conflict->number_value;
             }
         }
 
-        if ($maxDiff == 0) return null;
+        if ($maxDiff == 0) {
+            // Nilai identik setelah normalisasi satuan
+            if ($unitNormalized) {
+                // Ini bukan anomali nilai — cuma beda satuan. Tetap dicatat sebagai info,
+                // TAPI tidak masuk sebagai anomali yang butuh review serius.
+                // Opsional: bisa di-skip total (return null) atau dicatat severity rendah.
+                // Di sini kita catat sebagai TYPE_UNIT_CONFLICT informatif:
+                $mySource = $data->produsen?->nama_produsen ?? "Produsen #{$data->produsen_id}";
+                $mySatuan = $data->satuan?->nama_satuan ?? '-';
+                $otherSatuan = $conflict->satuan?->nama_satuan ?? '-';
 
-        // Hitung persentase selisih relatif terhadap nilai saat ini
-        $current = (float) $data->number_value;
-        $pctDiff = $current > 0 ? ($maxDiff / $current) * 100 : 0;
+                return $this->createAnomaly($data, [
+                    'anomaly_type'      => Anomaly::TYPE_UNIT_CONFLICT,
+                    'severity'          => Anomaly::SEVERITY_LOW,
+                    'previous_value'    => $conflictRaw,
+                    'current_value'     => $current,
+                    'percentage_change' => 0,
+                    'message'           => "Nilai dari {$mySource} ({$current} {$mySatuan}) sama dengan "
+                                        . "{$conflictSource} ({$conflictRaw} {$otherSatuan}) setelah dikonversi "
+                                        . "ke satuan yang sama. Kemungkinan ini bukan konflik data, hanya perbedaan satuan.",
+                ]);
+            }
+            return null;
+        }
+
+        // Masih ada selisih meski sudah dinormalisasi satuan (atau belum bisa dinormalisasi) → tetap konflik data biasa
+        $current2 = $current;
+        $pctDiff  = $current2 > 0 ? ($maxDiff / $current2) * 100 : 0;
 
         $frekuensi = strtolower($data->metadata?->frekuensi_penerbitan ?? '');
         $severity  = Anomaly::calculateSeverity($pctDiff, (int) $data->metadata_id, $frekuensi);
 
         $mySource = $data->produsen?->nama_produsen ?? "Produsen #{$data->produsen_id}";
+        $unitNote = $unitNormalized ? ' (nilai sudah dinormalisasi ke satuan yang sama)' : '';
 
         return $this->createAnomaly($data, [
             'anomaly_type'      => Anomaly::TYPE_SOURCE_CONFLICT,
@@ -203,8 +242,8 @@ class AnomalyDetectionService
             'current_value'     => $current,
             'percentage_change' => $pctDiff,
             'message'           => "Konflik sumber data: nilai dari {$mySource} ({$current}) "
-                                 . "berbeda {$maxDiff} dengan {$conflictSource} ({$conflictValue}). "
-                                 . "Selisih relatif: " . number_format($pctDiff, 2) . "%.",
+                                . "berbeda {$maxDiff} dengan {$conflictSource} ({$conflictValue}){$unitNote}. "
+                                . "Selisih relatif: " . number_format($pctDiff, 2) . "%.",
         ]);
     }
 

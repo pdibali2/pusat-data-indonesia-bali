@@ -41,6 +41,7 @@ class Data extends Model
         'reviewed_by',
         'reviewed_at',
         'produsen_id',
+        'satuan_id',
     ];
 
     protected $casts = [
@@ -74,6 +75,11 @@ class Data extends Model
     public function rujukan(): BelongsTo
     {
         return $this->belongsTo(Rujukan::class, 'rujukan_id', 'rujukan_id');
+    }
+
+    public function satuan(): BelongsTo
+    {
+        return $this->belongsTo(Satuan::class, 'satuan_id', 'satuan_id');
     }
 
     // ─── RELASI BARU (data quality) ───────────────────────────

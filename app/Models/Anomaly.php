@@ -25,6 +25,7 @@ class Anomaly extends Model
     const TYPE_EXTREME_DECREASE = 'extreme_decrease';
     const TYPE_SOURCE_CONFLICT  = 'source_conflict';
     const TYPE_UNREASONABLE     = 'unreasonable_value';
+    const TYPE_UNIT_CONFLICT = 'unit_conflict';
 
     // ─── WORKFLOW STATUS CONSTANTS ────────────────────────────
     const STATUS_WARNING            = 'warning';
@@ -174,6 +175,7 @@ class Anomaly extends Model
             self::TYPE_EXTREME_INCREASE => 'Kenaikan Ekstrem',
             self::TYPE_EXTREME_DECREASE => 'Penurunan Ekstrem',
             self::TYPE_SOURCE_CONFLICT  => 'Konflik Sumber Data',
+            self::TYPE_UNIT_CONFLICT    => 'Konflik Satuan',
             self::TYPE_UNREASONABLE     => 'Nilai Tidak Wajar',
             default                     => ucfirst(str_replace('_', ' ', $this->anomaly_type)),
         };
