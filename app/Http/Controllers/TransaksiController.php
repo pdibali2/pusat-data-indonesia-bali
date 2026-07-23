@@ -19,7 +19,6 @@ class TransaksiController extends Controller
     // ── Checkout: Buat transaksi & ambil Snap Token ────────────
     public function checkout(Request $request)
     {
-        // Pastikan user sudah login
         if (! Auth::check()) {
             return redirect()->route('login')
                 ->with('error', 'Silakan login terlebih dahulu untuk berlangganan.');
@@ -31,27 +30,31 @@ class TransaksiController extends Controller
 
         $user    = Auth::user();
         $layanan = Layanan::where('layanan_id', $request->layanan_id)
-                          ->where('status', 'publish')
-                          ->firstOrFail();
+                        ->where('status', 'publish')
+                        ->firstOrFail();
 
-        // Cek apakah user sudah punya transaksi aktif untuk layanan ini
         $existing = Transaksi::where('user_id', $user->user_id)
-                              ->where('layanan_id', $layanan->layanan_id)
-                              ->where('status', 'success')
-                              ->where(function ($q) {
-                                  $q->whereNull('aktif_sampai')
+                            ->where('layanan_id', $layanan->layanan_id)
+                            ->where('status', 'success')
+                            ->where(function ($q) {
+                                $q->whereNull('aktif_sampai')
                                     ->orWhere('aktif_sampai', '>=', now());
-                              })->first();
+                            })->first();
 
         if ($existing) {
             return redirect()->route('transaksi.riwayat')
                 ->with('error', 'Kamu sudah memiliki langganan aktif untuk layanan ini.');
         }
 
-        // Buat order_id unik
+        // ── Batalkan transaksi pending lama untuk layanan yang sama ──
+        // Supaya tidak numpuk saat user berkali-kali klik checkout tanpa bayar
+        Transaksi::where('user_id', $user->user_id)
+            ->where('layanan_id', $layanan->layanan_id)
+            ->where('status', 'pending')
+            ->update(['status' => 'cancelled']);
+
         $orderId = Transaksi::generateOrderId($user->user_id);
 
-        // Simpan transaksi dengan status pending
         $transaksi = Transaksi::create([
             'user_id'      => $user->user_id,
             'layanan_id'   => $layanan->layanan_id,
@@ -63,7 +66,6 @@ class TransaksiController extends Controller
             'status'       => 'pending',
         ]);
 
-        // Request Snap Token ke Midtrans
         $snapToken = $this->getSnapToken($transaksi, $user, $layanan);
 
         if (! $snapToken) {
@@ -73,8 +75,38 @@ class TransaksiController extends Controller
 
         $transaksi->update(['snap_token' => $snapToken]);
 
-        // Tampilkan halaman checkout dengan Snap popup
         return view('pages.transaksi.checkout', compact('transaksi', 'layanan', 'snapToken'));
+    }
+
+    // ── Bayar Ulang: Ambil Snap Token baru untuk transaksi pending ────
+    public function bayarUlang(Transaksi $transaksi)
+    {
+        if ($transaksi->user_id !== Auth::id()) {
+            abort(403);
+        }
+
+        if ($transaksi->status !== 'pending') {
+            return response()->json([
+                'message' => 'Transaksi ini sudah tidak berstatus menunggu pembayaran.',
+            ], 422);
+        }
+
+        $layanan = Layanan::findOrFail($transaksi->layanan_id);
+        $user    = Auth::user();
+
+        // Snap token lama kemungkinan sudah kedaluwarsa, minta token baru
+        // dengan order_id yang sama (Midtrans membolehkan re-request selama status masih pending)
+        $snapToken = $this->getSnapToken($transaksi, $user, $layanan);
+
+        if (! $snapToken) {
+            return response()->json([
+                'message' => 'Gagal menghubungi payment gateway. Coba lagi.',
+            ], 500);
+        }
+
+        $transaksi->update(['snap_token' => $snapToken]);
+
+        return response()->json(['snap_token' => $snapToken]);
     }
 
     // ── Notification: Webhook dari Midtrans ───────────────────

@@ -87,30 +87,91 @@
             </div>
 
             {{-- Note --}}
-            <p class="text-xs text-gray-400 text-center mb-6 font-body">
+            <p class="text-xs text-gray-400 text-center mb-4 font-body">
                 Pembayaran diproses secara aman.<br>
                 Data kartu kamu tidak disimpan di sistem kami.
             </p>
 
+            {{-- Syarat & Ketentuan --}}
+            <div class="flex items-start gap-3 mb-6 px-1">
+                <input
+                    id="agree_terms" type="checkbox"
+                    class="mt-1 h-4 w-4 rounded border-slate-300 text-stikom-blue focus:ring-stikom-blue cursor-pointer"
+                />
+                <label for="agree_terms" class="text-xs text-gray-600 font-body">
+                    Saya telah membaca dan menyetujui
+                    <button type="button" id="openTermsModal" class="text-stikom-blue hover:underline font-medium">
+                        Syarat & Ketentuan serta Kebijakan Pengembalian Dana
+                    </button>
+                </label>
+            </div>
+
             {{-- Pay Button --}}
-            <button id="pay-button"
+            <button id="pay-button" disabled
                     class="w-full py-4 bg-stikom-accent hover:bg-yellow-600 text-stikom hover:text-white font-black
-                           text-sm tracking-wide transition-colors duration-200 font-display
-                           flex items-center justify-center gap-2">
+                        text-sm tracking-wide transition-colors duration-200 font-display
+                        flex items-center justify-center gap-2
+                        disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:bg-stikom-accent disabled:hover:text-stikom">
                 <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                          d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z"/>
+                        d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z"/>
                 </svg>
-                Bayar Sekarang — {{ $layanan->harga_format }}
+                Checkout
             </button>
 
             <a href="{{ route('langganan') }}"
-               class="block text-center mt-4 text-xs text-gray-400 hover:text-gray-600 transition font-body">
-                ← Kembali ke halaman langganan
+            class="block text-center mt-4 text-xs text-gray-400 hover:text-gray-600 transition font-body">
+                Kembali ke halaman langganan
             </a>
 
         </div>
     </main>
+
+    {{-- Modal Syarat & Ketentuan --}}
+    <div id="termsModal" class="fixed inset-0 z-50 hidden items-center justify-center bg-black/50 px-4">
+        <div class="w-full max-w-lg bg-white rounded-xl shadow-xl">
+
+            <div class="flex items-center justify-between bg-stikom-blue px-6 py-4 rounded-t-xl">
+                <h3 class="text-white font-bold text-base tracking-wide">Syarat & Ketentuan Langganan</h3>
+                <button type="button" id="closeTermsModal" class="text-white hover:text-gray-200 text-xl font-bold">
+                    &times;
+                </button>
+            </div>
+
+            <div class="px-6 py-5 max-h-96 overflow-y-auto text-xs text-gray-700 space-y-4">
+                <p class="font-semibold text-gray-900">1. Ketentuan Langganan</p>
+                <p>Dengan melakukan pembayaran, Anda menyetujui untuk berlangganan layanan {{ $layanan->nama_layanan }} selama {{ $layanan->durasi_label }} sesuai fitur yang tercantum pada ringkasan pesanan. Masa aktif langganan dihitung sejak pembayaran berhasil diverifikasi.</p>
+
+                <p class="font-semibold text-gray-900">2. Pembayaran</p>
+                <p>Pembayaran diproses melalui Midtrans sebagai penyedia payment gateway pihak ketiga. Pusat Data Indonesia Bali tidak menyimpan data kartu atau rekening Anda. Status pembayaran mengikuti konfirmasi resmi dari Midtrans.</p>
+
+                <p class="font-semibold text-gray-900">3. Kebijakan Pengembalian Dana</p>
+                <p>Karena layanan berupa akses data digital yang aktif segera setelah pembayaran berhasil, pengembalian dana <strong>tidak dapat dilakukan</strong> setelah akses langganan aktif, kecuali:</p>
+                <ul class="list-disc list-inside space-y-1 ml-1">
+                    <li>Terjadi kesalahan sistem yang mengakibatkan pembayaran ganda (double charge) untuk transaksi yang sama.</li>
+                    <li>Pembayaran berhasil diverifikasi namun fitur langganan gagal diaktifkan oleh sistem dalam waktu 1x24 jam.</li>
+                </ul>
+                <p>Pengajuan pengembalian dana untuk kondisi di atas dapat dilakukan dengan menghubungi administrator melalui kontak yang tersedia pada platform, disertai bukti transaksi (order ID).</p>
+
+                <p class="font-semibold text-gray-900">4. Pembatalan Langganan</p>
+                <p>Langganan yang telah aktif tidak dapat dibatalkan secara sepihak oleh pengguna untuk mendapatkan pengembalian dana proporsional, kecuali diatur lain oleh kebijakan administrator.</p>
+
+                <p class="font-semibold text-gray-900">5. Perubahan Ketentuan</p>
+                <p>Pusat Data Indonesia Bali dapat memperbarui Syarat & Ketentuan ini sewaktu-waktu. Perubahan akan berlaku untuk transaksi baru setelah tanggal pembaruan.</p>
+            </div>
+
+            <div class="px-6 py-4 border-t flex justify-end gap-3">
+                <button type="button" id="closeTermsModalBtn"
+                    class="px-4 py-2 text-xs text-gray-600 border border-gray-300 rounded-lg hover:bg-gray-50">
+                    Tutup
+                </button>
+                <button type="button" id="agreeTermsBtn"
+                    class="px-4 py-2 text-xs text-white bg-stikom-blue rounded-lg hover:bg-blue-700 font-semibold">
+                    Saya Setuju
+                </button>
+            </div>
+        </div>
+    </div>
 
     @include('pages.landing.components.footer')
 
@@ -123,6 +184,41 @@
     const statusUrl  = @json(route('transaksi.status',  $transaksi->transaksi_id));
     const suksesUrl  = @json(route('transaksi.sukses',  $transaksi->transaksi_id));
     const riwayatUrl = @json(route('transaksi.riwayat'));
+
+    // ── Gate: T&C harus dicentang sebelum bisa bayar ───────────────
+    const agreeCheckbox = document.getElementById('agree_terms');
+    const payButton      = document.getElementById('pay-button');
+    const termsModal     = document.getElementById('termsModal');
+    const openTerms      = document.getElementById('openTermsModal');
+    const closeTerms     = document.getElementById('closeTermsModal');
+    const closeTermsBtn  = document.getElementById('closeTermsModalBtn');
+    const agreeTermsBtn  = document.getElementById('agreeTermsBtn');
+
+    agreeCheckbox.addEventListener('change', function () {
+        payButton.disabled = !this.checked;
+    });
+
+    openTerms.addEventListener('click', () => {
+        termsModal.classList.remove('hidden');
+        termsModal.classList.add('flex');
+    });
+
+    function closeTermsModalFn() {
+        termsModal.classList.add('hidden');
+        termsModal.classList.remove('flex');
+    }
+
+    closeTerms.addEventListener('click', closeTermsModalFn);
+    closeTermsBtn.addEventListener('click', closeTermsModalFn);
+    termsModal.addEventListener('click', (e) => {
+        if (e.target === termsModal) closeTermsModalFn();
+    });
+
+    agreeTermsBtn.addEventListener('click', () => {
+        agreeCheckbox.checked = true;
+        payButton.disabled = false;
+        closeTermsModalFn();
+    });
 
     document.getElementById('pay-button').addEventListener('click', function () {
         snap.pay(snapToken, {

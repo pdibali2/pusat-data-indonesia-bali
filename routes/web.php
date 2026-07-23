@@ -56,6 +56,8 @@ use App\Http\Controllers\OrganizationController;
     Route::post('/transaksi/notification', [TransaksiController::class, 'notification'])
         ->name('transaksi.notification')
         ->withoutMiddleware([VerifyCsrfToken::class]);
+    Route::get('/transaksi/{transaksi}/bayar-ulang', [TransaksiController::class, 'bayarUlang'])
+    ->name('transaksi.bayar-ulang');
 
     // Debug endpoints (HAPUS di PRODUCTION!)
     Route::post('/transaksi/webhook-test', [TransaksiController::class, 'webhookTest'])

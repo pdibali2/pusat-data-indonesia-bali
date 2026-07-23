@@ -216,11 +216,20 @@
                         </td>
                         <td class="px-5 py-3.5 text-xs text-gray-500">{{ $item->created_at->format('d M Y, H:i') }}</td>
                         <td class="px-5 py-3.5 text-right">
-                            <button type="button"
-                                    onclick="showDetail({{ $item->transaksi_id }})"
-                                    class="text-xs text-blue-600 hover:text-blue-800 hover:underline">
-                                Detail
-                            </button>
+                            <div class="flex items-center justify-end gap-3">
+                                @if($item->status === 'pending')
+                                    <button type="button"
+                                            onclick="bayarSekarang({{ $item->transaksi_id }})"
+                                            class="text-xs text-white bg-stikom-blue px-3 py-1.5 rounded-lg hover:bg-blue-700 font-medium">
+                                        Bayar
+                                    </button>
+                                @endif
+                                <button type="button"
+                                        onclick="showDetail({{ $item->transaksi_id }})"
+                                        class="text-xs text-blue-600 hover:text-blue-800 hover:underline">
+                                    Detail
+                                </button>
+                            </div>
                         </td>
                     </tr>
                     @endforeach
@@ -248,6 +257,13 @@
                         <span class="block font-medium text-gray-800 text-sm truncate">{{ $item->nama_layanan }}</span>
                         <span class="block text-sm font-semibold text-gray-700 mt-0.5">{{ $item->harga_format }}</span>
                     </span>
+
+                    @if($item->status === 'pending')
+                        <span onclick="event.stopPropagation(); bayarSekarang({{ $item->transaksi_id }})"
+                            class="flex-shrink-0 text-xs text-white bg-stikom-blue px-2.5 py-1.5 rounded-lg font-medium mr-1">
+                            Bayar
+                        </span>
+                    @endif
 
                     <span class="flex items-center gap-1 text-xs text-blue-600 flex-shrink-0">
                         Detail <i class="fas fa-chevron-right text-[10px]"></i>
@@ -387,7 +403,50 @@ const transaksiData = {
 </script>
 
 @push('scripts')
+<script src="{{ config('midtrans.snap_url') }}"
+        data-client-key="{{ config('midtrans.client_key') }}"></script>
 <script>
+    function bayarSekarang(transaksiId) {
+        const btn = event.currentTarget;
+        const originalHtml = btn.innerHTML;
+        btn.disabled = true;
+        btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
+
+        fetch(`/transaksi/${transaksiId}/bayar-ulang`)
+            .then(r => r.json().then(data => ({ ok: r.ok, data })))
+            .then(({ ok, data }) => {
+                if (!ok) {
+                    alert(data.message || 'Gagal memuat pembayaran.');
+                    btn.disabled = false;
+                    btn.innerHTML = originalHtml;
+                    return;
+                }
+
+                snap.pay(data.snap_token, {
+                    onSuccess: function () {
+                        window.location.reload();
+                    },
+                    onPending: function () {
+                        window.location.reload();
+                    },
+                    onError: function () {
+                        alert('Pembayaran gagal. Silakan coba lagi.');
+                        btn.disabled = false;
+                        btn.innerHTML = originalHtml;
+                    },
+                    onClose: function () {
+                        btn.disabled = false;
+                        btn.innerHTML = originalHtml;
+                    }
+                });
+            })
+            .catch(() => {
+                alert('Terjadi kesalahan jaringan.');
+                btn.disabled = false;
+                btn.innerHTML = originalHtml;
+            });
+    }
+
     const statusCfg = {
         success:   { bg: 'bg-emerald-50',  text: 'text-emerald-700', dot: 'bg-emerald-500', label: 'Berhasil'   },
         pending:   { bg: 'bg-yellow-50',   text: 'text-yellow-700',  dot: 'bg-yellow-400',  label: 'Menunggu'   },
@@ -429,25 +488,31 @@ const transaksiData = {
     
             // Footer berdasarkan status
             const footerHtml = d.status === 'success'
-                ? `<div class="bg-emerald-50 border border-emerald-100 rounded-xl px-4 py-3 text-center">
-                    <p class="text-xs text-emerald-700 font-medium">
-                        <i class="fas fa-shield-alt mr-1"></i>
-                        Langganan ${d.is_aktif ? 'sedang aktif' : 'sudah berakhir'}
-                    </p>
-                </div>`
-                : d.status === 'pending'
-                ? `<div class="bg-yellow-50 border border-yellow-100 rounded-xl px-4 py-3 text-center">
+            ? `<div class="bg-emerald-50 border border-emerald-100 rounded-xl px-4 py-3 text-center">
+                <p class="text-xs text-emerald-700 font-medium">
+                    <i class="fas fa-shield-alt mr-1"></i>
+                    Langganan ${d.is_aktif ? 'sedang aktif' : 'sudah berakhir'}
+                </p>
+            </div>`
+            : d.status === 'pending'
+            ? `<div class="space-y-2">
+                <div class="bg-yellow-50 border border-yellow-100 rounded-xl px-4 py-3 text-center">
                     <p class="text-xs text-yellow-700 font-medium">
                         <i class="fas fa-clock mr-1"></i>
                         Menunggu konfirmasi pembayaran
                     </p>
-                </div>`
-                : `<div class="bg-gray-50 border border-gray-200 rounded-xl px-4 py-3 text-center">
-                    <p class="text-xs text-gray-500">
-                        <i class="fas fa-info-circle mr-1"></i>
-                        Transaksi ini tidak aktif
-                    </p>
-                </div>`;
+                </div>
+                <button onclick="bayarSekarang(${d.id})"
+                        class="w-full py-2.5 bg-stikom-blue hover:bg-blue-700 text-white text-sm font-semibold rounded-xl transition">
+                    Lanjutkan Pembayaran
+                </button>
+            </div>`
+            : `<div class="bg-gray-50 border border-gray-200 rounded-xl px-4 py-3 text-center">
+                <p class="text-xs text-gray-500">
+                    <i class="fas fa-info-circle mr-1"></i>
+                    Transaksi ini tidak aktif
+                </p>
+            </div>`;
     
             content.innerHTML = `
                 <div>
