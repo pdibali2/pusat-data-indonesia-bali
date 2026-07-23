@@ -14,6 +14,7 @@ use PhpOffice\PhpSpreadsheet\Style\Protection;
 use App\Models\Klasifikasi;
 use App\Models\Metadata;
 use App\Models\ProdusenData;
+use App\Models\Satuan;
 use Illuminate\Support\Facades\DB;
 
 class MetadataController extends Controller
@@ -949,8 +950,16 @@ class MetadataController extends Controller
             'produsen',
             'klasifikasi'
         ]);
-
-        return view('pages.metadata.detail', compact('metadata'));
+ 
+        $subNamaMetadata = $metadata->sub_nama_metadata ?? [];
+        $satuanNames = [];
+        if (!empty($subNamaMetadata)) {
+            $satuanNames = Satuan::whereIn('satuan_id', array_keys($subNamaMetadata))
+                ->pluck('nama_satuan', 'satuan_id')
+                ->toArray();
+        }
+ 
+        return view('pages.metadata.detail', compact('metadata', 'satuanNames'));
     }
 
     public function detailApi(int $id)
@@ -969,11 +978,12 @@ class MetadataController extends Controller
             'penjelasan_metodologi'    => $metadata->penjelasan_metodologi,
             'tipe_data'                => $metadata->tipe_data,
             'satuan_data'              => $metadata->satuan_data,
+            'sub_nama_metadata'        => $metadata->sub_nama_metadata ?? [],
             'frekuensi_penerbitan'     => $metadata->frekuensi_penerbitan,
-            'tahun_mulai_data'         => $metadata->tahun_mulai,      // kolom langsung
+            'tahun_mulai_data'         => $metadata->tahun_mulai,
             'tahun_pertama_rilis'      => $metadata->tahun_pertama_rilis,
             'bulan_pertama_rilis'      => $metadata->bulan_pertama_rilis,
-            'tahun_data_tersedia'      => $metadata->tahun_data_tersedia,   // computed attribute
+            'tahun_data_tersedia'      => $metadata->tahun_data_tersedia,
             'klasifikasi'              => $metadata->klasifikasi?->nama_klasifikasi,
             'produsen'                 => $metadata->produsen?->nama_produsen,
             'status'                   => $metadata->status,

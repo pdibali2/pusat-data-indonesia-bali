@@ -9,6 +9,8 @@ use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Carbon\Carbon;
 use PhpOffice\PhpSpreadsheet\IOFactory;
+use App\Models\Metadata;
+use App\Models\Satuan;
 
 class DataImport
 {
@@ -64,6 +66,13 @@ class DataImport
     private array $existingSet  = [];
     private array $metadataCache = [];
     private array $rujukanCache  = [];
+    private array $satuanCache   = [];   // lower(nama_satuan|simbol) => satuan_id
+    private array $satuanNameCache         = []; // satuan_id => nama tampilan (buat pesan bentrok satuan)
+    private array $invalid_satuan          = []; // dipakai di import(), mirip $invalid_metadata
+    private array $pendingUnitConflictKeys = [];
+
+    private array $subNamaChecked   = []; // "{metadataId}_{satuanId}" => true (sekali per run import)
+    private array $satuanModelCache = [];
 
     public function __construct(int $userId = 0, bool $skipDuplicates = true)
     {
@@ -77,23 +86,26 @@ class DataImport
 
     public function preview(string $filePath): array
     {
-        [$periodCols, $dataRows, $rujukanColIndex] = $this->readExcel($filePath);
+        [$periodCols, $dataRows, $columns] = $this->readExcel($filePath);
     
-        $this->preloadMetadataCache($dataRows);
+        $this->preloadMetadataCache($dataRows, $columns['metadata_id']);
         $this->buildExistingSet($periodCols);
-        $this->preloadRujukanCache($dataRows, $rujukanColIndex);
+        $this->preloadRujukanCache($dataRows, $columns['rujukan_id']);
+        $this->preloadSatuanCache();
+        
     
         // ── Parse semua baris dulu ─────────────────────────────────────────────
         $previewRows      = [];
         $errors           = [];
         $duplicates       = [];
         $invalid_metadata = [];
+        $invalid_satuan   = [];
     
         foreach ($dataRows as $rowNum => $row) {
             $result = $this->parseRow(
                 $row, $periodCols, $rowNum,
                 dryRun: true,
-                rujukanColIndex: $rujukanColIndex
+                columns: $columns
             );
     
             foreach ($result['records'] as $rec) {
@@ -117,6 +129,9 @@ class DataImport
             foreach ($result['invalid_metadata'] as $inv) {
                 $invalid_metadata[] = array_merge($inv, ['row' => $rowNum]);
             }
+            foreach ($result['invalid_satuan'] ?? [] as $inv) {
+                $invalid_satuan[] = $inv;
+            }
         }
     
         // ── Deteksi outlier berbasis DB (batch per metadata+location) ──────────
@@ -124,6 +139,7 @@ class DataImport
         // di tabel anomalies oleh createAnomaliesForPendingKeys().
         $previewRows = $this->detectOutliersViaDb($previewRows);
         $previewRows = $this->detectOutliersIntraSeries($previewRows);
+        $unitConflicts = array_values(array_filter($previewRows, fn($r) => $r['is_unit_conflict']));
     
         // ── Kumpulkan outlier untuk return value ───────────────────────────────
         $outliers = array_filter($previewRows, fn($r) => $r['is_outlier']);
@@ -155,6 +171,13 @@ class DataImport
             'invalid_meta_count'=> count($uniqueInvalid),
             'period_type'       => $this->detectPeriodType($periodCols[0] ?? ''),
             'period_cols'       => $periodCols,
+            // Teks satuan dari Excel yang tidak ketemu padanannya di tabel master `satuan`.
+            // Ditampilkan di UI import supaya user pilih manual satuan_id yang sesuai
+            // (atau buat entri satuan baru) sebelum lanjut import.
+            'invalid_satuan'      => $invalid_satuan,
+            'invalid_satuan_count'=> count($invalid_satuan),
+            'unit_conflicts'      => $unitConflicts,
+            'unit_conflict_count' => count($unitConflicts),
         ];
     }
 
@@ -232,15 +255,21 @@ class DataImport
      * @param  array<string, bool>  $excludedKeys
      *         Key format: "{metadata_id}_{location_id}_{time_id}_{rujukan_id}"
      *         Record yang ada di sini TIDAK diimport (dikecualikan user dari UI).
+     * @param  array<string, int>   $satuanResolutions
+     *         Key = teks satuan mentah (lowercase, trim) yang tidak ketemu otomatis
+     *         saat preview, Value = satuan_id yang dipilih user secara manual.
+     *         Diterapkan ke record yang satuan_id/satuan_asal_id-nya masih null.
      */
-    public function import(string $filePath, array $excludedKeys = [], array $anomalyKeys = []): array
+    public function import(string $filePath, array $excludedKeys = [], array $anomalyKeys = [], array $unitConflictKeys = []): array
     {
-        [$periodCols, $dataRows, $rujukanColIndex] = $this->readExcel($filePath);
+        [$periodCols, $dataRows, $columns] = $this->readExcel($filePath);
 
-        $this->preloadMetadataCache($dataRows);
+        $this->preloadMetadataCache($dataRows, $columns['metadata_id']);
         $this->preloadTimeCache($periodCols);
         $this->buildExistingSet($periodCols);
-        $this->preloadRujukanCache($dataRows, $rujukanColIndex);
+        $this->preloadRujukanCache($dataRows, $columns['rujukan_id']);
+        $this->preloadSatuanCache();
+        
 
         $buffer    = [];
         $now       = Carbon::now()->format('Y-m-d H:i:s');
@@ -249,6 +278,7 @@ class DataImport
         $this->pendingAnomalyKeys = [];
         $this->pendingAnomalyInfo = [];
         $this->anomaliesCreated   = 0;
+        $this->pendingUnitConflictKeys = [];
 
         DB::beginTransaction();
         try {
@@ -256,7 +286,7 @@ class DataImport
                 $result = $this->parseRow(
                     $row, $periodCols, $rowNum,
                     dryRun: false,
-                    rujukanColIndex: $rujukanColIndex
+                    columns: $columns
                 );
 
                 foreach ($result['records'] as $rec) {
@@ -281,19 +311,33 @@ class DataImport
                         $this->pendingAnomalyKeys[$key] = true;
                     }
 
+                    $recordIsUnitConflict = isset($unitConflictKeys[$key]);
+                    if ($recordIsUnitConflict) {
+                        $this->pendingUnitConflictKeys[$key] = true;
+                    }
+
+                    if ($rec['satuan_id'] !== null) {
+                        $this->registerSubNamaIfMissing($rec['metadata_id'], $rec['satuan_id']);
+                    }
+                    if ($rec['satuan_asal_id'] !== null && $rec['satuan_asal_id'] !== $rec['satuan_id']) {
+                        $this->registerSubNamaIfMissing($rec['metadata_id'], $rec['satuan_asal_id']);
+                    }
+
                     $rowsForOutlierDetection[] = array_merge($rec, ['key' => $key]);
                     $insertSet[$key] = true;
                     $buffer[] = [
-                        'user_id'      => $this->userId,
-                        'metadata_id'  => $rec['metadata_id'],
-                        'location_id'  => $rec['location_id'],
-                        'time_id'      => $rec['time_id'],
-                        'number_value' => $rec['number_value'],
-                        'rujukan_id'   => $rec['rujukan_id'],
-                        'produsen_id'  => $rec['produsen_id'] ?? null,
-                        'status'       => Data::STATUS_PENDING,
-                        'workflow_status' => $recordIsAnomaly ? Data::WORKFLOW_WARNING : Data::WORKFLOW_DRAFT,
-                        'date_inputed' => $now,
+                        'user_id'         => $this->userId,
+                        'metadata_id'     => $rec['metadata_id'],
+                        'location_id'     => $rec['location_id'],
+                        'time_id'         => $rec['time_id'],
+                        'number_value'    => $rec['number_value'],
+                        'rujukan_id'      => $rec['rujukan_id'],
+                        'produsen_id'     => $rec['produsen_id'] ?? null,
+                        'satuan_id'       => $rec['satuan_id'],
+                        'satuan_asal_id'  => $rec['satuan_asal_id'],
+                        'status'          => Data::STATUS_PENDING,
+                        'workflow_status' => ($recordIsAnomaly || $recordIsUnitConflict) ? Data::WORKFLOW_WARNING : Data::WORKFLOW_DRAFT,
+                        'date_inputed'    => $now,
                     ];
 
                     if (count($buffer) >= self::BATCH_SIZE) {
@@ -331,6 +375,9 @@ class DataImport
             if (!empty($this->pendingAnomalyKeys)) {
                 $this->createAnomaliesForPendingKeys($now, $this->pendingAnomalyInfo);
             }
+            if (!empty($this->pendingUnitConflictKeys)) {
+                $this->createUnitConflictAnomaliesForPendingKeys($now);
+            }
 
             DB::commit();
         } catch (\Throwable $e) {
@@ -344,6 +391,7 @@ class DataImport
             'skipped'      => $this->skipped,
             'errors'       => count($this->errors),
             'skipped_meta' => count(array_unique(array_column($this->invalid_metadata, 'metadata_id'))),
+            'skipped_satuan' => count($this->invalid_satuan),
             'anomalies_created' => $this->anomaliesCreated,
             'message'      => $this->buildSummaryMessage(),
         ];
@@ -683,6 +731,83 @@ class DataImport
         }
     }
 
+    private function createUnitConflictAnomaliesForPendingKeys(string $insertedAt): void
+    {
+        if (empty($this->pendingUnitConflictKeys)) return;
+
+        $criteria = [];
+        foreach (array_keys($this->pendingUnitConflictKeys) as $key) {
+            [$metadataId, $locationId, $timeId, $rujukanId] = explode('_', $key);
+            $criteria[] = [
+                'metadata_id' => (int) $metadataId,
+                'location_id' => (int) $locationId,
+                'time_id'     => (int) $timeId,
+                'rujukan_id'  => $rujukanId === '' ? null : (int) $rujukanId,
+            ];
+        }
+
+        $query = DB::table('data')->where('date_inputed', $insertedAt);
+        $query->where(function ($q) use ($criteria) {
+            foreach ($criteria as $c) {
+                $q->orWhere(function ($qq) use ($c) {
+                    $qq->where('metadata_id', $c['metadata_id'])
+                    ->where('location_id', $c['location_id'])
+                    ->where('time_id', $c['time_id']);
+                    if ($c['rujukan_id'] === null) $qq->whereNull('rujukan_id');
+                    else $qq->where('rujukan_id', $c['rujukan_id']);
+                });
+            }
+        });
+
+        $rows = $query->get(['id', 'number_value', 'metadata_id', 'location_id', 'time_id', 'rujukan_id', 'satuan_id', 'satuan_asal_id']);
+
+        foreach ($rows as $row) {
+            $satuanMeta = $row->satuan_id      ? ($this->satuanNameCache[$row->satuan_id]      ?? "#{$row->satuan_id}")      : '-';
+            $satuanRuj  = $row->satuan_asal_id ? ($this->satuanNameCache[$row->satuan_asal_id] ?? "#{$row->satuan_asal_id}") : '-';
+
+            $message = sprintf(
+                'Bentrok satuan ditandai pengguna saat import. Data dicatat dalam satuan metadata "%s", '
+                . 'namun sumber rujukan aslinya melaporkan dalam satuan "%s".'
+                . 'Diperlukan verifikasi bahwa satuan sudah benar.',
+                $satuanMeta, $satuanRuj
+            );
+
+            $anomaly = Anomaly::firstOrCreate(
+                ['id' => $row->id, 'table_name' => 'data', 'anomaly_type' => Anomaly::TYPE_UNIT_CONFLICT],
+                [
+                    'severity'          => Anomaly::SEVERITY_LOW,
+                    'previous_value'    => null,
+                    'current_value'     => (float) $row->number_value,
+                    'percentage_change' => null,
+                    'message'           => $message,
+                    'status'            => Anomaly::STATUS_WARNING,
+                    'detected_at'       => now(),
+                ]
+            );
+
+            if ($anomaly->wasRecentlyCreated ?? false) $this->anomaliesCreated++;
+
+            DB::table('audit_trails')->insert([
+                'user_id'    => $this->userId ?: null,
+                'table_name' => 'data',
+                'record_id'  => (string) $row->id,
+                'action_type'=> 'screened',
+                'old_value'  => null,
+                'new_value'  => json_encode([
+                    'anomalies_found' => 1,
+                    'workflow_status' => 'warning',
+                    'checks_run'      => ['manual_unit_conflict_import'],
+                    'satuan_metadata' => $satuanMeta,
+                    'satuan_rujukan'  => $satuanRuj,
+                ]),
+                'reason'     => 'Screening otomatis sistem',
+                'ip_address' => null,
+                'user_agent' => null,
+                'created_at' => now(),
+            ]);
+        }
+    }
+
     // ══════════════════════════════════════════════════════════
     // OUTLIER DETECTION — Modified Z-Score (Iglewicz & Hoaglin)
     // ══════════════════════════════════════════════════════════
@@ -861,15 +986,33 @@ class DataImport
             }
         }
 
-        $rujukanColIndex = null;
-        foreach ($headerRow as $i => $val) {
-            if (strtolower(trim((string) $val)) === 'rujukan_id') {
-                $rujukanColIndex = $i;
+        // ── Resolve kolom bernama berdasarkan header, bukan index tetap ────────
+        // Ini supaya urutan kolom (mis. setelah nambah Satuan_rujukan) tidak
+        // merusak parsing. Fallback ke index lama kalau nama tidak ditemukan,
+        // untuk kompatibilitas file lama yang belum punya header ini.
+        $columns = [
+            'metadata_id'     => $this->findColumnIndex($headerRow, ['metadata_id']) ?? self::COL_META_ID,
+            'nama_metadata'   => $this->findColumnIndex($headerRow, ['nama_metadata']) ?? self::COL_META_NM,
+            'satuan_metadata' => $this->findColumnIndex($headerRow, ['satuan_metadata']) ?? self::COL_SATUAN,
+            'satuan_rujukan'  => $this->findColumnIndex($headerRow, ['satuan_rujukan']),   // tidak ada fallback — memang boleh kosong
+            'location_id'     => $this->findColumnIndex($headerRow, ['location_id']) ?? self::COL_LOC_ID,
+            'nama_wilayah'    => $this->findColumnIndex($headerRow, ['nama_wilayah']) ?? self::COL_LOC_NM,
+            'rujukan_id'      => $this->findColumnIndex($headerRow, ['rujukan_id']),
+        ];
+
+        // ── Kolom periode: mulai setelah kolom bernama TERTINGGI yang ditemukan,
+        //    lalu berhenti di header pertama yang BUKAN format periode valid
+        //    (menangani kolom catatan/trailing seperti "Note: ..." di akhir). ──
+        $lastNamedCol = max(array_filter($columns, fn($v) => $v !== null));
+        $periodCols   = [];
+        for ($i = $lastNamedCol + 1; $i < count($headerRow); $i++) {
+            $label = $headerRow[$i];
+            if ($label === null || $label === '' || !$this->parseTimeLabel((string) $label)) {
                 break;
             }
+            $periodCols[] = $label;
         }
-
-        $periodCols = array_slice($headerRow, self::COL_PERIOD);
+        $columns['period_start'] = $lastNamedCol + 1;
 
         $dataRows = [];
         for ($r = self::DATA_ROW; $r <= $maxRow; $r++) {
@@ -885,7 +1028,7 @@ class DataImport
             $dataRows[$r] = $rowData;
         }
 
-        return [$periodCols, $dataRows, $rujukanColIndex];
+        return [$periodCols, $dataRows, $columns];
     }
 
     // ══════════════════════════════════════════════════════════
@@ -897,20 +1040,21 @@ class DataImport
         array $periodCols,
         int   $rowNum,
         bool  $dryRun,
-        ?int  $rujukanColIndex = null
+        array $columns
     ): array {
         $records         = [];
         $errors          = [];
         $invalid_metadata = [];
+        $invalid_satuan   = [];
 
-        $metadataId = isset($row[self::COL_META_ID]) ? (int) $row[self::COL_META_ID] : null;
-        $locationId = isset($row[self::COL_LOC_ID]) && $row[self::COL_LOC_ID] !== '' && $row[self::COL_LOC_ID] !== null
-            ? (int) $row[self::COL_LOC_ID]
+        $metadataId = isset($row[$columns['metadata_id']]) ? (int) $row[$columns['metadata_id']] : null;
+        $locationId = isset($row[$columns['location_id']]) && $row[$columns['location_id']] !== '' && $row[$columns['location_id']] !== null
+            ? (int) $row[$columns['location_id']]
             : null;
-        $metaNama   = $row[self::COL_META_NM] ?? '-';
-        $locNama    = $row[self::COL_LOC_NM]  ?? '-';
-        $rujukanId  = ($rujukanColIndex !== null && isset($row[$rujukanColIndex]))
-            ? (int) $row[$rujukanColIndex]
+        $metaNama   = $row[$columns['nama_metadata']] ?? '-';
+        $locNama    = $row[$columns['nama_wilayah']]  ?? '-';
+        $rujukanId  = ($columns['rujukan_id'] !== null && isset($row[$columns['rujukan_id']]))
+            ? (int) $row[$columns['rujukan_id']]
             : null;
 
         if (!$metadataId) {
@@ -942,13 +1086,61 @@ class DataImport
         }
 
         if (!$metadataId || $locationId === null) {
-            return compact('records', 'errors', 'invalid_metadata');
+            return compact('records', 'errors', 'invalid_metadata', 'invalid_satuan');
         }
 
         $metaValidation = $this->metadataCache[$metadataId];
 
+        // ── Resolusi satuan — WAJIB valid kalau teksnya diisi ──────────────────
+        // Beda dari sebelumnya: kalau teks satuan diisi tapi TIDAK ketemu di
+        // tabel master, SELURUH baris (semua periode) di-skip + masuk
+        // $invalid_satuan. Tujuannya: paksa admin membereskan Excel/daftarkan
+        // satuannya dulu, baru boleh upload — bukan dipilih manual di UI.
+        $satuanMetadataRaw = $columns['satuan_metadata'] !== null ? ($row[$columns['satuan_metadata']] ?? null) : null;
+        $satuanRujukanRaw  = $columns['satuan_rujukan']  !== null ? ($row[$columns['satuan_rujukan']]  ?? null) : null;
+
+        $satuanMetadataText = ($satuanMetadataRaw !== null) ? trim((string) $satuanMetadataRaw) : null;
+        $satuanRujukanText  = ($satuanRujukanRaw  !== null) ? trim((string) $satuanRujukanRaw)  : null;
+
+        $satuanId       = null;
+        $satuanAsalId   = null;
+        $satuanNotFound = [];
+
+        if ($satuanMetadataText !== null && $satuanMetadataText !== '') {
+            $satuanId = $this->resolveSatuanId($satuanMetadataText);
+            if ($satuanId === null) $satuanNotFound[] = $satuanMetadataText;
+        }
+        if ($satuanRujukanText !== null && $satuanRujukanText !== '') {
+            $satuanAsalId = $this->resolveSatuanId($satuanRujukanText);
+            if ($satuanAsalId === null) $satuanNotFound[] = $satuanRujukanText;
+        }
+
+        if (!empty($satuanNotFound)) {
+            $invalid_satuan[] = [
+                'metadata_id'         => $metadataId,
+                'nama_metadata'       => $metaNama,
+                'location_id'         => $locationId,
+                'nama_wilayah'        => $locNama,
+                'satuan_metadata_raw' => $satuanMetadataText,
+                'satuan_rujukan_raw'  => $satuanRujukanText,
+                'satuan_tidak_ketemu' => implode(', ', array_unique($satuanNotFound)),
+                'row'                 => $rowNum,
+            ];
+            return compact('records', 'errors', 'invalid_metadata', 'invalid_satuan');
+        }
+
+        // Bentrok satuan: satuan_metadata & satuan_rujukan sama-sama terisi & valid,
+        // tapi merujuk ke satuan_id yang BERBEDA.
+        $isUnitConflict   = ($satuanId !== null && $satuanAsalId !== null && $satuanId !== $satuanAsalId);
+        $unitConflictInfo = $isUnitConflict ? [
+            'satuan_metadata_id'   => $satuanId,
+            'satuan_metadata_nama' => $this->satuanNameCache[$satuanId] ?? (string) $satuanId,
+            'satuan_rujukan_id'    => $satuanAsalId,
+            'satuan_rujukan_nama'  => $this->satuanNameCache[$satuanAsalId] ?? (string) $satuanAsalId,
+        ] : null;
+
         foreach ($periodCols as $pi => $periodLabel) {
-            $colIndex = self::COL_PERIOD + $pi;
+            $colIndex = $columns['period_start'] + $pi;
             $rawValue = $row[$colIndex] ?? null;
 
             if ($rawValue === null || $rawValue === '') continue;
@@ -975,17 +1167,23 @@ class DataImport
             }
 
             $records[] = [
-                'metadata_id'   => $metadataId,
-                'nama_metadata' => $metaNama,
-                'satuan_data'   => $metaValidation['satuan_data'] ?? null,
-                'location_id'   => $locationId,
-                'nama_wilayah'  => $locNama,
-                'time_id'       => $timeId,
-                'period_label'  => (string) $periodLabel,
-                'rujukan_id'    => $rujukanId,
-                'nama_rujukan'  => $this->rujukanCache[$rujukanId]['nama'] ?? null,
-                'produsen_id'   => $this->rujukanCache[$rujukanId]['produsen_id'] ?? null,
-                'number_value'  => (float) $rawValue,
+                'metadata_id'         => $metadataId,
+                'nama_metadata'       => $metaNama,
+                'satuan_data'         => $metaValidation['satuan_data'] ?? null,
+                'location_id'         => $locationId,
+                'nama_wilayah'        => $locNama,
+                'time_id'             => $timeId,
+                'period_label'        => (string) $periodLabel,
+                'rujukan_id'          => $rujukanId,
+                'nama_rujukan'        => $this->rujukanCache[$rujukanId]['nama'] ?? null,
+                'produsen_id'         => $this->rujukanCache[$rujukanId]['produsen_id'] ?? null,
+                'number_value'        => (float) $rawValue,
+                'satuan_id'           => $satuanId,
+                'satuan_asal_id'      => $satuanAsalId,
+                'satuan_metadata_raw' => $satuanMetadataText,
+                'satuan_rujukan_raw'  => $satuanRujukanText,
+                'is_unit_conflict'    => $isUnitConflict,
+                'unit_conflict_info'  => $unitConflictInfo,
             ];
         }
 
@@ -993,6 +1191,7 @@ class DataImport
             'records'          => $records,
             'errors'           => $errors,
             'invalid_metadata' => $invalid_metadata,
+            'invalid_satuan'   => $invalid_satuan,
         ];
     }
 
@@ -1023,10 +1222,83 @@ class DataImport
         }
     }
 
-    private function preloadMetadataCache(array $dataRows): void
+    /**
+     * Preload seluruh tabel `satuan` ke cache, key-nya nama_satuan DAN simbol
+     * (lowercase, trim) supaya matching "kWh" bisa kena baik lewat nama
+     * "Kilowatt Jam" atau simbol "Kwh".
+     */
+    private function preloadSatuanCache(): void
+    {
+        $rows = DB::table('satuan')->get(['satuan_id', 'nama_satuan', 'simbol']);
+        foreach ($rows as $r) {
+            $this->satuanCache[strtolower(trim($r->nama_satuan))] = $r->satuan_id;
+            if (!empty($r->simbol)) {
+                $this->satuanCache[strtolower(trim($r->simbol))] = $r->satuan_id;
+            }
+            $this->satuanNameCache[$r->satuan_id] = $r->simbol ? "{$r->nama_satuan} ({$r->simbol})" : $r->nama_satuan;
+        }
+    }
+
+    /**
+     * Cocokkan teks satuan mentah dari Excel ke tabel master `satuan`.
+     * Exact match (case-insensitive, trim) terhadap nama_satuan ATAU simbol.
+     * Kalau tidak ketemu, dicatat ke $this->unmatchedSatuan untuk dipilih
+     * manual oleh user di preview import (bukan fuzzy-matched otomatis).
+     *
+     * @return int|null  satuan_id jika ketemu, null jika kosong/tidak ketemu
+     */
+    private function resolveSatuanId(?string $text): ?int
+    {
+        if ($text === null) return null;
+        $trimmed = trim($text);
+        if ($trimmed === '') return null;
+
+        return $this->satuanCache[strtolower($trimmed)] ?? null;
+    }
+
+    /**
+     * Kalau metadata belum punya sub_nama_metadata untuk satuan_id tertentu,
+     * generate otomatis: "{nama metadata} ({simbol/nama satuan})".
+     * Tidak menimpa kalau sudah ada (mungkin sudah diedit manual oleh admin).
+     */
+    private function registerSubNamaIfMissing(int $metadataId, int $satuanId): void
+    {
+        $cacheKey = "{$metadataId}_{$satuanId}";
+        if (isset($this->subNamaChecked[$cacheKey])) return;
+        $this->subNamaChecked[$cacheKey] = true;
+
+        $metadata = Metadata::find($metadataId);
+        if (!$metadata) return;
+
+        $existing = $metadata->sub_nama_metadata ?? [];
+        if (isset($existing[$satuanId])) return;
+
+        $satuan = $this->satuanModelCache[$satuanId] ??= Satuan::find($satuanId);
+        if (!$satuan) return;
+
+        $label = $metadata->nama . ' (' . ($satuan->simbol ?: $satuan->nama_satuan) . ')';
+        $metadata->setSubNamaForSatuan($satuanId, $label);
+    }
+
+    /**
+     * Cari index kolom berdasarkan nama header (case-insensitive, trim).
+     * Dipakai supaya urutan kolom di Excel boleh berubah tanpa merusak parsing.
+     */
+    private function findColumnIndex(array $headerRow, array $candidateNames): ?int
+    {
+        $candidates = array_map('strtolower', $candidateNames);
+        foreach ($headerRow as $i => $val) {
+            if (in_array(strtolower(trim((string) $val)), $candidates, true)) {
+                return $i;
+            }
+        }
+        return null;
+    }
+
+    private function preloadMetadataCache(array $dataRows, int $metaIdCol = self::COL_META_ID): void
     {
         $ids = array_unique(array_filter(array_map(
-            fn($row) => isset($row[self::COL_META_ID]) ? (int) $row[self::COL_META_ID] : null,
+            fn($row) => isset($row[$metaIdCol]) ? (int) $row[$metaIdCol] : null,
             $dataRows
         )));
 

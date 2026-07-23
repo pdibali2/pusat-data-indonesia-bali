@@ -42,6 +42,7 @@ class Data extends Model
         'reviewed_at',
         'produsen_id',
         'satuan_id',
+        'satuan_asal_id',
     ];
 
     protected $casts = [
@@ -80,6 +81,11 @@ class Data extends Model
     public function satuan(): BelongsTo
     {
         return $this->belongsTo(Satuan::class, 'satuan_id', 'satuan_id');
+    }
+
+    public function satuanAsal(): BelongsTo
+    {
+        return $this->belongsTo(Satuan::class, 'satuan_asal_id', 'satuan_id');
     }
 
     // ─── RELASI BARU (data quality) ───────────────────────────

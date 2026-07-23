@@ -515,6 +515,45 @@
                         </div>
                     </div>
 
+                    <div id="invalidSatuanSection" class="hidden rounded-xl overflow-hidden" style="border: 1px solid #6366f1;">
+                        <div class="flex items-center gap-2.5 px-4 py-3 cursor-pointer select-none" style="background: #eef2ff;"
+                            onclick="toggleSection('satuan')">
+                            <div class="flex items-center justify-center w-7 h-7 rounded-full shrink-0" style="background:#e0e7ff;">
+                                <i class="fas fa-ruler-combined text-xs" style="color:#4f46e5;"></i>
+                            </div>
+                            <div class="flex-1 min-w-0">
+                                <p class="text-sm font-semibold" style="color:#3730a3;">Satuan Tidak Terdaftar — Baris Dilewati</p>
+                                <p class="text-xs mt-0.5" style="color:#4338ca;" id="satuanSubtitle"></p>
+                            </div>
+                            <span id="satuanBadge" class="text-xs font-semibold px-2.5 py-1 rounded-full shrink-0"
+                                style="background:#e0e7ff; color:#3730a3; border:1px solid #6366f1;"></span>
+                            <svg id="satuanChevron" class="w-4 h-4 shrink-0 transition-transform duration-200" style="color:#818cf8;"
+                                viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M4 6l4 4 4-4"/></svg>
+                        </div>
+                        <div id="satuanBody" class="hidden" style="border-top:1px solid #c7d2fe;">
+                            <div class="px-4 py-2.5 text-xs flex items-start gap-2" style="background:#eef2ff; color:#3730a3;">
+                                <i class="fas fa-triangle-exclamation mt-0.5 shrink-0" style="color:#6366f1;"></i>
+                                <span>Baris berikut TIDAK diimport karena teks satuan-nya belum terdaftar di tabel master satuan. Daftarkan dulu satuannya, lalu upload ulang.</span>
+                            </div>
+                            <div class="overflow-x-auto">
+                                <table class="w-full text-xs">
+                                    <thead style="background:#eef2ff;">
+                                        <tr>
+                                            <th class="px-3 py-2 text-left font-semibold" style="color:#4338ca;">Metadata</th>
+                                            <th class="px-3 py-2 text-left font-semibold" style="color:#4338ca;">Satuan Metadata (Excel)</th>
+                                            <th class="px-3 py-2 text-left font-semibold" style="color:#4338ca;">Satuan Rujukan (Excel)</th>
+                                            <th class="px-3 py-2 text-left font-semibold" style="color:#4338ca;">Tidak Ketemu</th>
+                                            <th class="px-3 py-2 text-left font-semibold" style="color:#4338ca;">Baris</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="satuanTableBody" class="divide-y" style="divide-color:#c7d2fe;"></tbody>
+                                </table>
+                            </div>
+                            <div id="satuanPager" class="hidden w-full flex items-center justify-center gap-1.5 py-2 text-xs"
+                                style="color:#4338ca; border-top:1px solid #c7d2fe;" onclick="showMore('satuan')"></div>
+                        </div>
+                    </div>
+
                     <div id="timeNotFoundAlert" class="hidden rounded-lg p-4 text-sm"
                         style="background:#fef2f2; border:1px solid #fecaca; color:#b91c1c;">
                         <p class="font-semibold flex items-center gap-2 mb-1">
@@ -753,6 +792,67 @@
                                     <i class="fas fa-flag text-orange-400"></i>
                                     <span style="color:#9a3412; font-weight:600;" id="outlierMarkedCount"></span>
                                     <span style="color:#c2410c;">akan dicatat sebagai anomali</span>
+                                </span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div id="unitConflictSection" class="hidden rounded-xl overflow-hidden" style="border: 1px solid #ec4899;">
+                        <div class="flex items-center gap-2.5 px-4 py-3 cursor-pointer select-none" style="background: #fdf2f8;"
+                            onclick="toggleSection('unit')">
+                            <div class="flex items-center justify-center w-7 h-7 rounded-full shrink-0" style="background:#fce7f3;">
+                                <i class="fas fa-scale-unbalanced text-xs" style="color:#db2777;"></i>
+                            </div>
+                            <div class="flex-1 min-w-0">
+                                <p class="text-sm font-semibold" style="color:#9d174d;">Bentrok Satuan (Metadata vs Rujukan)</p>
+                                <p class="text-xs mt-0.5" style="color:#be185d;" id="unitSubtitle"></p>
+                            </div>
+                            <span id="unitBadge" class="text-xs font-semibold px-2.5 py-1 rounded-full shrink-0"
+                                style="background:#fce7f3; color:#9d174d; border:1px solid #ec4899;"></span>
+                            <svg id="unitChevron" class="w-4 h-4 shrink-0 transition-transform duration-200" style="color:#f472b6;"
+                                viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M4 6l4 4 4-4"/></svg>
+                        </div>
+                        <div id="unitBody" class="hidden" style="border-top:1px solid #fbcfe8;">
+                            <div class="px-4 py-3 text-xs flex items-start gap-2.5" style="background:#fdf2f8; color:#9d174d; border-bottom:1px solid #fbcfe8;">
+                                <i class="fas fa-info-circle mt-0.5 shrink-0" style="color:#ec4899;"></i>
+                                <span>Teks <strong>Satuan Metadata</strong> dan <strong>Satuan Rujukan</strong> berbeda untuk baris ini. Nilai TIDAK dikonversi otomatis — pilih apakah tetap diimport, dan apakah dicatat sebagai anomali untuk direview.</span>
+                            </div>
+                            <div class="overflow-x-auto">
+                                <table class="w-full text-xs">
+                                    <thead style="background:#fdf2f8;">
+                                        <tr>
+                                            <th class="px-3 py-2 text-left font-semibold" style="color:#9d174d;">Metadata</th>
+                                            <th class="px-3 py-2 text-left font-semibold" style="color:#9d174d;">Lokasi</th>
+                                            <th class="px-3 py-2 text-center font-semibold" style="color:#9d174d;">Periode</th>
+                                            <th class="px-3 py-2 text-right font-semibold" style="color:#9d174d;">Nilai</th>
+                                            <th class="px-3 py-2 text-left font-semibold" style="color:#9d174d;">Satuan Metadata</th>
+                                            <th class="px-3 py-2 text-left font-semibold" style="color:#9d174d;">Satuan Rujukan</th>
+                                            <th class="px-3 py-2 text-center font-semibold" style="color:#9d174d;">
+                                                <input type="checkbox" id="checkAllUnitInclude" onchange="toggleAllUnitInclude(this)"
+                                                    title="Centang = sertakan semua"> Sertakan?
+                                            </th>
+                                            <th class="px-3 py-2 text-center font-semibold" style="color:#9d174d;">
+                                                <input type="checkbox" id="checkAllUnitMark" onchange="toggleAllUnitMark(this)"
+                                                    title="Centang = catat semua sebagai anomali"> Catat sebagai Anomali
+                                            </th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="unitTableBody" class="divide-y" style="divide-color:#fbcfe8;"></tbody>
+                                </table>
+                            </div>
+                            <div id="unitPager" class="hidden w-full flex items-center justify-center gap-1.5 py-2 text-xs"
+                                style="color:#be185d; border-top:1px solid #fbcfe8;" onclick="showMore('unit')"></div>
+                            <div class="px-4 py-2.5 flex items-center gap-4 text-xs flex-wrap" style="background:#fdf2f8; border-top:1px solid #fbcfe8;">
+                                <span class="flex items-center gap-1.5">
+                                    <i class="fas fa-check text-green-500"></i>
+                                    <span style="color:#166534; font-weight:600;" id="unitIncludedCount"></span>
+                                    <span style="color:#166534;">dari <span id="unitTotalCount"></span> akan diimport</span>
+                                </span>
+                                <span style="color:#fbcfe8;">|</span>
+                                <span class="flex items-center gap-1.5">
+                                    <i class="fas fa-flag" style="color:#db2777;"></i>
+                                    <span style="color:#9d174d; font-weight:600;" id="unitMarkedCount"></span>
+                                    <span style="color:#be185d;">akan dicatat sebagai anomali</span>
                                 </span>
                             </div>
                         </div>
@@ -1428,6 +1528,7 @@
         dup:  { data: [], page: 0 },
         meta: { data: [], page: 0 },
         out:  { data: [], page: 0, includeState: {}, markState: {} },
+        satuan: { data: [], page: 0, resolutions: {} },
         valid: { groups: [], page: 0, periodOrder: [] },
     };
 
@@ -1474,6 +1575,8 @@
         sectionState.err  = { data: [], page: 0 };
         sectionState.dup  = { data: [], page: 0 };
         sectionState.meta = { data: [], page: 0 };
+        sectionState.satuan = { data: [], page: 0 };            
+        sectionState.unit   = { data: [], page: 0, includeState: {}, markState: {} };
     }
 
     async function doPreview() {
@@ -1761,6 +1864,35 @@
         } else {
             outSection.classList.add('hidden');
         }
+        sectionState.satuan = { data: json.invalid_satuan || [], page: 0 };
+        const invalidSatuanSection = document.getElementById('invalidSatuanSection');
+        if (sectionState.satuan.data.length > 0) {
+            document.getElementById('satuanBadge').textContent = sectionState.satuan.data.length + ' baris';
+            document.getElementById('satuanSubtitle').textContent = sectionState.satuan.data.length + ' baris dilewati karena satuan belum terdaftar';
+            invalidSatuanSection.classList.remove('hidden');
+            document.getElementById('satuanBody').classList.add('hidden');
+            document.getElementById('satuanChevron').style.transform = '';
+        } else {
+            invalidSatuanSection.classList.add('hidden');
+        }
+
+        sectionState.unit = { data: json.unit_conflicts || [], page: 0, includeState: {}, markState: {} };
+        sectionState.unit.data.forEach(rec => {
+            const key = `${rec.metadata_id}_${rec.location_id}_${rec.time_id}_${rec.rujukan_id}`;
+            sectionState.unit.includeState[key] = true;
+            sectionState.unit.markState[key]    = true;
+        });
+        const unitSection = document.getElementById('unitConflictSection');
+        if (sectionState.unit.data.length > 0) {
+            document.getElementById('unitBadge').textContent = sectionState.unit.data.length + ' titik data';
+            document.getElementById('unitSubtitle').textContent = sectionState.unit.data.length + ' data punya satuan metadata & rujukan berbeda';
+            unitSection.classList.remove('hidden');
+            document.getElementById('unitBody').classList.add('hidden');
+            document.getElementById('unitChevron').style.transform = '';
+            toggleSection('unit'); // auto-buka, sama seperti outlier
+        } else {
+            unitSection.classList.add('hidden');
+        }
     }
 
     function toggleSection(type) {
@@ -1769,6 +1901,8 @@
             dup:  { body: 'dupBody',  chevron: 'dupChevron'  },
             meta: { body: 'metaBody', chevron: 'metaChevron' },
             out:  { body: 'outBody',  chevron: 'outChevron'  },
+            satuan: { body: 'satuanBody', chevron: 'satuanChevron' },
+            unit: { body: 'unitBody', chevron: 'unitChevron' },
         };
         const entry = ids[type];
         if (!entry) return;
@@ -1928,6 +2062,77 @@
                     }
                 });
                 updateOutlierSummary();
+            }
+
+            function updateUnitConflictSummary() {
+                const s = sectionState.unit, total = s.data.length;
+                const included = Object.values(s.includeState).filter(Boolean).length;
+                const marked   = Object.entries(s.markState).filter(([k,v]) => v && s.includeState[k] !== false).length;
+                document.getElementById('unitIncludedCount').textContent = included;
+                document.getElementById('unitMarkedCount').textContent   = marked;
+                document.getElementById('unitTotalCount').textContent    = total;
+                const mi = document.getElementById('checkAllUnitInclude');
+                if (mi) { mi.checked = included === total && total > 0; mi.indeterminate = included > 0 && included < total; }
+                const mm = document.getElementById('checkAllUnitMark');
+                if (mm) { mm.checked = marked === included && included > 0; mm.indeterminate = marked > 0 && marked < included; }
+            }
+
+            function syncUnitConflictRow(cb) {
+                const key = cb.dataset.key, s = sectionState.unit;
+                s.includeState[key] = cb.checked;
+                const row = cb.closest('tr'), mark = row?.querySelector('.unit-mark');
+                if (!cb.checked) {
+                    s.markState[key] = false;
+                    if (mark) { mark.checked = false; mark.disabled = true; mark.classList.add('opacity-50','cursor-not-allowed'); }
+                } else {
+                    s.markState[key] = true;
+                    if (mark) { mark.checked = true; mark.disabled = false; mark.classList.remove('opacity-50','cursor-not-allowed'); }
+                }
+                updateUnitConflictSummary();
+            }
+
+            function onUnitMarkChange(cb) {
+                const key = cb.dataset.key, s = sectionState.unit;
+                if (s.includeState[key] !== false) s.markState[key] = cb.checked;
+                updateUnitConflictSummary();
+            }
+
+            function toggleAllUnitInclude(master) {
+                const s = sectionState.unit;
+                s.data.forEach(rec => {
+                    const key = `${rec.metadata_id}_${rec.location_id}_${rec.time_id}_${rec.rujukan_id}`;
+                    s.includeState[key] = master.checked;
+                    s.markState[key]    = master.checked;
+                });
+                document.querySelectorAll('.unit-include').forEach(cb => cb.checked = master.checked);
+                document.querySelectorAll('.unit-mark').forEach(cb => { cb.checked = master.checked; cb.disabled = !master.checked; });
+                updateUnitConflictSummary();
+            }
+
+            function toggleAllUnitMark(master) {
+                const s = sectionState.unit;
+                s.data.forEach(rec => {
+                    const key = `${rec.metadata_id}_${rec.location_id}_${rec.time_id}_${rec.rujukan_id}`;
+                    if (s.includeState[key] !== false) s.markState[key] = master.checked;
+                });
+                document.querySelectorAll('.unit-mark').forEach(cb => {
+                    if (s.includeState[cb.dataset.key] !== false) cb.checked = master.checked;
+                });
+                updateUnitConflictSummary();
+            }
+
+            function saveUnitConflictState() {
+                document.querySelectorAll('.unit-include').forEach(cb => sectionState.unit.includeState[cb.dataset.key] = cb.checked);
+                document.querySelectorAll('.unit-mark').forEach(cb => sectionState.unit.markState[cb.dataset.key] = cb.checked);
+            }
+
+            function restoreUnitConflictState() {
+                document.querySelectorAll('.unit-include').forEach(cb => {
+                    if (cb.dataset.key in sectionState.unit.includeState) cb.checked = sectionState.unit.includeState[cb.dataset.key];
+                });
+                document.querySelectorAll('.unit-mark').forEach(cb => {
+                    if (cb.dataset.key in sectionState.unit.markState) cb.checked = sectionState.unit.markState[cb.dataset.key];
+                });
             }
 
     function saveOutlierState() {
@@ -2121,6 +2326,43 @@
             restoreOutlierState();
             renderPagination('out', 'outPager');
             updateOutlierSummary();
+        } else if (type === 'satuan') {
+            document.getElementById('satuanTableBody').innerHTML = rows.map((r, i) => `
+                <tr class="${i % 2 !== 0 ? 'bg-indigo-50/40' : ''}">
+                    <td class="px-3 py-2 text-gray-700">${esc(r.nama_metadata)}</td>
+                    <td class="px-3 py-2 text-gray-500">${esc(r.satuan_metadata_raw ?? '—')}</td>
+                    <td class="px-3 py-2 text-gray-500">${esc(r.satuan_rujukan_raw ?? '—')}</td>
+                    <td class="px-3 py-2 text-red-500 font-medium">${esc(r.satuan_tidak_ketemu)}</td>
+                    <td class="px-3 py-2 font-mono text-gray-400">Baris ${esc(String(r.row))}</td>
+                </tr>`).join('');
+            renderPagination('satuan', 'satuanPager');
+
+        } else if (type === 'unit') {
+            if (type === 'unit') saveUnitConflictState();
+            document.getElementById('unitTableBody').innerHTML = rows.map((rec, i) => {
+                const info = rec.unit_conflict_info;
+                const key  = `${rec.metadata_id}_${rec.location_id}_${rec.time_id}_${rec.rujukan_id}`;
+                return `
+                <tr style="background:${i % 2 === 0 ? '#ffffff' : '#fdf2f8'};">
+                    <td class="px-3 py-2.5 font-medium text-gray-800">${esc(rec.nama_metadata)}</td>
+                    <td class="px-3 py-2.5 text-gray-500">${esc(rec.nama_wilayah)}</td>
+                    <td class="px-3 py-2.5 text-center font-mono text-gray-700">${esc(rec.period_label)}</td>
+                    <td class="px-3 py-2.5 text-right font-mono font-semibold text-gray-900">${formatNum(rec.number_value)}</td>
+                    <td class="px-3 py-2.5"><span class="px-2 py-0.5 rounded-full text-xs" style="background:#e0e7ff;color:#3730a3;">${esc(info?.satuan_metadata_nama)}</span></td>
+                    <td class="px-3 py-2.5"><span class="px-2 py-0.5 rounded-full text-xs" style="background:#fce7f3;color:#9d174d;">${esc(info?.satuan_rujukan_nama)}</span></td>
+                    <td class="px-3 py-2.5 text-center">
+                        <input type="checkbox" class="unit-include rounded border-pink-300 text-pink-500 focus:ring-pink-400 cursor-pointer"
+                            data-key="${esc(key)}" checked onchange="syncUnitConflictRow(this)">
+                    </td>
+                    <td class="px-3 py-2.5 text-center">
+                        <input type="checkbox" class="unit-mark rounded border-pink-300 text-pink-500 focus:ring-pink-400 cursor-pointer"
+                            data-key="${esc(key)}" checked onchange="onUnitMarkChange(this)">
+                    </td>
+                </tr>`;
+            }).join('');
+            restoreUnitConflictState();
+            renderPagination('unit', 'unitPager');
+            updateUnitConflictSummary();
         }
     }
 
@@ -2148,6 +2390,16 @@
             .map(rec => `${rec.metadata_id}_${rec.location_id}_${rec.time_id}_${rec.rujukan_id}`)
             .filter(key => sectionState.out.markState[key] === true 
                         && sectionState.out.includeState[key] !== false);
+
+        const unitConflictKeys = sectionState.unit.data
+            .map(rec => `${rec.metadata_id}_${rec.location_id}_${rec.time_id}_${rec.rujukan_id}`)
+            .filter(key => sectionState.unit.markState[key] === true && sectionState.unit.includeState[key] !== false);
+
+        const unitExcludedKeys = sectionState.unit.data
+            .map(rec => `${rec.metadata_id}_${rec.location_id}_${rec.time_id}_${rec.rujukan_id}`)
+            .filter(key => sectionState.unit.includeState[key] === false);
+
+        const satuanResolutions = sectionState.satuan?.resolutions || {};
 
         // Build confirm message
         let confirmMsg = `Import ${previewData.valid} record data?`;
@@ -2182,7 +2434,12 @@
 
         // Kirim excluded_keys ke server
         excludedKeys.forEach(key => form.append('excluded_keys[]', key));
+        unitExcludedKeys.forEach(key => form.append('excluded_keys[]', key));
+        unitConflictKeys.forEach(key => form.append('unit_conflict_keys[]', key));
         anomalyKeys.forEach(key => form.append('anomaly_keys[]', key));
+        Object.entries(satuanResolutions).forEach(([key, val]) => {
+            if (val) form.append(`satuan_resolutions[${key}]`, val);
+        });
 
         try {
             const resp = await fetch(IMPORT_URL, {

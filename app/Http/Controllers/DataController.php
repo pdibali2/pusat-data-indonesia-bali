@@ -411,7 +411,10 @@ class DataController extends Controller
             'excluded_keys'   => 'nullable|array',
             'excluded_keys.*' => 'string',
             'anomaly_keys'    => 'nullable|array',
-            'anomaly_keys.*'  => 'string',
+            'unit_conflict_keys'   => 'nullable|array',
+            'unit_conflict_keys.*' => 'string',
+            'satuan_resolutions'   => 'nullable|array',
+            'satuan_resolutions.*' => 'integer',
         ]);
  
         try {
@@ -425,6 +428,10 @@ class DataController extends Controller
 
             // Bangun set key outlier yang harus dicatat sebagai anomali
             $anomalyKeys = [];
+            $unitConflictKeys = [];
+            foreach ($request->input('unit_conflict_keys', []) as $key) {
+                $unitConflictKeys[$key] = true;
+            }
             foreach ($request->input('anomaly_keys', []) as $key) {
                 $anomalyKeys[$key] = true;
             }
@@ -434,7 +441,7 @@ class DataController extends Controller
                 skipDuplicates: $request->boolean('skip_duplicates', true)
             );
  
-            $result = $import->import($path, $excludedKeys, $anomalyKeys);
+            $result = $import->import($path, $excludedKeys, $anomalyKeys, $unitConflictKeys);
  
             // Screening anomali untuk data yang baru diimport
             $anomalyStats = ['scanned' => 0, 'anomaliesFound' => 0];

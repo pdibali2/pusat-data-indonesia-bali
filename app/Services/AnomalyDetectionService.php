@@ -235,6 +235,26 @@ class AnomalyDetectionService
         $mySource = $data->produsen?->nama_produsen ?? "Produsen #{$data->produsen_id}";
         $unitNote = $unitNormalized ? ' (nilai sudah dinormalisasi ke satuan yang sama)' : '';
 
+        // ── Cek tambahan: apakah salah satu pihak yang konflik punya catatan
+        //    satuan_asal_id berbeda dari satuan_id-nya sendiri? Kalau ya, ini
+        //    petunjuk penting buat reviewer — konflik nilai bisa jadi akibat
+        //    kesalahan normalisasi manual, bukan data yang benar-benar salah.
+        $myHasUnitNote = $data->satuan_asal_id !== null && $data->satuan_asal_id !== $data->satuan_id;
+        $otherHasUnitNote = $conflict->satuan_asal_id !== null && $conflict->satuan_asal_id !== $conflict->satuan_id;
+
+        $unitFlagNote = '';
+        if ($myHasUnitNote || $otherHasUnitNote) {
+            $flagged = [];
+            if ($myHasUnitNote) {
+                $flagged[] = "{$mySource} (satuan rujukan: " . ($data->satuanAsal?->nama_satuan ?? '-') . ")";
+            }
+            if ($otherHasUnitNote) {
+                $flagged[] = "{$conflictSource} (satuan rujukan: " . ($conflict->satuanAsal?->nama_satuan ?? '-') . ")";
+            }
+            $unitFlagNote = ' Catatan: ' . implode(' dan ', $flagged)
+                . ' melaporkan satuan asli berbeda dari satuan metadata — periksa kemungkinan kesalahan normalisasi.';
+        }
+
         return $this->createAnomaly($data, [
             'anomaly_type'      => Anomaly::TYPE_SOURCE_CONFLICT,
             'severity'          => $severity,
@@ -243,7 +263,7 @@ class AnomalyDetectionService
             'percentage_change' => $pctDiff,
             'message'           => "Konflik sumber data: nilai dari {$mySource} ({$current}) "
                                 . "berbeda {$maxDiff} dengan {$conflictSource} ({$conflictValue}){$unitNote}. "
-                                . "Selisih relatif: " . number_format($pctDiff, 2) . "%.",
+                                . "Selisih relatif: " . number_format($pctDiff, 2) . "%.{$unitFlagNote}",
         ]);
     }
 
@@ -382,31 +402,60 @@ class AnomalyDetectionService
             ->where('location_id', $locationId)
             ->where('time_id', $timeId)
             ->whereNotNull('number_value')
-            ->with(['produsen', 'rujukan', 'metadata'])
+            ->with(['produsen', 'rujukan', 'metadata', 'satuan', 'satuanAsal'])
             ->get();
 
         if ($rows->isEmpty()) return collect();
 
-        // Hitung rata-rata sebagai baseline
         $avg = $rows->avg('number_value');
 
-        return $rows->map(function (Data $d) use ($avg) {
+        $distinctUnitIds = $rows->pluck('satuan_asal_id')->filter()->unique();
+        $unitsConsistent = $distinctUnitIds->count() <= 1;
+
+        // ── Tentukan satuan "mayoritas" agar bisa tandai baris yang berbeda ──
+        // (bukan sekadar unitsConsistent global, tapi per-baris: baris mana
+        // yang sebenarnya menyimpang dari mayoritas sumber lain)
+        $unitCounts = $rows->pluck('satuan_asal_id')->filter()->countBy();
+        $majorityUnitId = $unitCounts->isNotEmpty()
+            ? $unitCounts->sortDesc()->keys()->first()
+            : null;
+        $majorityCount = $unitCounts->isNotEmpty() ? $unitCounts->sortDesc()->first() : 0;
+        // Kalau semua unit unik (tidak ada mayoritas nyata, mis. 2 sumber beda unit
+        // tanpa ada yang menang), anggap tidak ada baseline mayoritas yang valid
+        $hasClearMajority = $majorityCount > 1 || $distinctUnitIds->count() <= 1;
+
+        return $rows->map(function (Data $d) use ($avg, $unitsConsistent, $majorityUnitId, $hasClearMajority) {
             $value   = (float) $d->number_value;
             $selisih = $value - $avg;
             $pctDiff = $avg > 0 ? abs($selisih / $avg) * 100 : 0;
 
+            $satuanDisplay = $d->satuanAsal?->nama_satuan
+                ?? $d->satuan?->nama_satuan
+                ?? ($d->metadata?->satuan_data ?? '—');
+
+            // ── Status satuan: konflik jika unit rujukan baris ini berbeda
+            //    dari mayoritas sumber lain untuk metadata+lokasi+waktu yang sama.
+            $unitConflict = false;
+            if (!$unitsConsistent) {
+                $unitConflict = $hasClearMajority
+                    ? ($d->satuan_asal_id !== $majorityUnitId)
+                    : true; // tidak ada mayoritas jelas → semua ditandai konflik
+            }
+
             return [
-                'data_id'       => $d->id,
-                'produsen_id'   => $d->produsen_id,
-                'produsen'      => $d->produsen?->nama_produsen ?? "Produsen #{$d->produsen_id}",
-                'rujukan'       => $d->rujukan?->nama_rujukan ?? '—',
-                'satuan'        => $d->metadata?->satuan_data ?? '—',
-                'value'         => $value,
-                'avg_baseline'  => round($avg, 4),
-                'selisih'       => round($selisih, 4),
-                'pct_diff'      => round($pctDiff, 2),
-                'conflict'      => $pctDiff >= 5,  // flag konflik jika selisih > 5%
-                'workflow'      => $d->workflow_status,
+                'data_id'          => $d->id,
+                'produsen_id'      => $d->produsen_id,
+                'produsen'         => $d->produsen?->nama_produsen ?? "Produsen #{$d->produsen_id}",
+                'rujukan'          => $d->rujukan?->nama_rujukan ?? '—',
+                'satuan'           => $satuanDisplay,
+                'units_consistent' => $unitsConsistent,
+                'unit_conflict'    => $unitConflict,
+                'value'            => $value,
+                'avg_baseline'     => round($avg, 4),
+                'selisih'          => round($selisih, 4),
+                'pct_diff'         => round($pctDiff, 2),
+                'conflict'         => $pctDiff >= 5,
+                'workflow'         => $d->workflow_status,
             ];
         });
     }
@@ -451,6 +500,16 @@ class AnomalyDetectionService
                     ->where('anomalies_id', '!=', $first->anomalies_id)
                     ->delete();
             }
+
+            // ── Refresh HANYA anomali berstatus WARNING (belum ada aksi apa pun).
+            // UNDER_REVIEW sengaja TIDAK disentuh karena ada reviewer yang sedang aktif
+            // menangani anomali itu, jangan ubah info di bawah kakinya.
+            // Approved/rejected/revised juga tidak disentuh, itu histori keputusan final.
+            if ($first->status === Anomaly::STATUS_WARNING) {
+                $first->update($attributes);
+                $first->refresh();
+            }
+
             return $first;
         }
 

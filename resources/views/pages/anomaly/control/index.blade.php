@@ -281,6 +281,7 @@
                                         'extreme_decrease' => ['fas fa-arrow-trend-down','bg-blue-50 text-blue-700 border-blue-200',   'Penurunan Ekstrem'],
                                         'source_conflict'  => ['fas fa-code-branch',     'bg-purple-50 text-purple-700 border-purple-200','Konflik Sumber'],
                                         'unreasonable_value'=> ['fas fa-chart-line',     'bg-amber-50 text-amber-700 border-amber-200','Nilai Tdk Wajar'],
+                                        'unit_conflict'    => ['fas fa-scale-unbalanced', 'bg-pink-50 text-pink-700 border-pink-200', 'Konflik Satuan'],
                                         default            => ['fas fa-question',        'bg-gray-100 text-gray-500 border-gray-200',  $anomaly->anomaly_type_label],
                                     };
                                 @endphp
@@ -393,6 +394,12 @@
                             {{-- Detail Perbandingan (kontekstual) --}}
                             <td class="px-3 py-3">
                                 @if($ctxType === 'source_conflict' && !empty($sources))
+                                    @php $unitsConsistent = $sources[0]['units_consistent'] ?? true; @endphp
+                                    @unless($unitsConsistent)
+                                    <div class="mb-1.5 px-2 py-1 rounded text-[10px] font-semibold bg-pink-50 text-pink-700 border border-pink-200">
+                                        <i class="fas fa-scale-unbalanced mr-1"></i>Satuan rujukan berbeda antar sumber
+                                    </div>
+                                    @endunless
                                     <div class="space-y-1">
                                         @foreach($sources as $src)
                                         <div class="flex items-center justify-between gap-2 px-2 py-1 rounded
@@ -401,6 +408,7 @@
                                                 title="{{ $src['rujukan'] }}">
                                                 @if($src['is_current'])<i class="fas fa-circle text-[6px] text-purple-500 mr-0.5"></i>@endif
                                                 {{ $src['rujukan'] }}
+                                                <span class="text-gray-400">({{ $src['satuan'] }})</span>
                                             </span>
                                             <span class="font-mono text-[11px] shrink-0
                                                         {{ $src['pct_diff'] >= 5 ? 'text-amber-600 font-semibold' : 'text-gray-600' }}">
@@ -514,7 +522,17 @@
                                         </span>
                                     </div>
                                     <p class="text-[10px] text-gray-400 mt-1">vs periode sebelumnya</p>
-        
+                                @elseif($ctxType === 'unit_conflict')
+                                    <div class="space-y-1 text-[11px]">
+                                        <div class="flex items-center justify-between gap-2 px-2 py-1 rounded bg-indigo-50 border border-indigo-100">
+                                            <span class="text-indigo-500">Satuan Metadata</span>
+                                            <span class="font-semibold text-indigo-700">{{ $stats['satuan_metadata'] ?? '-' }}</span>
+                                        </div>
+                                        <div class="flex items-center justify-between gap-2 px-2 py-1 rounded bg-pink-50 border border-pink-100">
+                                            <span class="text-pink-500">Satuan Rujukan</span>
+                                            <span class="font-semibold text-pink-700">{{ $stats['satuan_rujukan'] ?? '-' }}</span>
+                                        </div>
+                                    </div>
                                 @else
                                     <span class="text-gray-300 text-[11px]">Lihat detail</span>
                                 @endif

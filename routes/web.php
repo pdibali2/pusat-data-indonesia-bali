@@ -15,6 +15,7 @@ use App\Http\Controllers\KlasifikasiController;
 use App\Http\Controllers\MetadataController;
 use App\Http\Controllers\MetadataImportController;
 use App\Http\Controllers\LocationController;
+use App\Http\Controllers\SatuanController;
 use App\Http\Controllers\WaktuController;
 use App\Http\Controllers\DataController;
 use App\Http\Controllers\DataExportController;
@@ -171,6 +172,7 @@ Route::middleware(['is.login', 'is.pengelola', 'is.customer'])->group(function (
         Route::resource('produsen', ProdusenController::class);
         Route::resource('rujukan',  RujukanController::class);
         Route::resource('klasifikasi', KlasifikasiController::class);
+        Route::resource('satuan', SatuanController::class)->only(['index', 'create', 'store', 'edit', 'update']);
         Route::resource('layanan', LayananController::class);
         Route::get('organizations', [\App\Http\Controllers\AdminOrganizationController::class, 'index'])->name('organizations.index');
         Route::get('organizations/{organization}', [\App\Http\Controllers\AdminOrganizationController::class, 'show'])->name('organizations.show');

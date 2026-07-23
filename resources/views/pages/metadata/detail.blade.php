@@ -95,6 +95,22 @@
                     <span class="text-gray-500">Satuan:</span>
                     <span class="font-semibold text-gray-700">{{ $metadata->satuan_data }}</span>
                 </div>
+                @if(!empty($metadata->sub_nama_metadata))
+                <div class="flex items-start gap-1.5 bg-gray-50 border border-gray-200 rounded-lg px-3 py-2 text-xs">
+                    <i class="fas fa-list text-slate-400 mt-0.5"></i>
+                    <div>
+                        <div class="text-gray-500">Sub Nama Metadata:</div>
+                        <div class="mt-1 space-y-1 text-gray-700">
+                            @foreach($metadata->sub_nama_metadata as $satuanId => $label)
+                                <div>
+                                    <span class="font-semibold">{{ $satuanNames[$satuanId] ?? 'Satuan #'.$satuanId }}:</span>
+                                    {{ $label }}
+                                </div>
+                            @endforeach
+                        </div>
+                    </div>
+                </div>
+                @endif
                 <div class="flex items-center gap-1.5 bg-gray-50 border border-gray-200 rounded-lg px-3 py-1.5 text-xs">
                     <i class="fas fa-calendar-alt text-green-400"></i>
                     <span class="text-gray-500">Frekuensi:</span>

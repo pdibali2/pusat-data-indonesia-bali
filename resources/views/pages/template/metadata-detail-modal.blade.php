@@ -61,7 +61,12 @@
                     <span id="mdTipe">—</span>
                 </span>
             </div>
-
+ 
+            <div id="mdSubNamaWrap" class="hidden px-6 py-4 bg-slate-50 border-t border-gray-100">
+                <p class="md-section-label">Sub Nama Metadata</p>
+                <div id="mdSubNamaList" class="space-y-2 text-sm text-slate-700"></div>
+            </div>
+ 
             {{-- ── Body (scrollable) ───────────────────────── --}}
             <div class="overflow-y-auto flex-1 px-6 py-5 space-y-5">
 
@@ -311,7 +316,22 @@ function _populateModal(d) {
     document.getElementById('mdSatuan').textContent    = d.satuan_data    ?? '—';
     document.getElementById('mdFrekuensi').textContent = d.frekuensi_penerbitan ?? '—';
     document.getElementById('mdTipe').textContent      = d.tipe_data      ?? '—';
-
+ 
+    const subNamaWrap = document.getElementById('mdSubNamaWrap');
+    const subNamaList = document.getElementById('mdSubNamaList');
+    if (d.sub_nama_metadata && typeof d.sub_nama_metadata === 'object' && Object.keys(d.sub_nama_metadata).length) {
+        subNamaList.innerHTML = Object.entries(d.sub_nama_metadata)
+            .map(([satuanId, label]) =>
+                `<div class="rounded-2xl bg-white border border-slate-200 px-3 py-2">
+                    <span class="font-semibold text-slate-800">Satuan ${_mdEsc(satuanId)}:</span>
+                    <span class="text-slate-700"> ${_mdEsc(label)}</span>
+                 </div>`
+            ).join('');
+        subNamaWrap.classList.remove('hidden');
+    } else {
+        subNamaWrap.classList.add('hidden');
+    }
+ 
     // Definisi (selalu tampil)
     document.getElementById('mdDefinisi').textContent = d.definisi || 'Belum tersedia.';
 

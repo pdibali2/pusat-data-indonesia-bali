@@ -36,7 +36,9 @@ class AnomalyControlController extends Controller
             'data.location',
             'data.time',
             'data.user',
-            'data.produsen',     // ← sudah ada, pastikan tetap ada
+            'data.produsen',
+            'data.satuan',
+            'data.satuanAsal',
             'reviews.reviewer',
         ]);
     
@@ -97,6 +99,7 @@ class AnomalyControlController extends Controller
             Anomaly::TYPE_EXTREME_INCREASE => 'Kenaikan Ekstrem',
             Anomaly::TYPE_EXTREME_DECREASE => 'Penurunan Ekstrem',
             Anomaly::TYPE_SOURCE_CONFLICT  => 'Konflik Sumber Data',
+            Anomaly::TYPE_UNIT_CONFLICT    => 'Konflik Satuan',
             Anomaly::TYPE_UNREASONABLE     => 'Nilai Tidak Wajar',
         ];
     
@@ -154,7 +157,7 @@ class AnomalyControlController extends Controller
                 'time_id'     => $a->data?->time_id,
                 'data_id'     => $a->data?->id,
             ])
-            ->filter(fn($k) => $k['metadata_id'] && $k['location_id'] && $k['time_id'])
+            ->filter(fn($k) => $k['metadata_id'] !== null && $k['location_id'] !== null && $k['time_id'] !== null)
             ->unique(fn($k) => "{$k['metadata_id']}-{$k['location_id']}-{$k['time_id']}");
     
         // Batch load semua data sumber untuk source_conflict
@@ -165,20 +168,25 @@ class AnomalyControlController extends Controller
                 ->where('time_id', $key['time_id'])
                 ->where('status', Data::STATUS_AVAILABLE)
                 ->whereNotNull('number_value')
-                ->with(['produsen', 'rujukan'])
+                ->with(['produsen', 'rujukan', 'satuan', 'satuanAsal'])
                 ->get();
-    
-            $avg = $rows->avg('number_value');
+
+            $avg    = $rows->avg('number_value');
             $mapKey = "{$key['metadata_id']}-{$key['location_id']}-{$key['time_id']}";
-    
+
+            $distinctUnitIds = $rows->pluck('satuan_asal_id')->filter()->unique();
+            $unitsConsistent = $distinctUnitIds->count() <= 1;
+
             $conflictMap[$mapKey] = $rows->map(fn($d) => [
-                'data_id'    => $d->id,
-                'produsen'   => $d->produsen?->nama_produsen ?? "Produsen #{$d->produsen_id}",
-                'rujukan'    => $d->rujukan?->nama_rujukan ?? '—',
-                'value'      => (float) $d->number_value,
-                'selisih'    => round((float) $d->number_value - $avg, 4),
-                'pct_diff'   => $avg > 0 ? round(abs(((float) $d->number_value - $avg) / $avg * 100), 2) : 0,
-                'is_current' => false,   // akan di-set di bawah
+                'data_id'          => $d->id,
+                'produsen'         => $d->produsen?->nama_produsen ?? "Produsen #{$d->produsen_id}",
+                'rujukan'          => $d->rujukan?->nama_rujukan ?? '—',
+                'satuan'           => $d->satuanAsal?->nama_satuan ?? ($d->satuan?->nama_satuan ?? '—'),
+                'units_consistent' => $unitsConsistent,
+                'value'            => (float) $d->number_value,
+                'selisih'          => round((float) $d->number_value - $avg, 4),
+                'pct_diff'         => $avg > 0 ? round(abs(((float) $d->number_value - $avg) / $avg * 100), 2) : 0,
+                'is_current'       => false,
             ])->toArray();
         }
     
@@ -190,7 +198,7 @@ class AnomalyControlController extends Controller
                 'location_id' => $a->data?->location_id,
                 'data_id'     => $a->data?->id,
             ])
-            ->filter(fn($k) => $k['metadata_id'] && $k['location_id'] && $k['data_id']);
+            ->filter(fn($k) => $k['metadata_id'] !== null && $k['location_id'] !== null && $k['data_id'] !== null);
 
         $statsMap = [];
         foreach ($unreasonableKeys as $key) {
@@ -240,7 +248,7 @@ class AnomalyControlController extends Controller
                     $anomaly->_ctx_change_pct = $anomaly->percentage_change;
                     $anomaly->_ctx_sources    = [];
                     $anomaly->_ctx_stats      = [];
-                    break;
+                break;
     
                 // ── Konflik Sumber Data ───────────────────────────────────
                 case Anomaly::TYPE_SOURCE_CONFLICT:
@@ -266,7 +274,7 @@ class AnomalyControlController extends Controller
                         : null;
                     $anomaly->_ctx_sources    = $sources;
                     $anomaly->_ctx_stats      = [];
-                    break;
+                break;
     
                 // ── Nilai Tidak Wajar ────────────────────────────────────
                 case Anomaly::TYPE_UNREASONABLE:
@@ -334,7 +342,19 @@ class AnomalyControlController extends Controller
                     $anomaly->_ctx_change_pct = $zScore;
                     $anomaly->_ctx_sources    = [];
                     $anomaly->_ctx_stats      = $statsData;
-                    break;
+                break;
+                case Anomaly::TYPE_UNIT_CONFLICT:
+                    $anomaly->_ctx_type       = 'unit_conflict';
+                    $anomaly->_ctx_ref_label  = 'Satuan Rujukan';
+                    $anomaly->_ctx_ref_value  = null;
+                    $anomaly->_ctx_curr_value = $anomaly->current_value;
+                    $anomaly->_ctx_change_pct = null;
+                    $anomaly->_ctx_sources    = [];
+                    $anomaly->_ctx_stats      = [
+                        'satuan_metadata' => $data?->satuan?->nama_satuan ?? ($data?->metadata?->satuan_data ?? '-'),
+                        'satuan_rujukan'  => $data?->satuanAsal?->nama_satuan ?? '-',
+                    ];
+                break;
     
                 default:
                     $anomaly->_ctx_type       = 'other';
@@ -403,6 +423,8 @@ class AnomalyControlController extends Controller
             'data.produsen',
             'data.rujukan',
             'reviews.reviewer',
+            'data.satuan',
+            'data.satuanAsal',
         ]);
 
         if (request()->wantsJson()) {
@@ -430,7 +452,7 @@ class AnomalyControlController extends Controller
                 ->where('id', '!=', $data->id)
                 ->where('status', Data::STATUS_AVAILABLE)
                 ->whereNotNull('number_value')
-                ->with(['metadata', 'location', 'time', 'user', 'produsen', 'rujukan'])
+                ->with(['metadata', 'location', 'time', 'user', 'produsen', 'rujukan', 'satuan', 'satuanAsal'])
                 // Ambil yang selisihnya paling besar, sesuai logika checkSourceConflict()
                 ->orderByRaw('ABS(number_value - ?) DESC', [(float) $data->number_value])
                 ->first();
@@ -709,11 +731,25 @@ class AnomalyControlController extends Controller
             'data.user',
             'data.produsen',
             'data.rujukan',
+            'data.satuan',
+            'data.satuanAsal',
         ]);
 
         $data = $anomaly->data;
 
-        // Reuse logic perbandingan sumber yang sama seperti di method show()
+        $conflictData = null;
+        if ($anomaly->anomaly_type === Anomaly::TYPE_SOURCE_CONFLICT) {
+            $conflictData = Data::where('metadata_id', $data->metadata_id)
+                ->where('location_id', $data->location_id)
+                ->where('time_id', $data->time_id)
+                ->where('id', '!=', $data->id)
+                ->where('status', Data::STATUS_AVAILABLE)
+                ->whereNotNull('number_value')
+                ->with(['metadata', 'location', 'time', 'user', 'produsen', 'rujukan', 'satuan', 'satuanAsal'])
+                ->orderByRaw('ABS(number_value - ?) DESC', [(float) $data->number_value])
+                ->first();
+        }
+
         $sourceComparison = $this->detector->compareSourceValues(
             $data->metadata_id,
             $data->location_id,
@@ -729,7 +765,7 @@ class AnomalyControlController extends Controller
         }
 
         $pdf = app('dompdf.wrapper')
-            ->loadView('pages.anomaly.control.report_pdf', compact('anomaly', 'data', 'sourceComparison'))
+            ->loadView('pages.anomaly.control.report_pdf', compact('anomaly', 'data', 'conflictData', 'sourceComparison'))
             ->setPaper('a4', 'portrait');
 
         return $pdf->download("Laporan-Anomali-{$anomaly->anomalies_id}.pdf");
