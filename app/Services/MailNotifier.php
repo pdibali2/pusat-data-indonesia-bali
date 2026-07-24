@@ -98,7 +98,7 @@ class MailNotifier
     {
         return $this->panggilGas('verifikasi_email', $user->email, [
             'nama' => $user->name,
-            'link' => route('verify', $token),
+            'link' => route('verify.email', $token),
         ]);
     }
 
