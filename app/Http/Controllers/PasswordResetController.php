@@ -3,10 +3,10 @@
 namespace App\Http\Controllers;
 
 use App\Models\User;
+use App\Services\MailNotifier;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
-use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\RateLimiter;
 use Illuminate\Support\Str;
 use Carbon\Carbon;
@@ -21,7 +21,7 @@ class PasswordResetController extends Controller
     }
 
     // ── Proses kirim email reset ──────────────────────────────
-    public function sendResetLink(Request $request, RecaptchaService $recaptcha)
+    public function sendResetLink(Request $request, RecaptchaService $recaptcha, MailNotifier $mailNotifier)
     {
         // Rate limiting: 3x per jam per IP
         $key = 'password-reset:' . $request->ip();
@@ -73,8 +73,9 @@ class PasswordResetController extends Controller
             'created_at' => now(),
         ]);
 
-        // Kirim email
-        Mail::to($user->email)->send(new \App\Mail\ResetPasswordMail($user, $token));
+        // Kirim email lewat MailNotifier (otomatis pilih GAS / SMTP / Mailtrap
+        // sesuai MAIL_MAILER di .env, tidak perlu diubah manual di sini)
+        $mailNotifier->kirimResetPassword($user, $token);
 
         return back()->with('success', 'Jika email terdaftar, link reset password telah dikirim.');
     }

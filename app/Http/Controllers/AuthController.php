@@ -2,16 +2,14 @@
 
 namespace App\Http\Controllers;
 
-use App\Mail\AccountLocked;
 use App\Models\User;
 use App\Models\UserSession;
 use App\Services\OrganizationInvitationService;
 use App\Services\SessionLimitService;
+use App\Services\MailNotifier;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
-use Illuminate\Support\Facades\Http;
-use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\RateLimiter;
 use Illuminate\Support\Str;
 use App\Services\RecaptchaService;
@@ -26,7 +24,7 @@ class AuthController extends Controller
         return view('pages.auth.login');
     }
 
-    public function login(Request $request, RecaptchaService $recaptcha)
+    public function login(Request $request, RecaptchaService $recaptcha, MailNotifier $mailNotifier)
     {
         if (Auth::check()){
             return back();
@@ -76,11 +74,9 @@ class AuthController extends Controller
                     'unlock_token_expires_at' => now()->addHours(24),
                 ]);
 
-                try {
-                    Mail::to($user->email)->send(new AccountLocked($user, $token));
-                } catch (\Throwable $e) {
-                    // ignore mail errors
-                }
+                // Kirim lewat MailNotifier — otomatis pakai driver GAS/SMTP/Mailtrap
+                // sesuai MAIL_MAILER, dan errornya di-report ke log (tidak ditelan diam-diam)
+                $mailNotifier->kirimAccountLocked($user, $token);
 
                 return back()
                     ->withErrors(['username' => 'Akun dikunci karena terlalu banyak percobaan login. Silakan cek email untuk membuka kembali.'])

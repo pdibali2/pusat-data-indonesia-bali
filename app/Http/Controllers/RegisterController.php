@@ -4,15 +4,13 @@ namespace App\Http\Controllers;
 
 use App\Models\User;
 use App\Services\OrganizationInvitationService;
+use App\Services\MailNotifier;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Str;
-use Illuminate\Support\Facades\Mail;
-use App\Mail\VerifikasiEmail;
 use Illuminate\Support\Facades\RateLimiter;
 use App\Services\RecaptchaService;
-use Throwable;
 
 class RegisterController extends Controller
 {
@@ -28,7 +26,7 @@ class RegisterController extends Controller
         ]);
     }
 
-    public function register(Request $request, RecaptchaService $recaptcha)
+    public function register(Request $request, RecaptchaService $recaptcha, MailNotifier $mailNotifier)
     {
         if (Auth::check()) {
             return redirect('/data');
@@ -102,14 +100,7 @@ class RegisterController extends Controller
             'activation'    => $token,
         ]);
 
-        $mailSent = true;
-
-        try {
-            Mail::to($user->email)->send(new VerifikasiEmail($user, $token));
-        } catch (Throwable $exception) {
-            report($exception);
-            $mailSent = false;
-        }
+        $mailSent = $mailNotifier->kirimVerifikasi($user, $token);
 
         $message = $mailSent
             ? 'Registrasi berhasil! Silakan cek email untuk verifikasi akun.'

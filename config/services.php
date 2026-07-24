@@ -40,4 +40,9 @@ return [
         'inbox_id' => env('MAILTRAP_INBOX_ID'),
     ],
 
+    'gas' => [
+        'mail_url' => env('GAS_MAIL_URL'),
+        'secret'   => env('GAS_MAIL_SECRET'),
+    ],
+
 ];
